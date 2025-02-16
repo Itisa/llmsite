@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>DeepSeek Chat</title>
+	{% load static %}
+	<script src="{% static 'mainsite/axios_min.js' %}"></script>
+	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
+	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
+
+</head>
+<body class="bg-gray-100">
+	<div x-data="app()" class="min-h-screen">
+		<!-- 登录模块 -->
+		<div x-show="!username" class="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow">
+			<h2 class="text-2xl font-bold mb-4">用户登录</h2>
+
+			<form @submit.prevent="login">
+				{% csrf_token %}
+				<input x-model="loginForm.username"
+					   type="text"
+					   placeholder="用户名"
+					   class="w-full mb-3 p-2 border rounded" name="username">
+				<input x-model="loginForm.password"
+					   type="password"
+					   placeholder="密码"
+					   class="w-full mb-3 p-2 border rounded" name="password">
+				<button type="submit"
+						class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+					登录
+				</button>
+			</form>
+			<div class="mt-4 text-center">
+				<a href="{% url 'mainsite:register' %}" class="text-blue-500 hover:text-blue-700">注册</a>
+			</div>
+		</div>
+
+		<!-- 主界面 -->
+		<div x-show="username" class="flex h-screen">
+			<!-- 侧边栏 - 历史记录 -->
+			<div class="w-64 bg-white border-r p-4">
+				<h3 class="text-lg font-semibold mb-4">历史对话</h3>
+				<div class="space-y-2">
+					<template x-for="item in titles" :key="item.id">
+						<div @click="loadMessages(item.id)"
+							 class="p-2 hover:bg-gray-100 cursor-pointer rounded"
+							 :class="{ 'bg-blue-50': item.id === activeHistoryId }">
+							<div class="text-sm" x-text="item.title"></div>
+							<div class="text-xs text-gray-500" x-text="item.date"></div>
+						</div>
+					</template>
+				</div>
+			</div>
+
+			<!-- 主聊天区域 -->
+			<div class="flex-1 flex flex-col">
+				<!-- 消息区域 -->
+				<div class="flex-1 overflow-y-auto p-4 space-y-4">
+					<template x-for="message in messages" :key="message.id">
+						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+							<div class="inline-block p-3 rounded-lg max-w-[70%]"
+								 :class="message.role === 'user'
+									 ? 'bg-blue-500 text-white'
+									 : 'bg-gray-200 text-gray-800'">
+								<div x-text="message.content"></div>
+								<div class="text-xs mt-1 opacity-70"
+									 x-text="message.timestamp"></div>
+							</div>
+						</div>
+					</template>
+				</div>
+
+				<!-- 输入区域 -->
+				<div class="p-4 border-t bg-white">
+					<form @submit.prevent="sendMessage">
+						<div class="flex space-x-2">
+							<input x-model="inputMessage"
+								   type="text"
+								   placeholder="输入消息..."
+								   class="flex-1 p-2 border rounded">
+							<button type="submit"
+									class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+								发送
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		function app() {
+			return {
+				// 应用状态
+				user: null,
+				loginForm: {
+					csrfmiddlewaretoken: "",
+					username: '',
+					password: '',
+				},
+				messages: [],
+				titles: [],
+				inputMessage: '',
+				activeHistoryId: null,
+				username: null,
+				communication_id: -1,
+				init() {
+					this.loadHistory()
+					this.titles.push({
+						id: 123,
+						title: "seofi",
+						date: Date.now(),
+					});
+					for (let i = 0; i < this.titles.length; ++i){
+						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
+					}
+					if (document.cookie) {
+						const cookiePairs = document.cookie.split('; ');
+						cookiePairs.forEach(pair => {
+							const [key, value] = pair.split('=');
+							if (key=="username"){
+									this.username = decodeURIComponent(value);
+							}
+						});
+					}
+					
+				},
+
+				// 登录方法
+				login() {
+					this.loginForm.csrfmiddlewaretoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+					axios.post(
+							"{% url 'mainsite:login' %}",
+							new URLSearchParams(this.loginForm).toString(),
+						)
+						.then(response => {
+							console.log(response)
+							window.location.href = "{% url 'mainsite:site' %}";
+						})
+						.catch(error => {
+							console.error('登录失败:', error);
+						});
+				},
+
+				// 发送消息
+				sendMessage() {
+					if (!this.inputMessage.trim()) return;
+
+					const newMessage = {
+						id: Date.now(),
+						content: this.inputMessage,
+						role: 'user',
+						timestamp: new Date().toLocaleTimeString()
+					};
+
+					this.messages.push(newMessage);
+
+					axios.post("{% url 'mainsite:talk' %}", {
+						model_name: "model_NN",
+						message: this.inputMessage,
+						timestamp: Date.now(),
+						communication_id: this.communication_id,
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						
+						const aiMessage = {
+							id: Date.now(),
+							content: response.data.message,
+							role: 'assistant',
+							timestamp: new Date().toLocaleTimeString()
+						};
+						this.messages.push(aiMessage);
+						this.communication_id = response.communication_id;
+						// this.saveHistory();
+					})
+					.catch(error => {
+						console.error('请求失败:', error);
+					});
+
+					this.inputMessage = '';
+				},
+
+				// 加载历史记录
+				loadHistory() {
+					console.log("loadHis");
+					axios.get("{% url 'mainsite:talk' %}", {
+						params:{
+							communication_id: -1,
+						}
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						console.log(response)
+						this.titles = response.data.titles
+						for (var i = 0; i < this.titles.length; i++) {
+							this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
+							this.titles[i].title = this.title.id;
+						}
+					})
+					.catch(error => {
+						console.error('loadHistory请求失败:', error);
+					});
+				},
+
+				loadMessages(communication_id){
+					console.log("communication_id",communication_id);
+					axios.get("{% url 'mainsite:talk' %}", {
+						params:{
+							communication_id: communication_id,
+						}
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						console.log(response)
+						this.messages = response.data.messages
+						for (var i = 0; i < this.messages.length; i++) {
+							this.messages[i].timestamp =new Date(this.messages[i].timestamp).toLocaleString();
+						}
+						this.communication_id = communication_id;
+					})
+					.catch(error => {
+						console.error('loadHistory请求失败:', error);
+					});
+				},
+			}
+		}
+	</script>
+</body>
+</html>

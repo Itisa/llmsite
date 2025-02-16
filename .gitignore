@@ -1,0 +1,10 @@
+secret_settings.py
+api_keys.py
+tmp.py
+polls
+db.sqlite3
+node_moudles
+test.html
+testds.html
+talk_test.py
+__pycache__
