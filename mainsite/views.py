@@ -178,7 +178,7 @@ def talk(request):
 			response_data = {
 				'status': 'ok',
 				'message': rsp,
-				'id': comm.pk,
+				'communication_id': comm.pk,
 			}
 			return JsonResponse(response_data)
 		

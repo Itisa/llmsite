@@ -89,7 +89,7 @@
 		</div>
 	</div>
 
-	<script>
+	<script defer>
 		function app() {
 			return {
 				// 应用状态
@@ -107,11 +107,11 @@
 				communication_id: -1,
 				init() {
 					this.loadHistory()
-					this.titles.push({
-						id: 123,
-						title: "seofi",
-						date: Date.now(),
-					});
+					// this.titles.push({
+					// 	id: 123,
+					// 	title: "seofi",
+					// 	date: Date.now(),
+					// });
 					for (let i = 0; i < this.titles.length; ++i){
 						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
 					}
@@ -120,7 +120,7 @@
 						cookiePairs.forEach(pair => {
 							const [key, value] = pair.split('=');
 							if (key=="username"){
-									this.username = decodeURIComponent(value);
+								this.username = decodeURIComponent(value);
 							}
 						});
 					}
@@ -168,7 +168,8 @@
 						}
 					})
 					.then(response => {
-						
+						console.log(response)
+						console.log(response.data.communication_id)
 						const aiMessage = {
 							id: Date.now(),
 							content: response.data.message,
@@ -176,7 +177,7 @@
 							timestamp: new Date().toLocaleTimeString()
 						};
 						this.messages.push(aiMessage);
-						this.communication_id = response.communication_id;
+						this.communication_id = response.data.communication_id;
 						// this.saveHistory();
 					})
 					.catch(error => {
@@ -204,7 +205,7 @@
 						this.titles = response.data.titles
 						for (var i = 0; i < this.titles.length; i++) {
 							this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
-							this.titles[i].title = this.title.id;
+							this.titles[i].title = this.titles[i].id;
 						}
 					})
 					.catch(error => {
@@ -233,7 +234,7 @@
 						this.communication_id = communication_id;
 					})
 					.catch(error => {
-						console.error('loadHistory请求失败:', error);
+						console.error('loadMessages请求失败:', error);
 					});
 				},
 			}
