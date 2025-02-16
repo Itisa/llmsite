@@ -1,6 +1,6 @@
 import os
 from openai import OpenAI
-from api_keys import *
+from .api_keys import *
 import time
 
 def talk_with_AI(model_name,messages):
