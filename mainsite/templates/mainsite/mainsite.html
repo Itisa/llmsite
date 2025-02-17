@@ -174,19 +174,21 @@
 							console.error('登录失败:', error);
 						});
 				},
+				logout() {
+					deleteCookie("username");
+					window.location.href = "{% url 'mainsite:site' %}";
+				},
 
 				// 发送消息
 				sendMessage() {
 					if (!this.inputMessage.trim()) return;
 
-					const newMessage = {
+					this.messages.push({
 						id: Date.now(),
 						content: this.inputMessage,
 						role: 'user',
 						timestamp: new Date().toLocaleTimeString()
-					};
-
-					this.messages.push(newMessage);
+					});
 
 					axios.post("{% url 'mainsite:talk' %}", {
 						model_name: "model_NN",
@@ -202,22 +204,23 @@
 					.then(response => {
 						console.log(response)
 						console.log(response.data.communication_id)
-						const aiMessage = {
+						this.messages.push({
 							id: Date.now(),
 							content: response.data.message,
 							role: 'assistant',
 							timestamp: new Date().toLocaleTimeString()
-						};
-						this.messages.push(aiMessage);
-						if (this.communication_id == -1){
+						});
+
+						if (this.communication_id == -1){ // 新对话
 							this.titles.push({
 								id: response.data.communication_id,
-								title: response.data.communication_id,
+								title: response.data.title,
 								date: Date.now(),
 							});
 						}
 
 						this.communication_id = response.data.communication_id;
+						
 						this.update_topBar();
 					})
 					.catch(error => {
@@ -245,18 +248,18 @@
 						this.titles = response.data.titles
 						for (var i = 0; i < this.titles.length; i++) {
 							this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
-							this.titles[i].title = this.titles[i].id;
+							this.titles[i].title = this.titles[i].title;
 						}
 					})
 					.catch(error => {
 						console.error('loadHistory请求失败:', error);
 						if (error.response.data.message == "sessionid expires"){
-							deleteCookie("username");
-							window.location.href = "{% url 'mainsite:site' %}";
+							this.logout();
 						}
 					});
 				},
 
+				// 加载对话消息
 				loadMessages(communication_id){
 					console.log("communication_id",communication_id);
 					axios.get("{% url 'mainsite:talk' %}", {
@@ -281,27 +284,27 @@
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
 						if (error.response.data.message == "sessionid expires"){
-							deleteCookie("username");
-							window.location.href = "{% url 'mainsite:site' %}";
+							this.logout();
 						}
 					});
 				},
-
+				// 更新当前对话标题
 				update_topBar() {
 					for (let i = 0; i < this.titles.length; i++) {
 						if (this.communication_id == this.titles[i].id){
-							console.log(111);
-							console.log(this.topBarContent);
 							this.topBarContent = this.titles[i].title;
 							break;
 						}
 					}
 				},
+
+				// 开启新对话
 				createNewChat() {
 					this.communication_id = -1;
 					this.topBarContent = "新对话";
 					this.messages = [];
 				},
+				// 开启/关闭标题编辑
 				enableEditTitle(){
 					this.isEditingTitle = true;
 					this.newTitle = this.topBarContent;
@@ -310,8 +313,39 @@
 					this.isEditingTitle = false;
 					this.newTitle = null;
 				},
+
+				// 保存新标题
 				saveTitle(){
 					console.log("saveTitle",this.newTitle);
+					axios.post("{% url 'mainsite:other_functions' %}", {
+						cmd: "change communication title",
+						cid: this.communication_id,
+						newtitle: this.newTitle,
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						console.log(response)
+						for (let i = 0; i < this.titles.length; i++) {
+							if (this.communication_id == this.titles[i].id){
+								this.titles[i].title = this.newTitle;
+								this.topBarContent = this.titles[i].title;
+								break;
+							}
+						}
+						this.cancelEditTitle();
+						
+						// this.update_topBar();
+					})
+					.catch(error => {
+						console.error('saveTitle请求失败:', error);
+						if (error.response.data.message == "sessionid expires"){
+							this.logout();
+						}
+					});
 				},
 			}
 		}

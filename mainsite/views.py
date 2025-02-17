@@ -185,6 +185,7 @@ def talk(request):
 		try:
 			if communication_id == -1:
 				comm = user.communication_set.create(gen_date=timezone.now(),model=model_name)
+				comm.title = str(comm.pk)
 			else:
 				comm = Communication.objects.filter(pk=int(communication_id))
 				if len(comm) == 0:
@@ -202,7 +203,9 @@ def talk(request):
 				'status': 'ok',
 				'message': rsp,
 				'communication_id': comm.pk,
+				'title': comm.title,
 			}
+			comm.save()
 			return JsonResponse(response_data)
 
 		except Exception as e:
@@ -211,11 +214,39 @@ def talk(request):
 @require_http_methods(["POST"])  # 限制只接受POST请求
 def other_functions(request):
 	print("On other_functions post")
+
+	try:
+		user = get_user_by_sessionid(request.session["id"])
+		if not check_user_status(user):
+			return JSON_sessionid_expire_ret();
+	except Exception as e:
+		print(e)
+		print("ERROR in other_functions")
+		return JSON_sessionid_expire_ret();
+
 	try:
 		data = json.loads(request.body)
 		cmd = data.get('cmd')
-		if cmd == "change_communication_title":
+		if cmd == "change communication title":
+			cid = data.get('cid')
+			print("typecid:",type(cid))
+			newtitle = data.get('newtitle')
+			comm = Communication.objects.filter(pk=cid)
+			if len(comm) == 0:
+				return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
+			
+			if comm[0].user.pk == user.pk:
+				comm[0].title = newtitle
+				comm[0].save()
+				return JsonResponse({'status': 'ok'}, status=200)
+			else:
+				return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
+
+		elif cmd == "":
 			pass
+			return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
+		else:
+			return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
 	except json.JSONDecodeError:
 		return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
 	except KeyError as e:
