@@ -61,8 +61,27 @@
 			<!-- 主聊天区域 -->
 			<div class="flex-1 flex flex-col">
 				<!-- 顶部横条 -->
-				<div x-show="username" class="p-4 bg-gray-100 border-b">
-					<div class="text-lg font-semibold" x-text="topBarContent"></div>
+				<div class="p-4 bg-gray-100 border-b">
+					<div x-show = "!isEditingTitle" class="text-lg font-semibold" x-text="topBarContent"></div>
+
+					<div x-show="isEditingTitle" class="p-4 bg-gray-50 border-b">
+						<div class="flex space-x-2">
+							<input x-model="newTitle"
+								   type="text"
+								   placeholder="输入新标题"
+								   class="flex-1 p-2 border rounded">
+							<button @click="saveTitle" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+								保存
+							</button>
+							<button @click="cancelEditTitle" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+								取消
+							</button>
+						</div>
+					</div>
+					<!-- 修改标题按钮 -->
+					<button x-show="communication_id !== -1 && !isEditingTitle" @click="enableEditTitle" class="p-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+						修改标题
+					</button>
 				</div>
 				<!-- 消息区域 -->
 				<div class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -100,6 +119,11 @@
 	</div>
 
 	<script defer>
+		function deleteCookie(name, path, domain) {
+			document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
+				(path ? '; path=' + path : '') +
+				(domain ? '; domain=' + domain : '');
+		}
 		function app() {
 			return {
 				// 应用状态
@@ -115,8 +139,9 @@
 				username: null,
 				topBarContent: null,
 				communication_id: -1,
+				isEditingTitle: false,
+				newTitle: null,
 				init() {
-					this.loadHistory();
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
 						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
@@ -130,6 +155,7 @@
 							}
 						});
 					}
+					if (this.username) this.loadHistory();
 					
 				},
 
@@ -193,8 +219,6 @@
 
 						this.communication_id = response.data.communication_id;
 						this.update_topBar();
-						
-						// this.saveHistory();
 					})
 					.catch(error => {
 						console.error('请求失败:', error);
@@ -226,6 +250,10 @@
 					})
 					.catch(error => {
 						console.error('loadHistory请求失败:', error);
+						if (error.response.data.message == "sessionid expires"){
+							deleteCookie("username");
+							window.location.href = "{% url 'mainsite:site' %}";
+						}
 					});
 				},
 
@@ -252,6 +280,10 @@
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
+						if (error.response.data.message == "sessionid expires"){
+							deleteCookie("username");
+							window.location.href = "{% url 'mainsite:site' %}";
+						}
 					});
 				},
 
@@ -269,6 +301,17 @@
 					this.communication_id = -1;
 					this.topBarContent = "新对话";
 					this.messages = [];
+				},
+				enableEditTitle(){
+					this.isEditingTitle = true;
+					this.newTitle = this.topBarContent;
+				},
+				cancelEditTitle(){
+					this.isEditingTitle = false;
+					this.newTitle = null;
+				},
+				saveTitle(){
+					console.log("saveTitle",this.newTitle);
 				},
 			}
 		}

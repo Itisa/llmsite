@@ -55,12 +55,18 @@ def login(request):
 	print("On request login")
 	try:
 		username = request.POST["username"]
+	except:
+		JsonResponse({"status": "fail","reason": "no username",}, status=400)
+	try:
 		password = request.POST["password"]
-		print("username:",username)
-		print("password:",password)
-
+	except:
+		JsonResponse({"status": "fail","reason": "no password",}, status=400)
+	
+	try:
 		user = get_user_by_username(username)
-
+	except:
+		JsonResponse({"status": "fail","reason": "no password",}, status=400)
+	try:
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
 			sessionid = generate_random_string(20)
 			user.sessionid = sessionid;
@@ -79,7 +85,6 @@ def login(request):
 				"reason": "incorrect password",
 			}
 			return JsonResponse(response_data, status=403)
-
 	except Exception as e:
 		print("ERROR\n",e)
 		response_data = {
@@ -97,7 +102,6 @@ def register(request):
 			"reason": "register unavailable",
 		}
 		return JsonResponse(response_data, status=403)
-		### register unavailable
 		username = request.POST["username"]
 		password = request.POST["password"]
 		
@@ -122,19 +126,21 @@ def logout(request):
 	rsp.delete_cookie("username")
 	return rsp
 
+def JSON_sessionid_expire_ret():
+	rsp = JsonResponse({'status': 'error', 'message': 'sessionid expires'}, status=400)
+	rsp.delete_cookie("sessionid")
+	rsp.delete_cookie("username")
+	return rsp
+
 def talk(request):
 	try:
 		user = get_user_by_sessionid(request.session["id"])
 		if not check_user_status(user):
-			rsp = JsonResponse({'status': 'error', 'message': 'sessionid expires'}, status=400)
-			rsp.delete_cookie("sessionid")
-			rsp.delete_cookie("username")
-			return rsp;
+			return JSON_sessionid_expire_ret();
 	except Exception as e:
 		print(e)
 		print("ERROR in talk user")
-		# return logout(request)
-		return JsonResponse({'status': 'error', 'message': 'no sessionid'}, status=400)
+		return JSON_sessionid_expire_ret();
 
 	if request.method == "GET":
 		print("On talk get")
@@ -142,14 +148,19 @@ def talk(request):
 		for key, value in request.GET.items():
 			if key == "communication_id":
 				communication_id = int(value)
+				break
 
 		if communication_id == -1:
 			titles = []
 			for comm in user.communication_set.all():
 				titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk})
 			return JsonResponse({'status': 'ok', 'titles': titles},status=200)
+
 		else:
-			comm = Communication.objects.filter(pk=int(communication_id))[0]
+			comm = Communication.objects.filter(pk=int(communication_id))
+			if len(comm) == 0:
+				return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
+			comm = comm[0]
 			if (comm.user.pk != user.pk):
 				return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
 			messages = []
@@ -164,10 +175,22 @@ def talk(request):
 			model_name = data.get('model_name')
 			message = data.get('message')
 			communication_id = data.get('communication_id')
+		except json.JSONDecodeError:
+			# 处理JSON解析错误
+			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
+		except KeyError as e:
+			# 处理缺少必要字段的情况
+			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
+
+		try:
 			if communication_id == -1:
 				comm = user.communication_set.create(gen_date=timezone.now(),model=model_name)
 			else:
-				comm = Communication.objects.filter(pk=int(communication_id))[0]
+				comm = Communication.objects.filter(pk=int(communication_id))
+				if len(comm) == 0:
+					return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
+				comm = comm[0]
+
 				if (comm.user.sessionid != request.session["id"]):
 					return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
 
@@ -181,14 +204,19 @@ def talk(request):
 				'communication_id': comm.pk,
 			}
 			return JsonResponse(response_data)
-		
-		except json.JSONDecodeError:
-			# 处理JSON解析错误
-			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
-		
-		except KeyError as e:
-			# 处理缺少必要字段的情况
-			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
-		
+
 		except Exception as e:
 			return JsonResponse({'status': 'error', 'message': f'other: {str(e)}'}, status=400)
+
+@require_http_methods(["POST"])  # 限制只接受POST请求
+def other_functions(request):
+	print("On other_functions post")
+	try:
+		data = json.loads(request.body)
+		cmd = data.get('cmd')
+		if cmd == "change_communication_title":
+			pass
+	except json.JSONDecodeError:
+		return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
+	except KeyError as e:
+		return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
