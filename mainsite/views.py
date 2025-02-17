@@ -12,7 +12,7 @@ import datetime
 
 from .models import User, Communication, Communication_Content
 from .talk_with_AI import talk_with_AI
-
+from .config import available_models
 def generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
 	return ''.join(random.choices(characters, k=length))
@@ -144,20 +144,19 @@ def talk(request):
 
 	if request.method == "GET":
 		print("On talk get")
-
-		for key, value in request.GET.items():
-			if key == "communication_id":
-				communication_id = int(value)
-				break
-
-		if communication_id == -1:
+		try:
+			cid = int(request.GET["cid"])
+		except:
+			return JsonResponse({'status': 'error', 'message': "invalid cid"},status=400)
+		
+		if cid == -1:
 			titles = []
 			for comm in user.communication_set.all():
 				titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk})
 			return JsonResponse({'status': 'ok', 'titles': titles},status=200)
 
 		else:
-			comm = Communication.objects.filter(pk=int(communication_id))
+			comm = Communication.objects.filter(pk=int(cid))
 			if len(comm) == 0:
 				return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
 			comm = comm[0]
@@ -174,7 +173,7 @@ def talk(request):
 			data = json.loads(request.body)
 			model_name = data.get('model_name')
 			message = data.get('message')
-			communication_id = data.get('communication_id')
+			cid = data.get('cid')
 		except json.JSONDecodeError:
 			# 处理JSON解析错误
 			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
@@ -183,27 +182,29 @@ def talk(request):
 			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
 
 		try:
-			if communication_id == -1:
+			if cid == -1:
 				comm = user.communication_set.create(gen_date=timezone.now(),model=model_name)
 				comm.title = str(comm.pk)
 			else:
-				comm = Communication.objects.filter(pk=int(communication_id))
+				comm = Communication.objects.filter(pk=int(cid))
 				if len(comm) == 0:
 					return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
 				comm = comm[0]
 
 				if (comm.user.sessionid != request.session["id"]):
 					return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
+				model_name = comm.model
 
 			messages = [{"role": "user", "content": message}]
 			comm.communication_content_set.create(gen_date=timezone.now(),role="user",content=message)
-			rsp = talk_with_AI(model_name,messages)
+			rsp = talk_with_AI(messages)
 			comm.communication_content_set.create(gen_date=timezone.now(),role="assistant",content=rsp)
 			response_data = {
 				'status': 'ok',
 				'message': rsp,
-				'communication_id': comm.pk,
+				'cid': comm.pk,
 				'title': comm.title,
+				'model': comm.model,
 			}
 			comm.save()
 			return JsonResponse(response_data)
@@ -211,10 +212,9 @@ def talk(request):
 		except Exception as e:
 			return JsonResponse({'status': 'error', 'message': f'other: {str(e)}'}, status=400)
 
-@require_http_methods(["POST"])  # 限制只接受POST请求
+@require_http_methods(["GET","POST"])  # 限制只接受GET,POST请求
 def other_functions(request):
 	print("On other_functions post")
-
 	try:
 		user = get_user_by_sessionid(request.session["id"])
 		if not check_user_status(user):
@@ -224,30 +224,38 @@ def other_functions(request):
 		print("ERROR in other_functions")
 		return JSON_sessionid_expire_ret();
 
-	try:
-		data = json.loads(request.body)
-		cmd = data.get('cmd')
-		if cmd == "change communication title":
-			cid = data.get('cid')
-			print("typecid:",type(cid))
-			newtitle = data.get('newtitle')
-			comm = Communication.objects.filter(pk=cid)
-			if len(comm) == 0:
-				return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
-			
-			if comm[0].user.pk == user.pk:
-				comm[0].title = newtitle
-				comm[0].save()
-				return JsonResponse({'status': 'ok'}, status=200)
-			else:
-				return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
-
-		elif cmd == "":
+	if request.method == "GET":
+		try:
+			print(request.GET["cmd"])
+		except:
 			pass
-			return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
-		else:
-			return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
-	except json.JSONDecodeError:
-		return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
-	except KeyError as e:
-		return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
+		return JsonResponse({'status': 'ok', 'data': available_models}, status=200)
+		
+	elif request.method == "POST":
+		try:
+			data = json.loads(request.body)
+			cmd = data.get('cmd')
+			if cmd == "change communication title":
+				cid = data.get('cid')
+				print("typecid:",type(cid))
+				newtitle = data.get('newtitle')
+				comm = Communication.objects.filter(pk=cid)
+				if len(comm) == 0:
+					return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
+				
+				if comm[0].user.pk == user.pk:
+					comm[0].title = newtitle
+					comm[0].save()
+					return JsonResponse({'status': 'ok'}, status=200)
+				else:
+					return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
+
+			elif cmd == "":
+				pass
+				return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
+			else:
+				return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
+		except json.JSONDecodeError:
+			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
+		except KeyError as e:
+			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)

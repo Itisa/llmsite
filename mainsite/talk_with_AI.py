@@ -3,22 +3,18 @@ from openai import OpenAI
 from .api_keys import *
 import time
 
-def talk_with_AI(model_name,messages):
-	return messages[-1]["content"].swapcase()
+def talk_with_AI(messages,model_name="deepseek_v3",base_url="https://ark.cn-beijing.volces.com/api/v3"):
+	return messages[-1]["content"].swapcase();
 	start_time = time.time()
 	client = OpenAI(
 		api_key=volc_api_key,
-		base_url="https://ark.cn-beijing.volces.com/api/v3",
+		base_url=base_url,
 		timeout=1800,
-		)
-
+	)
 	
-	question = "你好！"
 	response = client.chat.completions.create(
-		model=ENDPOINT_ID["deepseek_v3"],
-		messages=[
-			{"role": "user", "content": question}
-		],
+		model=ENDPOINT_ID[model_name],
+		messages=messages,
 		stream=False,
 	)
 
@@ -30,3 +26,4 @@ def talk_with_AI(model_name,messages):
 	print("LINE 21")
 	print("LINE 22")
 	print(response.choices[0].message.content)
+	return response.choices[0].message.content

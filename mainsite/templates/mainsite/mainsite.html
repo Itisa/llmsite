@@ -14,7 +14,6 @@
 		<!-- 登录模块 -->
 		<div x-show="!username" class="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow">
 			<h2 class="text-2xl font-bold mb-4">用户登录</h2>
-
 			<form @submit.prevent="login">
 				{% csrf_token %}
 				<input x-model="loginForm.username"
@@ -37,33 +36,43 @@
 
 		<!-- 主界面 -->
 		<div x-show="username" class="flex h-screen">
-			
 			<!-- 侧边栏 - 历史记录 -->
-			<div class="w-64 bg-white border-r p-4">
-				<h3 class="text-lg font-semibold mb-4">历史对话</h3>
-				<div class="space-y-2">
-					<template x-for="item in titles" :key="item.id">
-						<div @click="loadMessages(item.id)"
-							 class="p-2 hover:bg-gray-100 cursor-pointer rounded"
-							 :class="{ 'bg-blue-50': item.id === communication_id }">
-							<div class="text-sm" x-text="item.title"></div>
-							<div class="text-xs text-gray-500" x-text="item.date"></div>
-						</div>
-					</template>
+			<div class="w-64 bg-white border-r flex flex-col">
+				<div class="p-4">
+					<h3 class="text-lg font-semibold mb-4">历史对话</h3>
+					<!-- 新增的生成新对话按钮 -->
+					<button @click="createNewChat"
+							class="w-full mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600">
+						新建对话
+					</button>
 				</div>
-				<!-- 生成新对话按钮 -->
-				<button @click="createNewChat"
-						class="w-full mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600">
-					新建对话
-				</button>
+				<!-- 历史对话列表，单独设置滚动 -->
+				<div class="flex-1 overflow-y-auto overflow-x-hidden p-4">
+					<div class="space-y-2">
+						<template x-for="item in titles.slice().reverse()" :key="item.id">
+							<div @click="loadMessages(item.id)"
+								 class="p-2 hover:bg-gray-100 cursor-pointer rounded"
+								 :class="{ 'bg-blue-50': item.id === cid }">
+								<div class="text-sm" x-text="item.title"></div>
+								<div class="text-xs text-gray-500" x-text="item.date"></div>
+							</div>
+						</template>
+						
+					</div>
+				</div>
 			</div>
 
 			<!-- 主聊天区域 -->
 			<div class="flex-1 flex flex-col">
 				<!-- 顶部横条 -->
 				<div class="p-4 bg-gray-100 border-b">
-					<div x-show = "!isEditingTitle" class="text-lg font-semibold" x-text="topBarContent"></div>
-
+					<div class="flex justify-between items-center mb-4">
+						<div x-show = "!isEditingTitle" class="text-lg font-semibold" x-text="topBarContent"></div>
+						<!-- 修改标题按钮 -->
+						<button x-show="cid !== -1 && !isEditingTitle" @click="enableEditTitle" class="p-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+							修改标题
+						</button>
+					</div>
 					<div x-show="isEditingTitle" class="p-4 bg-gray-50 border-b">
 						<div class="flex space-x-2">
 							<input x-model="newTitle"
@@ -78,10 +87,6 @@
 							</button>
 						</div>
 					</div>
-					<!-- 修改标题按钮 -->
-					<button x-show="communication_id !== -1 && !isEditingTitle" @click="enableEditTitle" class="p-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-						修改标题
-					</button>
 				</div>
 				<!-- 消息区域 -->
 				<div class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -113,6 +118,14 @@
 							</button>
 						</div>
 					</form>
+					<!-- 语言模型选择框 -->
+					<div class="mt-2">
+						<select id="model-select" x-model="selectedModel" :disabled="cid !== -1" class="mt-1 block w-full p-2 border rounded">
+							<template x-for="item in models">
+								<option value="item" x-text="item"></option>
+							</template>
+						</select>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -135,12 +148,14 @@
 				},
 				messages: [],
 				titles: [],
+				models: [],
 				inputMessage: '',
 				username: null,
 				topBarContent: null,
-				communication_id: -1,
+				cid: -1,
 				isEditingTitle: false,
 				newTitle: null,
+				selectedModel: null,
 				init() {
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
@@ -155,8 +170,10 @@
 							}
 						});
 					}
-					if (this.username) this.loadHistory();
-					
+					if (this.username){
+						this.loadHistory();
+						this.loadModels();
+					}
 				},
 
 				// 登录方法
@@ -191,10 +208,10 @@
 					});
 
 					axios.post("{% url 'mainsite:talk' %}", {
-						model_name: "model_NN",
+						model_name: this.selectedModel,
 						message: this.inputMessage,
 						timestamp: Date.now(),
-						communication_id: this.communication_id,
+						cid: this.cid,
 					}, {
 						headers: {
 							"Content-Type": "application/json",
@@ -203,39 +220,58 @@
 					})
 					.then(response => {
 						console.log(response)
-						console.log(response.data.communication_id)
+						console.log(response.data.cid)
 						this.messages.push({
 							id: Date.now(),
 							content: response.data.message,
 							role: 'assistant',
-							timestamp: new Date().toLocaleTimeString()
+							timestamp: new Date().toLocaleTimeString(),
 						});
 
-						if (this.communication_id == -1){ // 新对话
+						if (this.cid == -1){ // 新对话
 							this.titles.push({
-								id: response.data.communication_id,
+								id: response.data.cid,
 								title: response.data.title,
 								date: Date.now(),
 							});
 						}
-
-						this.communication_id = response.data.communication_id;
-						
+						this.cid = response.data.cid;
 						this.update_topBar();
 					})
 					.catch(error => {
 						console.error('请求失败:', error);
 					});
-
 					this.inputMessage = '';
 				},
 
+				loadModels() {
+					axios.get("{% url 'mainsite:other_functions' %}", {
+						params:{
+							cmd: "load models",
+						}
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						console.log(response)
+						this.models = response.data.data;
+					})
+					.catch(error => {
+						console.error('loadModels请求失败:', error);
+						if (error.response.data.message == "sessionid expires"){
+							this.logout();
+						}
+					});
+				},
 				// 加载历史记录
 				loadHistory() {
 					console.log("loadHis");
 					axios.get("{% url 'mainsite:talk' %}", {
 						params:{
-							communication_id: -1,
+							cid: -1,
 						}
 					}, {
 						headers: {
@@ -260,11 +296,11 @@
 				},
 
 				// 加载对话消息
-				loadMessages(communication_id){
-					console.log("communication_id",communication_id);
+				loadMessages(cid){
+					console.log("cid",cid);
 					axios.get("{% url 'mainsite:talk' %}", {
 						params:{
-							communication_id: communication_id,
+							cid: cid,
 						}
 					}, {
 						headers: {
@@ -278,7 +314,7 @@
 						for (var i = 0; i < this.messages.length; i++) {
 							this.messages[i].timestamp =new Date(this.messages[i].timestamp).toLocaleString();
 						}
-						this.communication_id = communication_id;
+						this.cid = cid;
 						this.update_topBar();
 					})
 					.catch(error => {
@@ -288,10 +324,11 @@
 						}
 					});
 				},
+
 				// 更新当前对话标题
 				update_topBar() {
 					for (let i = 0; i < this.titles.length; i++) {
-						if (this.communication_id == this.titles[i].id){
+						if (this.cid == this.titles[i].id){
 							this.topBarContent = this.titles[i].title;
 							break;
 						}
@@ -300,7 +337,7 @@
 
 				// 开启新对话
 				createNewChat() {
-					this.communication_id = -1;
+					this.cid = -1;
 					this.topBarContent = "新对话";
 					this.messages = [];
 				},
@@ -319,7 +356,7 @@
 					console.log("saveTitle",this.newTitle);
 					axios.post("{% url 'mainsite:other_functions' %}", {
 						cmd: "change communication title",
-						cid: this.communication_id,
+						cid: this.cid,
 						newtitle: this.newTitle,
 					}, {
 						headers: {
@@ -330,15 +367,13 @@
 					.then(response => {
 						console.log(response)
 						for (let i = 0; i < this.titles.length; i++) {
-							if (this.communication_id == this.titles[i].id){
+							if (this.cid == this.titles[i].id){
 								this.titles[i].title = this.newTitle;
 								this.topBarContent = this.titles[i].title;
 								break;
 							}
 						}
 						this.cancelEditTitle();
-						
-						// this.update_topBar();
 					})
 					.catch(error => {
 						console.error('saveTitle请求失败:', error);
