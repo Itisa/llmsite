@@ -37,6 +37,7 @@
 
 		<!-- 主界面 -->
 		<div x-show="username" class="flex h-screen">
+			
 			<!-- 侧边栏 - 历史记录 -->
 			<div class="w-64 bg-white border-r p-4">
 				<h3 class="text-lg font-semibold mb-4">历史对话</h3>
@@ -44,16 +45,25 @@
 					<template x-for="item in titles" :key="item.id">
 						<div @click="loadMessages(item.id)"
 							 class="p-2 hover:bg-gray-100 cursor-pointer rounded"
-							 :class="{ 'bg-blue-50': item.id === activeHistoryId }">
+							 :class="{ 'bg-blue-50': item.id === communication_id }">
 							<div class="text-sm" x-text="item.title"></div>
 							<div class="text-xs text-gray-500" x-text="item.date"></div>
 						</div>
 					</template>
 				</div>
+				<!-- 生成新对话按钮 -->
+				<button @click="createNewChat"
+						class="w-full mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600">
+					新建对话
+				</button>
 			</div>
 
 			<!-- 主聊天区域 -->
 			<div class="flex-1 flex flex-col">
+				<!-- 顶部横条 -->
+				<div x-show="username" class="p-4 bg-gray-100 border-b">
+					<div class="text-lg font-semibold" x-text="topBarContent"></div>
+				</div>
 				<!-- 消息区域 -->
 				<div class="flex-1 overflow-y-auto p-4 space-y-4">
 					<template x-for="message in messages" :key="message.id">
@@ -102,16 +112,12 @@
 				messages: [],
 				titles: [],
 				inputMessage: '',
-				activeHistoryId: null,
 				username: null,
+				topBarContent: null,
 				communication_id: -1,
 				init() {
-					this.loadHistory()
-					// this.titles.push({
-					// 	id: 123,
-					// 	title: "seofi",
-					// 	date: Date.now(),
-					// });
+					this.loadHistory();
+					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
 						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
 					}
@@ -177,7 +183,17 @@
 							timestamp: new Date().toLocaleTimeString()
 						};
 						this.messages.push(aiMessage);
+						if (this.communication_id == -1){
+							this.titles.push({
+								id: response.data.communication_id,
+								title: response.data.communication_id,
+								date: Date.now(),
+							});
+						}
+
 						this.communication_id = response.data.communication_id;
+						this.update_topBar();
+						
 						// this.saveHistory();
 					})
 					.catch(error => {
@@ -232,10 +248,27 @@
 							this.messages[i].timestamp =new Date(this.messages[i].timestamp).toLocaleString();
 						}
 						this.communication_id = communication_id;
+						this.update_topBar();
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
 					});
+				},
+
+				update_topBar() {
+					for (let i = 0; i < this.titles.length; i++) {
+						if (this.communication_id == this.titles[i].id){
+							console.log(111);
+							console.log(this.topBarContent);
+							this.topBarContent = this.titles[i].title;
+							break;
+						}
+					}
+				},
+				createNewChat() {
+					this.communication_id = -1;
+					this.topBarContent = "新对话";
+					this.messages = [];
 				},
 			}
 		}
