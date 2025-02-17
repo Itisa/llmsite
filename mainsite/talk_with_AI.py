@@ -1,6 +1,6 @@
 import os
 from openai import OpenAI
-from .api_keys import *
+from .secret_settings import volc_api_key,ENDPOINT_ID
 import time
 
 def talk_with_AI(messages,model_name="deepseek_v3",base_url="https://ark.cn-beijing.volces.com/api/v3"):

@@ -12,7 +12,7 @@ import datetime
 
 from .models import User, Communication, Communication_Content
 from .talk_with_AI import talk_with_AI
-from .config import available_models
+from .secret_settings import available_models
 def generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
 	return ''.join(random.choices(characters, k=length))
@@ -230,7 +230,7 @@ def other_functions(request):
 		except:
 			pass
 		return JsonResponse({'status': 'ok', 'data': available_models}, status=200)
-		
+
 	elif request.method == "POST":
 		try:
 			data = json.loads(request.body)
