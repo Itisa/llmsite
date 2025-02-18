@@ -175,25 +175,18 @@
 				selectedModel: null,
 				in_talk: false,
 				marked,
+				renderer: new marked.Renderer(),
 				init() {
+					this.renderer.code = function (code, language) {
+						// 使用 highlight.js 高亮代码
+						const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
+						const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
+						return `<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>`;
+					};
 					marked.setOptions({
-						breaks: true,
-						highlight: function (code, language) {
-							console.log(123);
-							// 检查语言是否有效，如果无效则使用 'plaintext'
-							const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
-							try {
-								// 使用 highlight.js 高亮代码
-								return hljs.highlight(code, { language: validLanguage }).value;
-							} catch (error) {
-								// 如果高亮失败，返回原始代码
-								console.error('Error highlighting code:', error);
-								return code;
-							}
-
-						}
+						renderer: this.renderer,
 					});
-					console.log(marked.parse("ewfjio\n\n```\nsojgi\n```"));
+					// console.log(marked.parse("ewfjio\n\n```\nsojgi\n```"));
 					console.log("init");
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
@@ -294,9 +287,9 @@
 								if (done) {
 									console.log('Stream complete');
 									this.in_talk = false;
-									setTimeout(() => {
-										hljs.highlightAll();
-									}, 0);
+									// setTimeout(() => {
+									// 	hljs.highlightAll();
+									// }, 0);
 									return;
 								}
 		
@@ -410,9 +403,9 @@
 						}
 						this.cid = cid;
 						this.update_topBar();
-						setTimeout(() => {
-							hljs.highlightAll();
-						}, 0);
+						// setTimeout(() => {
+						// 	hljs.highlightAll();
+						// }, 0);
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
