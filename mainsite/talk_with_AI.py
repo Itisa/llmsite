@@ -29,35 +29,28 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 	# 	base_url=base_url,
 	# 	timeout=1800,
 	# )
+	# allcontent = ""
 	# gen_date = timezone.now()
 	# response = client.chat.completions.create(
 	# 	model=ENDPOINT_ID[model_name],
 	# 	messages=messages,
 	# 	stream=True,
 	# )
-	# allcontent = ""
-	# print("\033[91mStart print rsp\033[0m")
 	# content_id = 0
 	# for chunk in response:
-	# 	print("chunk:", chunk)
-	# 	# if 'choices' in chunk:
 	# 	if hasattr(chunk,"choices"):
-	# 		print(1111)
-	# 		print("choices:",chunk.choices)
-	# 		print()
 	# 		content = chunk.choices[0].delta.content
 	# 		data = {
 	# 			"id": content_id,
 	# 			"message": content,
+	# 			"cid": comm.pk,
+	# 			"title": comm.title,
+	# 			"model": comm.model,
 	# 		}
 	# 		yield json.dumps(data) + "\n"
-	# 		print(content, end='', flush=True)
 	# 		allcontent += content
-	# print("\033[91mEnd print rsp\033[0m")
-	# print(allcontent)
+	# 		content_id += 1
 
-	# end_time = time.time()
-	# print(f"duration: {end_time - start_time}")
 	# # 当触发深度推理时，打印思维链内容
 	# if hasattr(response.choices[0].message, 'reasoning_content'):
 	# 	print(response.choices[0].message.reasoning_content)

@@ -208,6 +208,7 @@
 					if (!this.inputMessage.trim()) return;
 					if (this.in_talk) return ;
 					this.cancelEditTitle();
+					this.inputMessage = null;
 					this.messages.push({
 						id: Date.now(),
 						content: this.inputMessage,
@@ -231,7 +232,6 @@
 					})
 					.then(response => {
 						this.in_talk = true;
-						this.inputMessage = null;
 						console.log(response)
 						if (!response.ok) {
 							throw new Error('Network response was not ok');
