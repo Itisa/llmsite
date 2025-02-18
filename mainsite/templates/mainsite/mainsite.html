@@ -6,6 +6,7 @@
 	{% load static %}
 	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
+	<script defer src="{% static 'mainsite/marked.min.js' %}"></script>
 	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
 
 </head>
@@ -96,7 +97,8 @@
 								 :class="message.role === 'user'
 									 ? 'bg-blue-500 text-white'
 									 : 'bg-gray-200 text-gray-800'">
-								<div x-text="message.content"></div>
+								<!-- <div x-text="message.content"></div> -->
+								<div x-html="marked.parse(message.content)"></div>
 								<div class="text-xs mt-1 opacity-70"
 									 x-text="message.timestamp"></div>
 							</div>
@@ -132,6 +134,9 @@
 	</div>
 
 	<script defer>
+		// marked.setOptions({
+		// 	breaks: true, // 将换行符转换为 <br>
+		// });
 		function deleteCookie(name, path, domain) {
 			document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
 				(path ? '; path=' + path : '') +
@@ -157,6 +162,7 @@
 				newTitle: null,
 				selectedModel: null,
 				in_talk: false,
+				marked,
 				init() {
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){

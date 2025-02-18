@@ -14,7 +14,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 		usercontent = messages[-1]["content"]
 		data = {
 			"id": i,
-			"message": f"Message {i} **你好你好{usercontent}**\n",
+			"message": f"Message {i} **你好你好{usercontent}**\n\n",
 			"cid": comm.pk,
 			"title": comm.title,
 			"model": comm.model,
