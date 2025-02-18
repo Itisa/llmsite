@@ -4,11 +4,26 @@
 	<meta charset="UTF-8">
 	<title>DeepSeek Chat</title>
 	{% load static %}
-	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
-	<script defer src="{% static 'mainsite/marked.min.js' %}"></script>
+	<!-- <script src="{% static 'mainsite/highlight.css' %}"></script> -->
+	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
+	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css"> -->
+	<script src="{% static 'mainsite/axios_min.js' %}"></script>
+	<script src="{% static 'mainsite/highlight.js' %}"></script>
+	<script src="{% static 'mainsite/marked.min.js' %}"></script>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script> -->
 	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
-
+	<style>
+		/*pre {
+			background-color: #2d2d2d;
+			padding: 1rem;
+			border-radius: 4px;
+			overflow-x: auto;
+		}*/
+		code {
+			font-family: 'Courier New', Courier, monospace;
+		}
+	</style>
 </head>
 <body class="bg-gray-100">
 	<div x-data="app()" class="min-h-screen">
@@ -110,10 +125,10 @@
 				<div class="p-4 border-t bg-white">
 					<form @submit.prevent="sendMessage">
 						<div class="flex space-x-2">
-							<input x-model="inputMessage"
+							<textarea x-model="inputMessage"
 								   type="text"
 								   placeholder="输入消息..."
-								   class="flex-1 p-2 border rounded">
+								   class="flex-1 p-2 border rounded"></textarea>
 							<button type="submit"
 									class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
 								发送
@@ -132,11 +147,11 @@
 			</div>
 		</div>
 	</div>
+	<script>
 
+	</script>
 	<script defer>
-		// marked.setOptions({
-		// 	breaks: true, // 将换行符转换为 <br>
-		// });
+
 		function deleteCookie(name, path, domain) {
 			document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
 				(path ? '; path=' + path : '') +
@@ -163,7 +178,27 @@
 				selectedModel: null,
 				in_talk: false,
 				marked,
+
 				init() {
+					marked.setOptions({
+						break: true,
+						renderer: new marked.Renderer(),
+						highlight: function (code, language) {
+							console.log(123)
+							// 检查语言是否有效，如果无效则使用 'plaintext'
+							const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
+							try {
+								// 使用 highlight.js 高亮代码
+								return hljs.highlight(code, { language: validLanguage }).value;
+							} catch (error) {
+								// 如果高亮失败，返回原始代码
+								console.error('Error highlighting code:', error);
+								return code;
+							}
+						}
+					});
+					console.log(marked.parse("ewfjio\n\n```\nsojgi\n```"));
+					console.log("init");
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
 						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
@@ -210,9 +245,10 @@
 					this.cancelEditTitle();
 					const uploadMessage = this.inputMessage;
 					this.inputMessage = null;
+
 					this.messages.push({
 						id: Date.now(),
-						content: this.inputMessage,
+						content: uploadMessage,
 						role: 'user',
 						timestamp: new Date().toLocaleTimeString()
 					});
@@ -366,6 +402,7 @@
 						}
 						this.cid = cid;
 						this.update_topBar();
+						// hljs.highlightAll();
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
@@ -438,6 +475,7 @@
 				},
 			}
 		}
+		
 	</script>
 </body>
 </html>

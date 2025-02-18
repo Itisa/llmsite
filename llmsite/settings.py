@@ -54,7 +54,7 @@ ROOT_URLCONF = 'llmsite.urls'
 TEMPLATES = [
 	{
 		'BACKEND': 'django.template.backends.django.DjangoTemplates',
-		'DIRS': [],
+		'DIRS': [BASE_DIR / 'llmsite/templates'],
 		'APP_DIRS': True,
 		'OPTIONS': {
 			'context_processors': [
