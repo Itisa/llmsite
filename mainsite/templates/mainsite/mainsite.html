@@ -208,6 +208,7 @@
 					if (!this.inputMessage.trim()) return;
 					if (this.in_talk) return ;
 					this.cancelEditTitle();
+					const uploadMessage = this.inputMessage;
 					this.inputMessage = null;
 					this.messages.push({
 						id: Date.now(),
@@ -225,7 +226,7 @@
 						},
 						body: JSON.stringify({
 							model_name: this.selectedModel,
-							message: this.inputMessage,
+							message: uploadMessage,
 							timestamp: Date.now(),
 							cid: this.cid,
 						})
