@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 from django.utils import timezone
@@ -195,19 +195,24 @@ def talk(request):
 					return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
 				model_name = comm.model
 
-			messages = [{"role": "user", "content": message}]
+			messages = []
+			for msg in comm.communication_content_set.all():
+				messages.append({"role":msg.role,"content":msg.content})
+			messages.append({"role": "user", "content": message})
+			print(messages)
 			comm.communication_content_set.create(gen_date=timezone.now(),role="user",content=message)
-			rsp = talk_with_AI(messages)
-			comm.communication_content_set.create(gen_date=timezone.now(),role="assistant",content=rsp)
-			response_data = {
-				'status': 'ok',
-				'message': rsp,
-				'cid': comm.pk,
-				'title': comm.title,
-				'model': comm.model,
-			}
-			comm.save()
-			return JsonResponse(response_data)
+			return StreamingHttpResponse(talk_with_AI(messages), content_type="application/json")
+			# rsp = talk_with_AI(messages)
+			# comm.communication_content_set.create(gen_date=timezone.now(),role="assistant",content=rsp)
+			# response_data = {
+			# 	'status': 'ok',
+			# 	'message': rsp,
+			# 	'cid': comm.pk,
+			# 	'title': comm.title,
+			# 	'model': comm.model,
+			# }
+			# comm.save()
+			# return JsonResponse(response_data)
 
 		except Exception as e:
 			return JsonResponse({'status': 'error', 'message': f'other: {str(e)}'}, status=400)

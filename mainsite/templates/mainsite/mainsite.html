@@ -207,41 +207,97 @@
 						timestamp: new Date().toLocaleTimeString()
 					});
 
-					axios.post("{% url 'mainsite:talk' %}", {
-						model_name: this.selectedModel,
-						message: this.inputMessage,
-						timestamp: Date.now(),
-						cid: this.cid,
-					}, {
+					fetch("{% url 'mainsite:talk' %}", {
+						method: 'POST',	
+					
 						headers: {
-							"Content-Type": "application/json",
+							'Content-Type': 'application/json',
 							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-						}
+						},
+						body: JSON.stringify({
+							model_name: this.selectedModel,
+							message: this.inputMessage,
+							timestamp: Date.now(),
+							cid: this.cid,
+						})
 					})
 					.then(response => {
 						console.log(response)
-						console.log(response.data.cid)
+						if (!response.ok) {
+							throw new Error('Network response was not ok');
+						}
 						this.messages.push({
 							id: Date.now(),
 							content: response.data.message,
 							role: 'assistant',
 							timestamp: new Date().toLocaleTimeString(),
 						});
-
-						if (this.cid == -1){ // 新对话
-							this.titles.push({
-								id: response.data.cid,
-								title: response.data.title,
-								date: Date.now(),
+						const reader = response.body.getReader();
+						const decoder = new TextDecoder();
+						const readChunk = () => {
+							reader.read().then(({ done, value }) => {
+								// console.log(done, value);
+								if (done) {
+									console.log('Stream complete');
+									return;
+								}
+								const chunk = decoder.decode(value);
+								// 假设服务器返回的是逐行 JSON 数据
+								chunk.split('\n').forEach(line => {
+									if (line.trim()) {
+										try {
+											const jsonData = JSON.parse(line);
+											console.log(jsonData)
+											// this.items.push(jsonData);
+										} catch (error) {
+											console.error('Error parsing JSON:', error);
+										}
+									}
+								});
+								readChunk();  // 继续读取下一个数据块
 							});
-						}
-						this.cid = response.data.cid;
-						this.update_topBar();
+						};
+						readChunk();
 					})
 					.catch(error => {
-						console.error('请求失败:', error);
+						console.error('Error fetching stream:', error);
 					});
-					this.inputMessage = '';
+
+					// axios.post("{% url 'mainsite:talk' %}", {
+					// 	model_name: this.selectedModel,
+					// 	message: this.inputMessage,
+					// 	timestamp: Date.now(),
+					// 	cid: this.cid,
+					// }, {
+					// 	headers: {
+					// 		"Content-Type": "application/json",
+					// 		'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+					// 	}
+					// })
+					// .then(response => {
+					// 	console.log(response)
+					// 	console.log(response.data.cid)
+					// 	this.messages.push({
+					// 		id: Date.now(),
+					// 		content: response.data.message,
+					// 		role: 'assistant',
+					// 		timestamp: new Date().toLocaleTimeString(),
+					// 	});
+
+					// 	if (this.cid == -1){ // 新对话
+					// 		this.titles.push({
+					// 			id: response.data.cid,
+					// 			title: response.data.title,
+					// 			date: Date.now(),
+					// 		});
+					// 	}
+					// 	this.cid = response.data.cid;
+					// 	this.update_topBar();
+					// })
+					// .catch(error => {
+					// 	console.error('请求失败:', error);
+					// });
+					// this.inputMessage = '';
 				},
 
 				loadModels() {
