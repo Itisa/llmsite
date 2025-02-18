@@ -7,7 +7,7 @@ import json
 from .models import User, Communication, Communication_Content
 from django.utils import timezone
 def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn-beijing.volces.com/api/v3"):
-	test = False
+	test = True
 	if test:
 		allcontent = ""
 		gen_date = timezone.now()

@@ -5,13 +5,10 @@
 	<title>DeepSeek Chat</title>
 	{% load static %}
 	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
-	<!-- <script src="{% static 'mainsite/highlight.css' %}"></script> -->
-	<!-- <link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}"> -->
-	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css"> -->
+	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
 	<script src="{% static 'mainsite/axios_min.js' %}"></script>
-	<!-- <script src="{% static 'mainsite/highlight.js' %}"></script> -->
+	<script src="{% static 'mainsite/highlight.js' %}"></script>
 	<script src="{% static 'mainsite/marked.min.js' %}"></script>
-	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script> -->
 	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
 	<style>
 		pre {
@@ -178,13 +175,11 @@
 				selectedModel: null,
 				in_talk: false,
 				marked,
-
 				init() {
 					marked.setOptions({
-						break: true,
-						renderer: new marked.Renderer(),
+						breaks: true,
 						highlight: function (code, language) {
-							console.log(123)
+							console.log(123);
 							// 检查语言是否有效，如果无效则使用 'plaintext'
 							const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
 							try {
@@ -195,6 +190,7 @@
 								console.error('Error highlighting code:', error);
 								return code;
 							}
+
 						}
 					});
 					console.log(marked.parse("ewfjio\n\n```\nsojgi\n```"));
@@ -216,6 +212,16 @@
 						this.loadHistory();
 						this.loadModels();
 					}
+					// 添加 marked 的 afterRender 钩子
+					// const originalParse = marked.parse;
+					// marked.parse = (...args) => {
+					// 	const result = originalParse.apply(marked, args);
+					// 	// 使用 setTimeout 确保在 DOM 更新后执行
+					// 	setTimeout(() => {
+					// 		hljs.highlightAll();
+					// 	}, 0);
+					// 	return result;
+					// };
 				},
 
 				// 登录方法
@@ -287,8 +293,10 @@
 							reader.read().then(({ done, value }) => {
 								if (done) {
 									console.log('Stream complete');
-									
 									this.in_talk = false;
+									setTimeout(() => {
+										hljs.highlightAll();
+									}, 0);
 									return;
 								}
 		
@@ -402,7 +410,9 @@
 						}
 						this.cid = cid;
 						this.update_topBar();
-						// hljs.highlightAll();
+						setTimeout(() => {
+							hljs.highlightAll();
+						}, 0);
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
