@@ -156,6 +156,7 @@
 				isEditingTitle: false,
 				newTitle: null,
 				selectedModel: null,
+				in_talk: false,
 				init() {
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
@@ -199,7 +200,8 @@
 				// 发送消息
 				sendMessage() {
 					if (!this.inputMessage.trim()) return;
-					
+					if (this.in_talk) return ;
+					this.cancelEditTitle();
 					this.messages.push({
 						id: Date.now(),
 						content: this.inputMessage,
@@ -222,36 +224,55 @@
 						})
 					})
 					.then(response => {
+						this.in_talk = true;
+						this.inputMessage = null;
 						console.log(response)
 						if (!response.ok) {
 							throw new Error('Network response was not ok');
 						}
 						this.messages.push({
 							id: Date.now(),
-							content: response.data.message,
+							content: "",
 							role: 'assistant',
 							timestamp: new Date().toLocaleTimeString(),
 						});
 						const reader = response.body.getReader();
 						const decoder = new TextDecoder();
+
+						var firstchunk = true;
 						const readChunk = () => {
 							reader.read().then(({ done, value }) => {
-								// console.log(done, value);
 								if (done) {
 									console.log('Stream complete');
+									
+									this.in_talk = false;
 									return;
 								}
+		
 								const chunk = decoder.decode(value);
 								// 假设服务器返回的是逐行 JSON 数据
 								chunk.split('\n').forEach(line => {
 									if (line.trim()) {
-										try {
-											const jsonData = JSON.parse(line);
-											console.log(jsonData)
-											// this.items.push(jsonData);
-										} catch (error) {
-											console.error('Error parsing JSON:', error);
+
+									try {
+										const jsonData = JSON.parse(line);
+										if (firstchunk){
+											if (this.cid == -1){ // 新对话
+												this.titles.push({
+													id: jsonData.cid,
+													title: jsonData.title,
+													date: Date.now(),
+												});
+												this.cid = jsonData.cid;
+												this.update_topBar();
+											}
+											firstchunk = false;
 										}
+										this.messages[this.messages.length-1].content += jsonData.message;
+									} catch (error) {
+										console.error('Error parsing JSON:', error);
+									}
+
 									}
 								});
 								readChunk();  // 继续读取下一个数据块
@@ -262,42 +283,6 @@
 					.catch(error => {
 						console.error('Error fetching stream:', error);
 					});
-
-					// axios.post("{% url 'mainsite:talk' %}", {
-					// 	model_name: this.selectedModel,
-					// 	message: this.inputMessage,
-					// 	timestamp: Date.now(),
-					// 	cid: this.cid,
-					// }, {
-					// 	headers: {
-					// 		"Content-Type": "application/json",
-					// 		'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-					// 	}
-					// })
-					// .then(response => {
-					// 	console.log(response)
-					// 	console.log(response.data.cid)
-					// 	this.messages.push({
-					// 		id: Date.now(),
-					// 		content: response.data.message,
-					// 		role: 'assistant',
-					// 		timestamp: new Date().toLocaleTimeString(),
-					// 	});
-
-					// 	if (this.cid == -1){ // 新对话
-					// 		this.titles.push({
-					// 			id: response.data.cid,
-					// 			title: response.data.title,
-					// 			date: Date.now(),
-					// 		});
-					// 	}
-					// 	this.cid = response.data.cid;
-					// 	this.update_topBar();
-					// })
-					// .catch(error => {
-					// 	console.error('请求失败:', error);
-					// });
-					// this.inputMessage = '';
 				},
 
 				loadModels() {
@@ -354,6 +339,7 @@
 
 				// 加载对话消息
 				loadMessages(cid){
+					if (this.in_talk) return ;
 					console.log("cid",cid);
 					axios.get("{% url 'mainsite:talk' %}", {
 						params:{
@@ -394,22 +380,26 @@
 
 				// 开启新对话
 				createNewChat() {
+					if (this.in_talk) return ;
 					this.cid = -1;
 					this.topBarContent = "新对话";
 					this.messages = [];
 				},
 				// 开启/关闭标题编辑
 				enableEditTitle(){
+					if (this.in_talk) return ;
 					this.isEditingTitle = true;
 					this.newTitle = this.topBarContent;
 				},
 				cancelEditTitle(){
+					if (this.in_talk) return ;
 					this.isEditingTitle = false;
 					this.newTitle = null;
 				},
 
 				// 保存新标题
 				saveTitle(){
+					if (this.in_talk) return ;
 					console.log("saveTitle",this.newTitle);
 					axios.post("{% url 'mainsite:other_functions' %}", {
 						cmd: "change communication title",

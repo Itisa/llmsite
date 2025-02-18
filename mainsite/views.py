@@ -201,7 +201,8 @@ def talk(request):
 			messages.append({"role": "user", "content": message})
 			print(messages)
 			comm.communication_content_set.create(gen_date=timezone.now(),role="user",content=message)
-			return StreamingHttpResponse(talk_with_AI(messages), content_type="application/json")
+			return StreamingHttpResponse(talk_with_AI(comm,messages), content_type="application/json")
+			
 			# rsp = talk_with_AI(messages)
 			# comm.communication_content_set.create(gen_date=timezone.now(),role="assistant",content=rsp)
 			# response_data = {
