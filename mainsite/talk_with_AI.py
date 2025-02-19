@@ -11,7 +11,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 	if test:
 		allcontent = ""
 		gen_date = timezone.now()
-		for i in range(10):  # 假设你生成10个JSON对象
+		for i in range(3):  # 假设你生成10个JSON对象
 			usercontent = messages[-1]["content"]
 			data = {
 				"id": i,

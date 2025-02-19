@@ -241,9 +241,9 @@ def other_functions(request):
 		try:
 			data = json.loads(request.body)
 			cmd = data.get('cmd')
+			print("cmd:",cmd)
 			if cmd == "change communication title":
 				cid = data.get('cid')
-				print("typecid:",type(cid))
 				newtitle = data.get('newtitle')
 				comm = Communication.objects.filter(pk=cid)
 				if len(comm) == 0:
@@ -255,7 +255,17 @@ def other_functions(request):
 					return JsonResponse({'status': 'ok'}, status=200)
 				else:
 					return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
-
+			elif cmd == "delete communication":
+				cid = data.get('cid')
+				comm = Communication.objects.filter(pk=cid)
+				if len(comm) == 0:
+					return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
+				
+				if comm[0].user.pk == user.pk:
+					comm[0].delete();
+					return JsonResponse({'status': 'ok'}, status=200)
+				else:
+					return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
 			elif cmd == "":
 				pass
 				return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
