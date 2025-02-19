@@ -115,10 +115,10 @@
 								 class="p-2 hover:bg-gray-100 cursor-pointer rounded flex justify-between items-start"
 								 :class="{ 'bg-blue-50': item.id === cid }">
 								<div>
-									<div class="text-sm" x-text="item.title"></div>
+									<div class="text-sm truncate w-40 whitespace-nowrap overflow-hidden text-ellipsis" x-text="item.title"></div>
 									<div class="text-xs text-gray-500" x-text="item.date"></div>
 								</div>
-								<button @click.stop="deleteCommunication(item.id,item.title)" class="text-red-500 hover:text-red-700 text-sm ml-4">
+								<button @click.stop="deleteCommunication(item.id,item.title)" class="text-red-500 hover:text-red-700 text-sm m-0">
 									删除
 								</button>
 							</div>
@@ -154,7 +154,7 @@
 					</div>
 				</div>
 				<!-- 消息区域 -->
-				<div class="flex-1 overflow-y-auto p-4 space-y-4">
+				<div class="flex-1 overflow-y-auto p-4 space-y-4" id="message_area">
 					<template x-for="message in messages" :key="message.id">
 						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
 							<div class="inline-block p-3 rounded-lg max-w-[70%] text-left"
@@ -301,6 +301,7 @@
 				renderer: new marked.Renderer(),
 				show_floating_ball: true,
 				floating_ball_showButtons: false,
+				message_area_div: document.getElementById('message_area'),
 				init() {
 					this.renderer.code = function (code, language) {
 						// 使用 highlight.js 高亮代码
@@ -320,7 +321,7 @@
 					marked.setOptions({
 						renderer: this.renderer,
 					});
-					console.log("init");
+					// console.log("init");
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
 						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
@@ -348,7 +349,7 @@
 							new URLSearchParams(this.loginForm).toString(),
 						)
 						.then(response => {
-							console.log(response)
+							// console.log(response)
 							window.location.href = "{% url 'mainsite:site' %}";
 						})
 						.catch(error => {
@@ -376,7 +377,6 @@
 					this.cancelEditTitle();
 					const uploadMessage = this.inputMessage;
 					this.inputMessage = "";
-
 					this.messages.push({
 						id: Date.now(),
 						content: uploadMessage,
@@ -400,7 +400,7 @@
 					})
 					.then(response => {
 						this.in_talk = true;
-						console.log(response)
+						// console.log(response)
 						if (!response.ok) {
 							throw new Error('Network response was not ok');
 						}
@@ -410,6 +410,9 @@
 							role: 'assistant',
 							timestamp: new Date().toLocaleTimeString(),
 						});
+						setTimeout(() => {
+							this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+						}, 0);
 						const reader = response.body.getReader();
 						const decoder = new TextDecoder();
 
@@ -417,11 +420,11 @@
 						const readChunk = () => {
 							reader.read().then(({ done, value }) => {
 								if (done) {
-									console.log('Stream complete');
+									// console.log('Stream complete');
 									this.in_talk = false;
 									return;
 								}
-		
+								const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
 								const chunk = decoder.decode(value);
 								// 假设服务器返回的是逐行 JSON 数据
 								chunk.split('\n').forEach(line => {
@@ -442,6 +445,11 @@
 											firstchunk = false;
 										}
 										this.messages[this.messages.length-1].content += jsonData.message;
+										if (at_bottom) {
+											setTimeout(() => {
+												this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+											}, 0);
+										}
 									} catch (error) {
 										console.error('Error parsing JSON:', error);
 									}
@@ -470,7 +478,7 @@
 						}
 					})
 					.then(response => {
-						console.log(response)
+						// console.log(response)
 						this.models = response.data.data;
 						this.selectedModel = this.models[0];
 					})
@@ -483,7 +491,6 @@
 				},
 				// 加载历史记录
 				loadHistory() {
-					console.log("loadHis");
 					axios.get("{% url 'mainsite:talk' %}", {
 						params:{
 							cid: -1,
@@ -495,7 +502,7 @@
 						}
 					})
 					.then(response => {
-						console.log(response)
+						// console.log(response)
 						this.titles = response.data.titles
 						for (var i = 0; i < this.titles.length; i++) {
 							this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
@@ -513,7 +520,6 @@
 				// 加载对话消息
 				loadMessages(cid){
 					if (this.in_talk) return ;
-					console.log("cid",cid);
 					axios.get("{% url 'mainsite:talk' %}", {
 						params:{
 							cid: cid,
@@ -525,7 +531,7 @@
 						}
 					})
 					.then(response => {
-						console.log(response)
+						// console.log(response)
 						this.messages = response.data.messages
 						for (var i = 0; i < this.messages.length; i++) {
 							this.messages[i].timestamp =new Date(this.messages[i].timestamp).toLocaleString();
@@ -564,7 +570,7 @@
 						}
 					})
 					.then(response => {
-						console.log(response)
+						// console.log(response)
 						for (var i = 0; i < this.titles.length; i++) {
 							if (cid == this.titles[i].id){
 								if (cid == this.cid) {
@@ -605,7 +611,11 @@
 				// 保存新标题
 				saveTitle(){
 					if (this.in_talk) return ;
-					console.log("saveTitle",this.newTitle);
+					// console.log("saveTitle",this.newTitle);
+					if (this.newTitle.length > 30) {
+						alert(`标题的长度要 <= 30 (当前长度：${this.newTitle.length})`);
+						return ;
+					}
 					axios.post("{% url 'mainsite:other_functions' %}", {
 						cmd: "change communication title",
 						cid: this.cid,
@@ -617,7 +627,7 @@
 						}
 					})
 					.then(response => {
-						console.log(response)
+						// console.log(response)
 						for (let i = 0; i < this.titles.length; i++) {
 							if (this.cid == this.titles[i].id){
 								this.titles[i].title = this.newTitle;

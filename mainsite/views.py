@@ -284,6 +284,9 @@ def other_functions(request):
 			if cmd == "change communication title":
 				cid = data.get('cid')
 				newtitle = data.get('newtitle')
+				if len(newtitle) > 30:
+					return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=400)
+
 				comm = Communication.objects.filter(pk=cid)
 				if len(comm) == 0:
 					return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
