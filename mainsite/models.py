@@ -27,4 +27,4 @@ class Communication_Content(models.Model):
 	role = models.CharField(max_length=10)
 	content = models.CharField(max_length=4000)
 	def __str__(self):
-		return self.communication.title
+		return self.content[:20]

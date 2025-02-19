@@ -6,19 +6,24 @@ from django.urls import path
 # Register your models here.
 
 from .models import User, Communication, Communication_Content
-from .views import generate_random_string
+from .views import generate_random_string,add_user
+
+import bcrypt
 def new_user(username, password, param3):
 	# 在这里执行你的自定义逻辑
 	print("new_user:",username,password,param3)
 	if password == "":
 		password = generate_random_string(10)
-	result = f"successfully new user 用户名={username}, 密码={password}, param3={param3}"
+	if add_user(username,password):
+		result = f"successfully new user 用户名={username}, 密码={password}, param3={param3}"
+	else:
+		result = f"fail new user 用户名={username}, 密码={password}, param3={param3}"
 	return result
 class MyCustomForm(forms.Form):
 	username = forms.CharField(label="用户名", required=True)
 	password = forms.CharField(label="密码", required=False)
 	param3 = forms.ChoiceField(
-		label="Parameter 3",
+		label="这个现在没用",
 		choices=[
 			('option1', 'Option 1'),
 			('option2', 'Option 2'),
@@ -28,19 +33,14 @@ class MyCustomForm(forms.Form):
 	)
 	# param3 = forms.IntegerField(label="maxCommunications", initial=20, required=True)
 
-def function1(modeladmin, request, queryset):
-	print(modeladmin)
-	print()
-	print(request)
-	print()
-	print(queryset)
-	# for obj in queryset:
-	#     # 在这里执行你的自定义逻辑
-	#     obj.some_field = "Updated Value"
-	#     obj.save()
-	modeladmin.message_user(request, "Custom function executed successfully.")
+def reset_pwd2username(modeladmin, request, queryset):
+	for user in queryset:
+		# 在这里执行你的自定义逻辑
+		user.user_password = bcrypt.hashpw(user.username.encode(), bcrypt.gensalt()).decode()
+		user.save()
+	modeladmin.message_user(request, "重置密码成功")
 
-function1.short_description = "Execute custom function"
+reset_pwd2username.short_description = "重置密码为用户名"
 
 class UserAdmin(admin.ModelAdmin):
 	def get_urls(self):
@@ -72,7 +72,7 @@ class UserAdmin(admin.ModelAdmin):
 		extra_context['new_user_url'] = 'new_user/'
 		return super().changelist_view(request, extra_context=extra_context)
 	list_display = ["username"]
-	actions = [function1]  # 注册自定义操作
+	actions = [reset_pwd2username]  # 注册自定义操作
 
 admin.site.register(User,UserAdmin)
 
@@ -81,5 +81,5 @@ class CommunicationAdmin(admin.ModelAdmin):
 admin.site.register(Communication,CommunicationAdmin)
 
 class Communication_ContentAdmin(admin.ModelAdmin):
-	pass
+	list_display = ["communication","__str__"]
 admin.site.register(Communication_Content,Communication_ContentAdmin)

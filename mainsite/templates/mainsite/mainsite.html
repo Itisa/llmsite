@@ -156,6 +156,7 @@
 		<!-- 悬浮球 -->
 		<div x-show="username" class="fixed">
 			<div 
+				x-show="show_floating_ball"
 				x-ref="floating_ball"
 				@click="floating_ball_toggleButtons"
 				class="fixed left-10 bottom-10 w-16 h-16 bg-blue-500 rounded-full cursor-pointer flex items-center justify-center text-white text-2xl shadow-lg"
@@ -164,8 +165,11 @@
 				<!-- 按钮组 -->
 				<div x-show="floating_ball_showButtons" class="absolute bottom-20 left-1.5 space-y-2">
 					<button class="w-12 h-12 bg-green-500 rounded-full text-white shadow-lg text-base" @click="logout">注销</button>
-					<button class="w-12 h-12 bg-red-500 rounded-full text-white shadow-lg">2</button>
-					<button class="w-12 h-12 bg-yellow-500 rounded-full text-white shadow-lg">3</button>
+					<button class="w-12 h-12 bg-red-500 rounded-full text-white shadow-lg text-base flex flex-col items-center justify-center" @click="window.location.href = '{% url 'mainsite:change_password' %}'">
+						<span class="leading-none">修改</span>
+						<span class="leading-none">密码</span>
+					</button>
+					<button class="w-12 h-12 bg-yellow-500 rounded-full text-white shadow-lg text-base" @click="show_floating_ball=false">隐藏</button>
 				</div>
 			</div>
 
@@ -203,9 +207,7 @@
 				in_talk: false,
 				marked,
 				renderer: new marked.Renderer(),
-				floating_ball_x: 100,
-				floating_ball_y: 100,
-				floating_ball_dragging: false,
+				show_floating_ball: true,
 				floating_ball_showButtons: false,
 				init() {
 					this.renderer.code = function (code, language) {
@@ -217,7 +219,6 @@
 					marked.setOptions({
 						renderer: this.renderer,
 					});
-					// console.log(marked.parse("ewfjio\n\n```\nsojgi\n```"));
 					console.log("init");
 					this.topBarContent = "新对话";
 					for (let i = 0; i < this.titles.length; ++i){
@@ -533,12 +534,10 @@
 					});
 				},
 				floating_ball_toggleButtons() {
-					console.log(123,this.floating_ball_dragging);
 					if (!this.floating_ball_dragging) {
-						console.log(111,this.floating_ball_showButtons);
 						this.floating_ball_showButtons = !this.floating_ball_showButtons;
 					}
-				}
+				},
 			}
 		}
 		

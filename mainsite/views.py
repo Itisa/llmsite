@@ -69,10 +69,10 @@ def login(request):
 	try:
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
 			sessionid = generate_random_string(20)
-			user.sessionid = sessionid;
+			user.sessionid = sessionid
 			user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
 			user.save()
-			request.session["id"] = sessionid;
+			request.session["id"] = sessionid
 			response_data = {
 				"status": "success",
 			}
@@ -116,6 +116,44 @@ def register(request):
 			print("Error occured in register")
 			print(e)
 			return JsonResponse({"status": "fail","reason": "error"}, status=500)
+
+def change_password(request):
+	if request.method == "GET":
+		return render(request,"mainsite/change_password.html")
+	elif request.method == "POST":
+		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=403)
+		
+		try:
+			user = get_user_by_sessionid(request.session["id"])
+			if not check_user_status(user):
+				return JSON_sessionid_expire_ret()
+		except Exception as e:
+			print(e)
+			print("ERROR in change_password in talk user")
+			return JSON_sessionid_expire_ret()
+
+		try:
+			ori_password = request.POST["ori_password"]
+		except:
+			return JsonResponse({"status": "fail","reason": "no ori_password"}, status=400)
+		
+		if not bcrypt.checkpw(ori_password.encode(), user.user_password.encode()):
+			return JsonResponse({"status": "fail","reason": "ori_password error"}, status=400)
+
+		try:
+			new_password = request.POST["new_password"]
+		except:
+			return JsonResponse({"status": "fail","reason": "no new_password"}, status=400)
+
+		try:
+			user.user_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+			user.save()
+			return JsonResponse({"status": "success"}, status=200)
+
+		except Exception as e:
+			print("Error occured in register")
+			print(e)
+			return JsonResponse({"status": "fail","reason": "error"}, status=500)
 		
 def logout(request):
 	rsp = HttpResponseRedirect(reverse("mainsite:site"))
@@ -133,11 +171,11 @@ def talk(request):
 	try:
 		user = get_user_by_sessionid(request.session["id"])
 		if not check_user_status(user):
-			return JSON_sessionid_expire_ret();
+			return JSON_sessionid_expire_ret()
 	except Exception as e:
 		print(e)
 		print("ERROR in user_get in talk user")
-		return JSON_sessionid_expire_ret();
+		return JSON_sessionid_expire_ret()
 
 	if request.method == "GET":
 		print("On talk get")
@@ -221,11 +259,11 @@ def other_functions(request):
 	try:
 		user = get_user_by_sessionid(request.session["id"])
 		if not check_user_status(user):
-			return JSON_sessionid_expire_ret();
+			return JSON_sessionid_expire_ret()
 	except Exception as e:
 		print(e)
 		print("ERROR in user_get in other_functions")
-		return JSON_sessionid_expire_ret();
+		return JSON_sessionid_expire_ret()
 
 	if request.method == "GET":
 		try:
@@ -263,7 +301,7 @@ def other_functions(request):
 					return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 				
 				if comm[0].user.pk == user.pk:
-					comm[0].delete();
+					comm[0].delete()
 					return JsonResponse({'status': 'ok'}, status=200)
 				else:
 					return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
