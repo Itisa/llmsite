@@ -72,14 +72,21 @@ class UserAdmin(admin.ModelAdmin):
 		extra_context['new_user_url'] = 'new_user/'
 		return super().changelist_view(request, extra_context=extra_context)
 	list_display = ["username"]
+	list_per_page = 50
 	actions = [reset_pwd2username]  # 注册自定义操作
 
 admin.site.register(User,UserAdmin)
 
 class CommunicationAdmin(admin.ModelAdmin):
 	list_display = ["title","user", "gen_date", "model"]
+	list_per_page = 50
 admin.site.register(Communication,CommunicationAdmin)
 
 class Communication_ContentAdmin(admin.ModelAdmin):
-	list_display = ["communication","__str__"]
+	list_display = ["communication","__str__","get_communication_user"]
+	list_per_page = 50
+	def get_communication_user(self, obj):
+		return obj.communication.user
+	get_communication_user.short_description = 'User'
+
 admin.site.register(Communication_Content,Communication_ContentAdmin)

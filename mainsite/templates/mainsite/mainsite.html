@@ -224,7 +224,7 @@
 				🎾
 				<!-- 按钮组 -->
 				<div x-show="floating_ball_showButtons" class="absolute bottom-20 left-1.5 space-y-2">
-					<button class="w-12 h-12 bg-green-500 rounded-full text-white shadow-lg text-base" @click="logout">注销</button>
+					<button class="w-12 h-12 bg-green-500 rounded-full text-white shadow-lg text-base" @click="logout">登出</button>
 					<button class="w-12 h-12 bg-red-500 rounded-full text-white shadow-lg text-base flex flex-col items-center justify-center" @click="window.location.href = '{% url 'mainsite:change_password' %}'">
 						<span class="leading-none">修改</span>
 						<span class="leading-none">密码</span>
@@ -411,8 +411,8 @@
 						})
 					})
 					.then(response => {
-						this.in_talk = true;
 						// console.log(response)
+						this.in_talk = true;
 						if (!response.ok) {
 							throw new Error('Network response was not ok');
 						}
@@ -639,6 +639,7 @@
 				// 开启新对话
 				createNewChat() {
 					if (this.in_talk) return ;
+					this.selectedModel = this.models[0];
 					this.cid = -1;
 					this.topBarContent = "新对话";
 					this.messages = [];
