@@ -49,6 +49,10 @@
 					return ;
 				},
 				register() {
+					if (!this.registerForm.password.trim()){
+						alert("密码为空");
+						return ;
+					}
 					console.log("register")
 					console.log(this.registerForm.password)
 					console.log(this.password_confirm)
