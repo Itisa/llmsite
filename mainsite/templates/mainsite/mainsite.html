@@ -236,15 +236,47 @@
 		function copyCodeToClipboard(button) {
 			const codeBlock = button.closest('.code-block').querySelector('code');
 			const codeText = codeBlock.innerText;
-			navigator.clipboard.writeText(codeText).then(() => {
-				button.textContent = 'Copied!';
-				setTimeout(() => {
-					button.textContent = 'Copy';
-				}, 2000);
-			}).catch(err => {
+
+			if (navigator.clipboard) {
+				navigator.clipboard.writeText(codeText).then(() => {
+					showCopiedFeedback(button);
+				}).catch(err => {
+					console.error('Failed to copy code: ', err);
+					fallbackCopyText(codeText, button);
+				});
+			} else {
+				fallbackCopyText(codeText, button);
+			}
+		}
+
+		function fallbackCopyText(text, button) {
+			const textarea = document.createElement('textarea');
+			textarea.value = text;
+			textarea.style.position = 'fixed';
+			textarea.style.opacity = 0;
+			document.body.appendChild(textarea);
+			textarea.select();
+
+			try {
+				const success = document.execCommand('copy');
+				if (success) {
+					showCopiedFeedback(button);
+				} else {
+					console.error('Failed to copy code using execCommand');
+				}
+			} catch (err) {
 				console.error('Failed to copy code: ', err);
-			});
-		};
+			} finally {
+				document.body.removeChild(textarea);
+			}
+		}
+
+		function showCopiedFeedback(button) {
+			button.textContent = 'Copied!';
+			setTimeout(() => {
+				button.textContent = 'Copy';
+			}, 2000);
+		}
 		function app() {
 			return {
 				// 应用状态
