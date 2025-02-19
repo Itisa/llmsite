@@ -18,13 +18,55 @@
 	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 	<style>
 		pre {
-/*			background-color: #eeeeee;*/
-			padding: 1rem;
-			border-radius: 4px;
-			overflow-x: auto;
+			margin: 0;
+			padding: 0;
+			overflow: auto;
+			font-size: 14px;
+			line-height: 1.45;
+			background-color: #f6f8fa;
+			border-bottom-left-radius: 6px;
+			border-bottom-right-radius: 6px;
 		}
+
 		code {
-			font-family: 'Courier New', Courier, monospace;
+			font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+		}
+		.code-block {
+			position: relative;
+			border: 1px solid #e1e4e8;
+			border-radius: 6px;
+			background-color: #f6f8fa;
+			margin: 16px 0;
+		}
+
+		.code-top-bar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 8px 12px;
+			background-color: #ffffff;
+			border-bottom: 1px solid #d1d5da;
+			border-top-left-radius: 6px;
+			border-top-right-radius: 6px;
+		}
+
+		.code-language {
+			font-size: 14px;
+			color: #586069;
+		}
+
+		.copy-button {
+			background-color: #0366d6;
+			color: white;
+			border: none;
+			padding: 5px 10px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+		.copy-button:hover {
+			background-color: #0356b6;
 		}
 	</style>
 </head>
@@ -191,6 +233,18 @@
 				(path ? '; path=' + path : '') +
 				(domain ? '; domain=' + domain : '');
 		}
+		function copyCodeToClipboard(button) {
+			const codeBlock = button.closest('.code-block').querySelector('code');
+			const codeText = codeBlock.innerText;
+			navigator.clipboard.writeText(codeText).then(() => {
+				button.textContent = 'Copied!';
+				setTimeout(() => {
+					button.textContent = 'Copy';
+				}, 2000);
+			}).catch(err => {
+				console.error('Failed to copy code: ', err);
+			});
+		};
 		function app() {
 			return {
 				// 应用状态
@@ -220,7 +274,16 @@
 						// 使用 highlight.js 高亮代码
 						const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 						const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
-						return `<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>`;
+						const topBar = `
+		<div class="code-top-bar">
+			<span class="code-language">${validLanguage}</span>
+			<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
+		</div>
+		`;
+						return `<div class="code-block">
+			${topBar}
+			<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
+		</div>`;
 					};
 					marked.setOptions({
 						renderer: this.renderer,
