@@ -65,7 +65,7 @@ def login(request):
 	try:
 		user = get_user_by_username(username)
 	except:
-		JsonResponse({"status": "fail","reason": "no password",}, status=400)
+		JsonResponse({"status": "fail","reason": "username not exist",}, status=400)
 	try:
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
 			sessionid = generate_random_string(20)
@@ -97,28 +97,25 @@ def register(request):
 		return render(request,"mainsite/register.html")
 	elif request.method == "POST":
 		
-		response_data = {
-			"status": "fail",
-			"reason": "register unavailable",
-		}
-		return JsonResponse(response_data, status=403)
-		username = request.POST["username"]
-		password = request.POST["password"]
-		
-		if add_user(username,password):
-			response_data = {
-				"status": "success",
-				"sessionid": "xoihfiseorjgdio",
-			}
-			return JsonResponse(response_data, status=200)
+		return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403)
+		try:		
+			username = request.POST["username"]
+		except:
+			return JsonResponse({"status": "fail","reason": "no username"}, status=400)
+		try:
+			password = request.POST["password"]
+		except:
+			return JsonResponse({"status": "fail","reason": "no password"}, status=400)
 
-		else:
-			response_data = {
-				"status": "fail",
-				"reason": "username exist",
-			}
-			return JsonResponse(response_data, status=403)
-
+		try:
+			if add_user(username,password):
+				return JsonResponse({"status": "success",}, status=200)
+			else:
+				return JsonResponse({"status": "fail","reason": "username exist"}, status=403)
+		except Exception as e:
+			print("Error occured in register")
+			print(e)
+			return JsonResponse({"status": "fail","reason": "error"}, status=500)
 		
 def logout(request):
 	rsp = HttpResponseRedirect(reverse("mainsite:site"))
@@ -127,7 +124,7 @@ def logout(request):
 	return rsp
 
 def JSON_sessionid_expire_ret():
-	rsp = JsonResponse({'status': 'error', 'message': 'sessionid expires'}, status=400)
+	rsp = JsonResponse({'status': 'error', 'reason': 'sessionid expires'}, status=400)
 	rsp.delete_cookie("sessionid")
 	rsp.delete_cookie("username")
 	return rsp
@@ -139,7 +136,7 @@ def talk(request):
 			return JSON_sessionid_expire_ret();
 	except Exception as e:
 		print(e)
-		print("ERROR in talk user")
+		print("ERROR in user_get in talk user")
 		return JSON_sessionid_expire_ret();
 
 	if request.method == "GET":
@@ -147,7 +144,7 @@ def talk(request):
 		try:
 			cid = int(request.GET["cid"])
 		except:
-			return JsonResponse({'status': 'error', 'message': "invalid cid"},status=400)
+			return JsonResponse({'status': 'error', 'reason': "invalid cid"},status=400)
 		
 		if cid == -1:
 			titles = []
@@ -158,10 +155,10 @@ def talk(request):
 		else:
 			comm = Communication.objects.filter(pk=int(cid))
 			if len(comm) == 0:
-				return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
+				return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
 			comm = comm[0]
 			if (comm.user.pk != user.pk):
-				return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
+				return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
 			messages = []
 			for msg in comm.communication_content_set.all():
 				messages.append({"role":msg.role,"content":msg.content,"timestamp":msg.gen_date,"id":msg.pk})
@@ -176,10 +173,10 @@ def talk(request):
 			cid = data.get('cid')
 		except json.JSONDecodeError:
 			# 处理JSON解析错误
-			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
+			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
 		except KeyError as e:
 			# 处理缺少必要字段的情况
-			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
+			return JsonResponse({'status': 'error', 'reason': f'Missing key: {str(e)}'}, status=400)
 
 		try:
 			if cid == -1:
@@ -188,18 +185,18 @@ def talk(request):
 			else:
 				comm = Communication.objects.filter(pk=int(cid))
 				if len(comm) == 0:
-					return JsonResponse({'status': 'error', 'message': 'no communication'}, status=400)
+					return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=400)
 				comm = comm[0]
 
 				if (comm.user.sessionid != request.session["id"]):
-					return JsonResponse({'status': 'error', 'message': 'no permission'}, status=403)
+					return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
 				model_name = comm.model
 
 			messages = []
 			for msg in comm.communication_content_set.all():
 				messages.append({"role":msg.role,"content":msg.content})
 			messages.append({"role": "user", "content": message})
-			print(messages)
+			# print(messages)
 			comm.communication_content_set.create(gen_date=timezone.now(),role="user",content=message)
 			return StreamingHttpResponse(talk_with_AI(comm,messages), content_type="application/json")
 			
@@ -216,7 +213,7 @@ def talk(request):
 			# return JsonResponse(response_data)
 
 		except Exception as e:
-			return JsonResponse({'status': 'error', 'message': f'other: {str(e)}'}, status=400)
+			return JsonResponse({'status': 'error', 'reason': f'other: {str(e)}'}, status=400)
 
 @require_http_methods(["GET","POST"])  # 限制只接受GET,POST请求
 def other_functions(request):
@@ -227,16 +224,20 @@ def other_functions(request):
 			return JSON_sessionid_expire_ret();
 	except Exception as e:
 		print(e)
-		print("ERROR in other_functions")
+		print("ERROR in user_get in other_functions")
 		return JSON_sessionid_expire_ret();
 
 	if request.method == "GET":
 		try:
-			print(request.GET["cmd"])
+			cmd = request.GET["cmd"]
 		except:
-			pass
-		return JsonResponse({'status': 'ok', 'data': available_models}, status=200)
-
+			return JsonResponse({'status': 'fail', 'reason': "no command"}, status=400)
+		
+		if cmd == "load models":
+			return JsonResponse({'status': 'ok', 'data': available_models}, status=200)
+		else:
+			return JsonResponse({'status': 'fail', 'reason': "command not found"}, status=400)
+	
 	elif request.method == "POST":
 		try:
 			data = json.loads(request.body)
@@ -247,31 +248,31 @@ def other_functions(request):
 				newtitle = data.get('newtitle')
 				comm = Communication.objects.filter(pk=cid)
 				if len(comm) == 0:
-					return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
+					return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 				
 				if comm[0].user.pk == user.pk:
 					comm[0].title = newtitle
 					comm[0].save()
 					return JsonResponse({'status': 'ok'}, status=200)
 				else:
-					return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
+					return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
 			elif cmd == "delete communication":
 				cid = data.get('cid')
 				comm = Communication.objects.filter(pk=cid)
 				if len(comm) == 0:
-					return JsonResponse({'status': 'fail', 'message': "communication not found"}, status=400)
+					return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 				
 				if comm[0].user.pk == user.pk:
 					comm[0].delete();
 					return JsonResponse({'status': 'ok'}, status=200)
 				else:
-					return JsonResponse({'status': 'fail', 'message': "no permission"}, status=400)
+					return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
 			elif cmd == "":
 				pass
-				return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
+				return JsonResponse({'status': 'fail', 'reason': "cmd not found"}, status=400)
 			else:
-				return JsonResponse({'status': 'fail', 'message': "cmd not found"}, status=400)
+				return JsonResponse({'status': 'fail', 'reason': "cmd not found"}, status=400)
 		except json.JSONDecodeError:
-			return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)	
+			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
 		except KeyError as e:
-			return JsonResponse({'status': 'error', 'message': f'Missing key: {str(e)}'}, status=400)
+			return JsonResponse({'status': 'error', 'reason': f'Missing key: {str(e)}'}, status=400)

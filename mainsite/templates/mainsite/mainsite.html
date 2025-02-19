@@ -113,8 +113,12 @@
 								 :class="message.role === 'user'
 									 ? 'bg-blue-500 text-white'
 									 : 'bg-gray-200 text-gray-800'">
-								<!-- <div x-text="message.content"></div> -->
-								<div x-html="marked.parse(message.content)"></div>
+								<template x-if="message.role === 'user'">
+									<div x-text="message.content"></div>
+								</template>
+								<template x-if="message.role === 'assistant'">
+									<div x-html="marked.parse(message.content)"></div>
+								</template>
 								<div class="text-xs mt-1 opacity-70"
 									 x-text="message.timestamp"></div>
 							</div>
@@ -129,7 +133,8 @@
 							<textarea x-model="inputMessage"
 								   type="text"
 								   placeholder="输入消息..."
-								   class="flex-1 p-2 border rounded"></textarea>
+								   class="flex-1 p-2 border rounded"
+								   @keydown.enter="userPressEnter(event)"></textarea>
 							<button type="submit"
 									class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
 								发送
@@ -146,6 +151,24 @@
 					</div>
 				</div>
 			</div>
+		</div>
+
+		<!-- 悬浮球 -->
+		<div x-show="username" class="fixed">
+			<div 
+				x-ref="floating_ball"
+				@click="floating_ball_toggleButtons"
+				class="fixed left-10 bottom-10 w-16 h-16 bg-blue-500 rounded-full cursor-pointer flex items-center justify-center text-white text-2xl shadow-lg"
+			>
+				🎾
+				<!-- 按钮组 -->
+				<div x-show="floating_ball_showButtons" class="absolute bottom-20 left-1.5 space-y-2">
+					<button class="w-12 h-12 bg-green-500 rounded-full text-white shadow-lg text-base" @click="logout">注销</button>
+					<button class="w-12 h-12 bg-red-500 rounded-full text-white shadow-lg">2</button>
+					<button class="w-12 h-12 bg-yellow-500 rounded-full text-white shadow-lg">3</button>
+				</div>
+			</div>
+
 		</div>
 	</div>
 	<script>
@@ -180,6 +203,10 @@
 				in_talk: false,
 				marked,
 				renderer: new marked.Renderer(),
+				floating_ball_x: 100,
+				floating_ball_y: 100,
+				floating_ball_dragging: false,
+				floating_ball_showButtons: false,
 				init() {
 					this.renderer.code = function (code, language) {
 						// 使用 highlight.js 高亮代码
@@ -227,17 +254,26 @@
 						});
 				},
 				logout() {
-					deleteCookie("username");
-					window.location.href = "{% url 'mainsite:site' %}";
+					deleteCookie("username","/");
+					deleteCookie("sessionid","/");
+					setTimeout(function() {window.location.href = "{% url 'mainsite:site' %}";}, 10);
 				},
+				userPressEnter(event){
+					if (event.shiftKey) {
+						return ;
+					} else {
+						event.preventDefault();
+						this.sendMessage();
+					}
 
+				},
 				// 发送消息
 				sendMessage() {
-					if (!this.inputMessage.trim()) return;
+					if (!this.inputMessage.trim()) return ;
 					if (this.in_talk) return ;
 					this.cancelEditTitle();
 					const uploadMessage = this.inputMessage;
-					this.inputMessage = null;
+					this.inputMessage = "";
 
 					this.messages.push({
 						id: Date.now(),
@@ -319,7 +355,7 @@
 						console.error('Error fetching stream:', error);
 					});
 				},
-
+				// 加载可选模型
 				loadModels() {
 					axios.get("{% url 'mainsite:other_functions' %}", {
 						params:{
@@ -496,6 +532,13 @@
 						}
 					});
 				},
+				floating_ball_toggleButtons() {
+					console.log(123,this.floating_ball_dragging);
+					if (!this.floating_ball_dragging) {
+						console.log(111,this.floating_ball_showButtons);
+						this.floating_ball_showButtons = !this.floating_ball_showButtons;
+					}
+				}
 			}
 		}
 		
