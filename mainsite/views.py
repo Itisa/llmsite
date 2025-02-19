@@ -219,7 +219,7 @@ def talk(request):
 		try:
 			if cid == -1:
 				comm = user.communication_set.create(gen_date=timezone.now(),model=model_name)
-				comm.title = str(comm.pk)
+				comm.title = message[:30]
 			else:
 				comm = Communication.objects.filter(pk=int(cid))
 				if len(comm) == 0:
