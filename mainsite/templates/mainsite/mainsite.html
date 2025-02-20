@@ -4,18 +4,18 @@
 	<meta charset="UTF-8">
 	<title>DeepSeek Chat</title>
 	{% load static %}
-	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
+	<!-- <script src="{% static 'mainsite/tailwindcss.css' %}"></script>
 	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
 	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/highlight.js' %}"></script>
 	<script src="{% static 'mainsite/marked.min.js' %}"></script>
-	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
-<!-- 	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script> -->
+	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 	<style>
 		pre {
 			margin: 0;
@@ -162,7 +162,7 @@
 								<template x-if="message.role === 'user'">
 									<div>
 										<!-- 用户消息样式 -->
-										<div class="bg-blue-500 text-white rounded-lg p-3 shadow-sm" x-text="message.content"></div>
+										<div class="bg-blue-500 text-white rounded-lg p-3 shadow-sm whitespace-pre-wrap" x-text="message.content"></div>
 										<!-- 时间戳（仅 user 显示） -->
 										<div class="text-xs mt-1 opacity-70" x-text="message.timestamp"></div>
 									</div>
@@ -203,7 +203,7 @@
 					</form>
 					<!-- 语言模型选择框 -->
 					<div class="mt-2">
-						<select id="model-select" x-model="selectedModel" :disabled="cid !== -1" class="mt-1 block w-full p-2 border rounded">
+						<select id="model-select" x-model="selectedModel" :disabled="in_talk" class="mt-1 block w-full p-2 border rounded">
 							<template x-for="item in models">
 								<option :value="item" x-text="item"></option>
 							</template>
@@ -366,6 +366,9 @@
 						})
 						.catch(error => {
 							console.error('登录失败:', error);
+							if (error.response.data.reason == "incorrect password"){
+								alert("密码错误");
+							}
 						});
 				},
 				logout() {

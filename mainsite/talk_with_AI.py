@@ -73,16 +73,9 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 				yield json.dumps(data) + "\n"
 				allcontent += new_content
 			content_id += 1
-
-	# # 当触发深度推理时，打印思维链内容
-	# if hasattr(response.choices[0].message, 'reasoning_content'):
-	# 	print(response.choices[0].message.reasoning_content)
-	# print("LINE 21")
-	# print("LINE 22")
-	# print(response.choices[0].message.content)
-	# return response.choices[0].message.content
-	print(reasoning_content)
-	print(allcontent)
+	
+	# print(reasoning_content)
+	# print(allcontent)
 	if model_name == "deepseek_r1":
 		comm.communication_content_set.create(gen_date=gen_date,role="reasoning",content=reasoning_content)
 

@@ -207,6 +207,8 @@ def talk(request):
 		try:
 			data = json.loads(request.body)
 			model_name = data.get('model_name')
+			if not model_name in available_models:
+				return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=400)	
 			message = data.get('message')
 			cid = data.get('cid')
 		except json.JSONDecodeError:
@@ -228,7 +230,7 @@ def talk(request):
 
 				if (comm.user.sessionid != request.session["id"]):
 					return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
-				model_name = comm.model
+				# model_name = comm.model
 
 			messages = []
 			for msg in comm.communication_content_set.all():
