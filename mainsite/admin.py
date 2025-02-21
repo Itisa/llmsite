@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 # Register your models here.
 
-from .models import User, Communication, Communication_Content
+from .models import User, Communication, Communication_Content, Mailbox
 from .views import generate_random_string,add_user
 
 import bcrypt
@@ -90,3 +90,11 @@ class Communication_ContentAdmin(admin.ModelAdmin):
 	get_communication_user.short_description = 'User'
 
 admin.site.register(Communication_Content,Communication_ContentAdmin)
+
+class MailboxAdmin(admin.ModelAdmin):
+	list_display = ["user","title","get_mailbox_content20"]
+	list_per_page = 50
+	def get_mailbox_content20(self, obj):
+		return obj.content[:20]
+	get_mailbox_content20.short_description = 'content'
+admin.site.register(Mailbox,MailboxAdmin)

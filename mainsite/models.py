@@ -28,3 +28,11 @@ class Communication_Content(models.Model):
 	content = models.CharField(max_length=4000)
 	def __str__(self):
 		return self.content[:20]
+
+class Mailbox(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	gen_date = models.DateTimeField("date published")
+	title = models.CharField(max_length=200)
+	content = models.CharField(max_length=4000)
+	def __str__(self):
+		return self.title

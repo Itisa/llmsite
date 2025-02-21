@@ -10,7 +10,7 @@ import random
 import string
 import datetime
 
-from .models import User, Communication, Communication_Content
+from .models import User, Communication, Communication_Content, Mailbox
 from .talk_with_AI import talk_with_AI
 from .secret_settings import available_models
 def generate_random_string(length):
@@ -317,6 +317,35 @@ def other_functions(request):
 				return JsonResponse({'status': 'fail', 'reason': "cmd not found"}, status=400)
 			else:
 				return JsonResponse({'status': 'fail', 'reason': "cmd not found"}, status=400)
+		except json.JSONDecodeError:
+			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
+		except KeyError as e:
+			return JsonResponse({'status': 'error', 'reason': f'Missing key: {str(e)}'}, status=400)
+
+
+def site_mailbox(request):
+	try:
+		user = get_user_by_sessionid(request.session["id"])
+		if not check_user_status(user):
+			return JSON_sessionid_expire_ret()
+	except Exception as e:
+		print(e)
+		print("ERROR in user_get in site_mailbox user")
+		return JSON_sessionid_expire_ret()
+
+	if request.method == "GET":
+		return render(request,"mainsite/site_mailbox.html")
+	
+	elif request.method == "POST":
+		try:
+			data = json.loads(request.body)
+			title = data.get('title')
+			content = data.get('content')
+			# print("title:",title)
+			# print("content:",content)
+			mm = Mailbox(user=user,title=title,content=content,gen_date=timezone.now())
+			mm.save()
+			return JsonResponse({'status': 'ok'}, status=200)
 		except json.JSONDecodeError:
 			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
 		except KeyError as e:

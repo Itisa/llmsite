@@ -11,4 +11,5 @@ urlpatterns = [
 	path("talk", views.talk, name="talk"),
 	path("change_password", views.change_password, name="change_password"),
 	path("other_functions", views.other_functions, name="other_functions"),
+	path("site_mailbox", views.site_mailbox, name="site_mailbox"),
 ]

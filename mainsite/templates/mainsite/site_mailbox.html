@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>站点建议箱</title>
+	{% load static %}
+	<script src="{% static 'mainsite/axios_min.js' %}"></script>
+	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
+	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+	<a href="{% url 'mainsite:site' %}" class="absolute top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+    	返回首页
+	</a>
+	<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl"> 
+		<h1 class="text-2xl font-bold mb-6 text-center">站点建议箱</h1>
+		<form x-data="app()" @submit.prevent="upload()">
+			{% csrf_token %}
+			<div class="mb-4">
+				<label for="name" class="block text-sm font-medium text-gray-700">标题</label>
+				<input
+					type="text"
+					id="name"
+					x-model="title"
+					class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+					placeholder="请输入标题，可以为空"
+				>
+			</div>
+			<div class="mb-6">
+				<label for="content" class="block text-sm font-medium text-gray-700">建议内容</label>
+				<textarea
+					id="content"
+					x-model="content"
+					rows="8"
+					class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+					placeholder="请输入您的建议"
+					required
+				></textarea>
+			</div>
+			<div class="flex justify-end">
+				<button
+					type="submit"
+					class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+				>
+					提交建议
+				</button>
+			</div>
+		</form>
+	</div>
+	<script>
+		function deleteCookie(name, path, domain) {
+			document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
+				(path ? '; path=' + path : '') +
+				(domain ? '; domain=' + domain : '');
+		}
+		function app() {
+			return {
+				title: "",
+				content: "",
+				init(){
+
+				},
+				upload(){
+					axios.post("{% url 'mainsite:site_mailbox' %}", {
+						title: this.title,
+						content: this.content,
+					}, {
+						headers: {
+							"Content-Type": "application/json",
+							'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+						}
+					})
+					.then(response => {
+						console.log(response);
+						this.title = "";
+						this.content = "";
+						alert("提交成功");
+					})
+					.catch(error => {
+						console.error('失败', error);
+						if (error.response.data.reason === "sessionid expires"){
+							deleteCookie("username","/");
+							deleteCookie("sessionid","/");
+							setTimeout(function() {window.location.href = "{% url 'mainsite:site' %}";}, 10);
+						}
+					});
+				},
+			}
+		}
+	</script>
+</body>
+</html>

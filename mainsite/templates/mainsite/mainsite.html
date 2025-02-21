@@ -230,6 +230,10 @@
 						<span class="leading-none">密码</span>
 					</button>
 					<button class="w-12 h-12 bg-yellow-500 rounded-full text-white shadow-lg text-base" @click="show_floating_ball=false">隐藏</button>
+					<button class="w-12 h-12 bg-purple-500 rounded-full text-white shadow-lg text-base flex flex-col items-center justify-center" @click="window.location.href = '{% url 'mainsite:site_mailbox' %}'">
+						<span class="leading-none">站主</span>
+						<span class="leading-none">信箱</span>
+					</button>
 				</div>
 			</div>
 
@@ -525,7 +529,7 @@
 					})
 					.catch(error => {
 						console.error('loadModels请求失败:', error);
-						if (error.response.data.message === "sessionid expires"){
+						if (error.response.data.reason === "sessionid expires"){
 							this.logout();
 						}
 					});
@@ -552,7 +556,7 @@
 					})
 					.catch(error => {
 						console.error('loadHistory请求失败:', error);
-						if (error.response.data.message === "sessionid expires"){
+						if (error.response.data.reason === "sessionid expires"){
 							this.logout();
 						}
 					});
@@ -590,7 +594,7 @@
 					})
 					.catch(error => {
 						console.error('loadMessages请求失败:', error);
-						if (error.response.data.message === "sessionid expires"){
+						if (error.response.data.reason === "sessionid expires"){
 							this.logout();
 						}
 					});
@@ -633,7 +637,7 @@
 					})
 					.catch(error => {
 						console.error('deleteCommunication请求失败:', error);
-						if (error.response.data.message === "sessionid expires"){
+						if (error.response.data.reason === "sessionid expires"){
 							this.logout();
 						}
 					});
@@ -690,7 +694,7 @@
 					})
 					.catch(error => {
 						console.error('saveTitle请求失败:', error);
-						if (error.response.data.message === "sessionid expires"){
+						if (error.response.data.reason === "sessionid expires"){
 							this.logout();
 						}
 					});
