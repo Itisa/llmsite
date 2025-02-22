@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-from .secret_settings import *
+DEBUG = True
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
 
 # ALLOWED_HOSTS = [] from .secret_settings
 
@@ -79,7 +80,10 @@ DATABASES = {
 		'NAME': BASE_DIR / 'db.sqlite3',
 	}
 }
-
+try:
+	from .local_settings import *
+except:
+	pass
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
