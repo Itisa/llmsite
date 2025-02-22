@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<title>DeepSeek Chat Register</title>
-	{% load static %}
-	<script src="{% static 'mainsite/axios_min.js' %}"></script>
-	<script src="{% static 'mainsite/tailwindcss.css' %}"></script>
-	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
-	
-</head>
-<body class="bg-gray-100">
+{% extends "mainsite/base_frame.html" %}
+{% block title %}
+	DeepSeek Chat Register
+{% endblock %}
+
+{% block mainbody %}
 	<div x-data="app()" x-init="init()" class="min-h-screen">
 		<!-- 注册模块 -->
 		<div class="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow">
@@ -78,5 +72,4 @@
 			}
 		}
 	</script>
-</body>
-</html>
+{% endblock %}

@@ -339,9 +339,7 @@
 					});
 					// console.log("init");
 					this.topBarContent = "新对话";
-					for (let i = 0; i < this.titles.length; ++i){
-						this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
-					}
+					
 					if (document.cookie) {
 						const cookiePairs = document.cookie.split('; ');
 						cookiePairs.forEach(pair => {

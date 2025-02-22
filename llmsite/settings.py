@@ -9,6 +9,9 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
+import os
+
 DEBUG = True
 
 from pathlib import Path
@@ -125,3 +128,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGGING = {
+	"version": 1,  # the dictConfig format version
+	"disable_existing_loggers": False,  # retain the default loggers
+	"handlers": {
+		"file": {
+			"class": "logging.FileHandler",
+			"filename": os.path.join(BASE_DIR,"general.log"),
+		},
+	},
+	"loggers": {
+		"": {
+			"level": "DEBUG",
+			"handlers": ["file"],
+		},
+	},
+}

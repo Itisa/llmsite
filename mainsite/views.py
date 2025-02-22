@@ -9,6 +9,8 @@ import bcrypt
 import random
 import string
 import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 from .models import User, Communication, Communication_Content, Mailbox
 from .talk_with_AI import talk_with_AI
@@ -35,10 +37,20 @@ def delete_user(username):
 	return True
 
 def get_user_by_sessionid(sessionid):
-	return User.objects.filter(sessionid=sessionid)[0]
+	u = None
+	try:
+		u = User.objects.get(sessionid=sessionid)
+	except User.DoesNotExist:
+		pass
+	return u
 
 def get_user_by_username(username):
-	return User.objects.filter(username=username)[0]
+	u = None
+	try:
+		u = User.objects.get(username=username)
+	except User.DoesNotExist:
+		pass
+	return u
 
 def check_user_status(user):
 	if user.sessionid_expire >= timezone.now():
@@ -50,47 +62,41 @@ def site(request):
 	print("On request site")
 	rsp = render(request,"mainsite/mainsite.html")
 	return rsp
-	
+
+def json_resp(ret_dict):
+	return JsonResponse(ret_dict)
+
 def login(request):
 	print("On request login")
-	try:
-		username = request.POST["username"]
-	except:
-		JsonResponse({"status": "fail","reason": "no username",}, status=400)
-	try:
-		password = request.POST["password"]
-	except:
-		JsonResponse({"status": "fail","reason": "no password",}, status=400)
+	ret_dict = {}
+	ret_dict['result'] = 0
+
+	return 
+	username = request.POST.get("username","")
+	password = request.POST.get("password","")
 	
-	try:
-		user = get_user_by_username(username)
-	except:
-		JsonResponse({"status": "fail","reason": "username not exist",}, status=400)
-	try:
-		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
-			sessionid = generate_random_string(20)
-			user.sessionid = sessionid
-			user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
-			user.save()
-			request.session["id"] = sessionid
-			response_data = {
-				"status": "success",
-			}
-			rsp = JsonResponse(response_data, status=200)
-			rsp.set_cookie("username",username,max_age=1209600)
-			return rsp
-		else:
-			response_data = {
-				"status": "fail",
-				"reason": "incorrect password",
-			}
-			return JsonResponse(response_data, status=403)
-	except Exception as e:
-		print("ERROR\n",e)
+	user = get_user_by_username(username)
+	if not user:
+		return ;
+
+	if bcrypt.checkpw(password.encode(), user.user_password.encode()):
+		sessionid = generate_random_string(20)
+		user.sessionid = sessionid
+		user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
+		user.save()
+		request.session["id"] = sessionid
 		response_data = {
-			'status': 'error',
+			"status": "success",
 		}
-		return JsonResponse(response_data, status=500)
+		rsp = JsonResponse(response_data, status=200)
+		rsp.set_cookie("username",username,max_age=1209600)
+		return rsp
+	else:
+		response_data = {
+			"status": "fail",
+			"reason": "incorrect password",
+		}
+		return JsonResponse(response_data, status=403)
 
 def register(request):
 	if request.method == "GET":
@@ -98,31 +104,20 @@ def register(request):
 	elif request.method == "POST":
 		
 		return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403)
-		try:		
-			username = request.POST["username"]
-		except:
-			return JsonResponse({"status": "fail","reason": "no username"}, status=400)
-		try:
-			password = request.POST["password"]
-		except:
-			return JsonResponse({"status": "fail","reason": "no password"}, status=400)
+		username = request.POST.get("username","")
+		password = request.POST.get("password","")
 
-		try:
-			if add_user(username,password):
-				return JsonResponse({"status": "success",}, status=200)
-			else:
-				return JsonResponse({"status": "fail","reason": "username exist"}, status=403)
-		except Exception as e:
-			print("Error occured in register")
-			print(e)
-			return JsonResponse({"status": "fail","reason": "error"}, status=500)
+		if add_user(username,password):
+			return JsonResponse({"status": "success",}, status=200)
+		else:
+			return JsonResponse({"status": "fail","reason": "username exist"}, status=403)
+		
 
 def change_password(request):
 	if request.method == "GET":
 		return render(request,"mainsite/change_password.html")
 	elif request.method == "POST":
 		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=403)
-		
 		try:
 			user = get_user_by_sessionid(request.session["id"])
 			if not check_user_status(user):
@@ -132,28 +127,16 @@ def change_password(request):
 			print("ERROR in change_password in talk user")
 			return JSON_sessionid_expire_ret()
 
-		try:
-			ori_password = request.POST["ori_password"]
-		except:
-			return JsonResponse({"status": "fail","reason": "no ori_password"}, status=400)
+		logger.info(f"user {user} change_password")
+		ori_password = request.POST.get("ori_password","")
 		
 		if not bcrypt.checkpw(ori_password.encode(), user.user_password.encode()):
 			return JsonResponse({"status": "fail","reason": "ori_password error"}, status=400)
-
-		try:
-			new_password = request.POST["new_password"]
-		except:
-			return JsonResponse({"status": "fail","reason": "no new_password"}, status=400)
-
-		try:
-			user.user_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-			user.save()
-			return JsonResponse({"status": "success"}, status=200)
-
-		except Exception as e:
-			print("Error occured in register")
-			print(e)
-			return JsonResponse({"status": "fail","reason": "error"}, status=500)
+		new_password = request.POST.get("new_password","")
+		
+		user.user_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+		user.save()
+		return JsonResponse({"status": "success"}, status=200)
 		
 def logout(request):
 	rsp = HttpResponseRedirect(reverse("mainsite:site"))
@@ -230,7 +213,6 @@ def talk(request):
 
 				if (comm.user.sessionid != request.session["id"]):
 					return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
-				# model_name = comm.model
 
 			messages = []
 			for msg in comm.communication_content_set.all():
