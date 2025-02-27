@@ -1,0 +1,23 @@
+from mainsite.models import User
+class UserAuthMiddleware:
+	def __init__(self, get_response):
+		self.get_response = get_response
+
+	def __call__(self, request):
+		# 在视图处理请求之前执行的代码
+		# print("Before view")
+		sessionid = request.session.get("id")
+		u = None
+		if sessionid:
+			try:
+				u = User.objects.get(sessionid=sessionid)
+			except User.DoesNotExist:
+				pass
+		request.User = u
+
+		response = self.get_response(request)
+		
+		# 在视图处理请求之后执行的代码
+		# print("After view")
+		
+		return response

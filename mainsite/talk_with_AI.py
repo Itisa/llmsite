@@ -1,14 +1,14 @@
 import os
 from openai import OpenAI
-from .secret_settings import volc_api_key,ENDPOINT_ID
+from .local_settings import volc_api_key,ENDPOINT_ID, talk_test
 import time
 import json
 
 from .models import User, Communication, Communication_Content
 from django.utils import timezone
 def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn-beijing.volces.com/api/v3"):
-	test = False
-	if test:
+	# test = False
+	if talk_test:
 		allcontent = ""
 		reasoning_content = ""
 		gen_date = timezone.now()
