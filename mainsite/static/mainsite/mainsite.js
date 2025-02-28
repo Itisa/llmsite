@@ -182,6 +182,7 @@ function app() {
 						}
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
 						const chunk = decoder.decode(value);
+						console.log(chunk)
 						// 假设服务器返回的是逐行 JSON 数据
 						chunk.split('\n').forEach(line => {
 							if (line.trim()) {

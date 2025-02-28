@@ -12,17 +12,20 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 		allcontent = ""
 		reasoning_content = ""
 		gen_date = timezone.now()
-		for i in range(10):  # 假设你生成10个JSON对象
+
+		msglen = 6
+		for i in range(msglen):  # 假设你生成10个JSON对象
 			usercontent = messages[-1]["content"]
 			data = {
 				"id": i,
 				"role": "assistant",
-				"message": f"Message {i} **你好你好{usercontent}**\n\n",
+				"message": f"Message {i} **你好\n你好{usercontent}**\n\n",
 				"cid": comm.pk,
 				"title": comm.title,
 				"model": comm.model,
 			}
-			if i < 5 and model_name == "deepseek_r1":
+			# data["message"] = data["message"].encode()
+			if i < msglen/2 and model_name == "deepseek_r1":
 				data["role"] = "reasoning"
 			yield json.dumps(data) + "\n"  # 每个JSON对象以换行符分隔
 			if data["role"] == "assistant":
