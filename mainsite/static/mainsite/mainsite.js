@@ -239,7 +239,7 @@ function app() {
 			.then(response => {
 				this.in_talk = true;
 				if (!response.ok) {
-					console.log(response);
+					// console.log(response);
 					if (response.status == 401){
 						window.location.href = urls["login"];
 						return ;
@@ -249,7 +249,7 @@ function app() {
 					return ;
 				}
 				let reasoning = (this.selectedModel === "deepseek_r1");
-				console.log(reasoning)
+				// console.log(reasoning)
 				if (reasoning){
 					this.messages.push({
 						id: Date.now()-1,
@@ -283,7 +283,7 @@ function app() {
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
 						const chunk = lastchunk + decoder.decode(value);
 						lastchunk = "";
-						console.log(chunk);
+						// console.log(chunk);
 						// 假设服务器返回的是逐行 JSON 数据
 						chunk.split('\n').forEach(line => {
 							if (line.trim()) {
@@ -297,7 +297,7 @@ function app() {
 								lastchunk = line;
 							} else {
 							const jsonData = JSON.parse(line);
-							console.log(jsonData);
+							// console.log(jsonData);
 							if (firstchunk){
 								if (this.cid === -1){ // 新对话
 									this.titles.push({
@@ -363,7 +363,7 @@ function app() {
 		get_history() {
 			$axios.get(urls["get_history"])
 			.then(response => {
-				console.log(response)
+				// console.log(response)
 				this.titles = response.data.titles
 				for (var i = 0; i < this.titles.length; i++) {
 					this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
