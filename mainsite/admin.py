@@ -3,7 +3,6 @@ from django import forms
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import path
-# Register your models here.
 
 from .models import User, Communication, Communication_Content, Mailbox
 from .views import generate_random_string,add_user
@@ -85,6 +84,14 @@ admin.site.register(Communication,CommunicationAdmin)
 class Communication_ContentAdmin(admin.ModelAdmin):
 	list_display = ["communication","__str__","get_communication_user"]
 	list_per_page = 50
+	
+	def get_form(self, request, obj=None, **kwargs):
+		# 获取默认的表单类
+		form = super().get_form(request, obj, **kwargs)
+		# 为特定字段设置 Textarea 小部件
+		form.base_fields['content'].widget = forms.Textarea(attrs={'rows': 4, 'cols': 40})
+		return form
+
 	def get_communication_user(self, obj):
 		return obj.communication.user
 	get_communication_user.short_description = 'User'

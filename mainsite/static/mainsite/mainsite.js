@@ -3,6 +3,41 @@ function deleteCookie(name, path, domain) {
 		(path ? '; path=' + path : '') +
 		(domain ? '; domain=' + domain : '');
 }
+function renderWithKatex(input) {
+	// 正则表达式匹配行内公式 \(...\) 和多行块级公式 \[...\]
+	const regex = /(\\\(.*?\\\)|\\\[[\s\S]*?\\\])/g;
+
+	// 将字符串拆分为普通文本和公式部分
+	const parts = input.split(regex);
+	let output = '';
+	parts.forEach(part => {
+		if (!part) return; // 跳过空字符串
+
+		// 检查是否是行内公式
+		if (part.startsWith('\\(') && part.endsWith('\\)')) {
+			output += katex.renderToString(part.slice(2, -2), {
+				throwOnError: false,
+				displayMode: false // 行内模式
+			});
+		}
+		// 检查是否是块级公式
+		else if (part.startsWith('\\[') && part.endsWith('\\]')) {
+			// 去除首尾的 \[ 和 \]，并去掉多余的换行符和空格
+			const formula = part.slice(2, -2).trim();
+			output += katex.renderToString(formula, {
+				throwOnError: false,
+				displayMode: true // 块级模式
+			});
+		}
+		// 普通文本
+		else {
+			output += part;
+		}
+	});
+
+	return output;
+}
+
 function copyCodeToClipboard(button) {
 	const codeBlock = button.closest('.code-block').querySelector('code');
 	const codeText = codeBlock.innerText;
@@ -47,6 +82,78 @@ function showCopiedFeedback(button) {
 		button.textContent = 'Copy';
 	}, 2000);
 }
+
+const $axios = axios.create({
+	headers: {
+		"Content-Type": "application/json",
+	}
+});
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+$axios.defaults.headers.common['X-CSRFToken'] = csrftoken;
+
+function init_renderer() {
+	const renderer = new marked.Renderer();
+	renderer.code = function (code) {
+		// 使用 highlight.js 高亮代码
+		
+		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
+		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
+		const topBar = `
+	<div class="code-top-bar">
+	<span class="code-language">${validLanguage}</span>
+	<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
+	</div>
+	`;
+		return `<div class="code-block">
+	${topBar}
+	<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
+	</div>`;
+	};
+
+	renderer.paragraph = function(text) {
+		rsp = `<p>${renderWithKatex(this.parser.parseInline(text.tokens))}</p>\n`;
+		return rsp
+	}
+	renderer.strong = function(text) {
+		rsp = `<strong>${renderWithKatex(this.parser.parseInline(text.tokens))}</strong>`;
+		return rsp
+	}
+	renderer.text = function(token) {
+		return 'tokens' in token && token.tokens ? this.parser.parseInline(token.tokens) : (token.raw);
+	}
+
+	renderer.listitem = function(item) {
+		let itemBody = '';
+		if (item.task) {
+			const checkbox = this.checkbox({ checked: !!item.checked });
+			if (item.loose) {
+				if (item.tokens[0]?.type === 'paragraph') {
+					item.tokens[0].text = checkbox + ' ' + item.tokens[0].text;
+					if (item.tokens[0].tokens && item.tokens[0].tokens.length > 0 && item.tokens[0].tokens[0].type === 'text') {
+						item.tokens[0].tokens[0].text = checkbox + ' ' + escape(item.tokens[0].tokens[0].text);
+						item.tokens[0].tokens[0].escaped = true;
+					}
+				} else {
+					item.tokens.unshift({
+						type: 'text',
+						raw: checkbox + ' ',
+						text: checkbox + ' ',
+						escaped: true,
+					});
+				}
+			} else {
+				itemBody += checkbox + ' ';
+			}
+		}
+
+		itemBody += this.parser.parse(item.tokens, !!item.loose);
+		return `<li>${renderWithKatex(itemBody)}</li>\n`;
+	}
+	return renderer;
+}
+
+
+
 function app() {
 	return {
 		// 应用状态
@@ -63,30 +170,16 @@ function app() {
 		selectedModel: null,
 		in_talk: false,
 		marked,
-		renderer: new marked.Renderer(),
+		renderer: init_renderer(),
 		show_floating_ball: true,
 		floating_ball_showButtons: false,
 		message_area_div: document.getElementById('message_area'),
+		$axios,
+		csrftoken,
 		init() {
-			this.renderer.code = function (code, language) {
-				// 使用 highlight.js 高亮代码
-				const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
-				const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
-				const topBar = `
-<div class="code-top-bar">
-	<span class="code-language">${validLanguage}</span>
-	<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
-</div>
-`;
-				return `<div class="code-block">
-	${topBar}
-	<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
-</div>`;
-			};
 			marked.setOptions({
 				renderer: this.renderer,
 			});
-			// console.log("init");
 			this.topBarContent = "新对话";
 			
 			if (document.cookie) {
@@ -99,8 +192,8 @@ function app() {
 				});
 			}
 			if (this.username){
-				this.loadHistory();
-				this.loadModels();
+				this.get_history();
+				this.get_available_models();
 			}
 		},
 
@@ -144,10 +237,16 @@ function app() {
 				})
 			})
 			.then(response => {
-				// console.log(response)
 				this.in_talk = true;
 				if (!response.ok) {
-					throw new Error('Network response was not ok');
+					console.log(response);
+					if (response.status == 401){
+						window.location.href = urls["login"];
+						return ;
+					} else {
+						throw new Error('Network response was not ok');
+					}
+					return ;
 				}
 				let reasoning = (this.selectedModel === "deepseek_r1");
 				console.log(reasoning)
@@ -173,6 +272,7 @@ function app() {
 				const decoder = new TextDecoder();
 				let firstchunk = true;
 				let in_assistant = !reasoning;
+				let lastchunk = '';
 				const readChunk = () => {
 					reader.read().then(({ done, value }) => {
 						if (done) {
@@ -181,46 +281,52 @@ function app() {
 							return;
 						}
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
-						const chunk = decoder.decode(value);
-						console.log(chunk)
+						const chunk = lastchunk + decoder.decode(value);
+						lastchunk = "";
+						console.log(chunk);
 						// 假设服务器返回的是逐行 JSON 数据
 						chunk.split('\n').forEach(line => {
 							if (line.trim()) {
 
-							try {
-								const jsonData = JSON.parse(line);
-								console.log(jsonData);
-								if (firstchunk){
-									if (this.cid === -1){ // 新对话
-										this.titles.push({
-											id: jsonData.cid,
-											title: jsonData.title,
-											date: Date.now(),
-											model: this.selectedModel,
-										});
-										this.cid = jsonData.cid;
-										this.update_topBar();
-									}
-									firstchunk = false;
+							
+							if (line[line.length-1] != "}"){
+								if (lastchunk != ""){
+									console.log(lastchunk);
+									console.error("exist lastchunk");
 								}
-								if (jsonData.role === "reasoning") {
-									this.messages[this.messages.length-1].content += jsonData.message;
-								} else {
-									if (!in_assistant){
-										this.messages.push({
-											id: Date.now(),
-											content: "",
-											role: 'assistant',
-											timestamp: new Date().toLocaleTimeString(),
-										});
-										in_assistant = true;
-									}
-									this.messages[this.messages.length-1].content += jsonData.message;
+								lastchunk = line;
+							} else {
+							const jsonData = JSON.parse(line);
+							console.log(jsonData);
+							if (firstchunk){
+								if (this.cid === -1){ // 新对话
+									this.titles.push({
+										id: jsonData.cid,
+										title: jsonData.title,
+										date: Date.now(),
+										model: this.selectedModel,
+									});
+									this.cid = jsonData.cid;
+									this.update_topBar();
 								}
-							} catch (error) {
-								console.error('Error parsing JSON:', error);
+								firstchunk = false;
 							}
-
+							if (jsonData.role === "reasoning") {
+								this.messages[this.messages.length-1].content += jsonData.message;
+							} else {
+								if (!in_assistant){
+									this.messages.push({
+										id: Date.now(),
+										content: "",
+										role: 'assistant',
+										timestamp: new Date().toLocaleTimeString(),
+									});
+									in_assistant = true;
+								}
+								this.messages[this.messages.length-1].content += jsonData.message;
+							}
+							
+							}
 							}
 						});
 						if (at_bottom) {
@@ -234,39 +340,28 @@ function app() {
 				readChunk();
 			})
 			.catch(error => {
-				console.error('Error fetching stream:', error);
+				console.log(error);
+				console.log(error.message);
 			});
 		},
 		// 加载可选模型
-		loadModels() {
-			axios.get(urls["get_available_models"], {
-				
-			}, {
-				headers: {
-					"Content-Type": "application/json",
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-				}
-			})
+		get_available_models() {
+			$axios.get(urls["get_available_models"])
 			.then(response => {
-				// console.log(response)
 				this.models = response.data.data;
 				this.selectedModel = this.models[0];
 			})
 			.catch(error => {
-				console.error('loadModels请求失败:', error);
-				if (error.response.data.reason === "sessionid expires"){
-					this.logout();
-				}
+				console.log("error in get_available_models");
+				console.log(error);
+				if (error.status == 401) {
+					window.location.href = urls["login"];
+				}	
 			});
 		},
 		// 加载历史记录
-		loadHistory() {
-			axios.get(urls["get_history"],{
-				headers: {
-					"Content-Type": "application/json",
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-				}
-			})
+		get_history() {
+			$axios.get(urls["get_history"])
 			.then(response => {
 				console.log(response)
 				this.titles = response.data.titles
@@ -276,30 +371,23 @@ function app() {
 				}
 			})
 			.catch(error => {
-				console.log(error.response);
-				console.error('loadHistory请求失败:', error);
-				if (error.response.data.reason === "sessionid expires"){
-					this.logout();
+				console.log('get_history请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
 				}
 			});
 		},
 
 		// 加载对话消息
-		loadMessages(cid){
+		get_communication_content(cid){
 			if (this.in_talk) return ;
-			axios.get(urls["get_communication_content"], {
+			$axios.get(urls["get_communication_content"], {
 				params:{
 					cid: cid,
 				}
-			}, {
-				headers: {
-					"Content-Type": "application/json",
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-				}
 			})
 			.then(response => {
-				// console.log(response)
-
 				for (var i = 0; i < this.titles.length; i++) {
 					if (cid == this.titles[i].id){
 						this.selectedModel = this.titles[i].model;
@@ -315,9 +403,10 @@ function app() {
 				this.update_topBar();
 			})
 			.catch(error => {
-				console.error('loadMessages请求失败:', error);
-				if (error.response.data.reason === "sessionid expires"){
-					this.logout();
+				console.log('get_communication_content请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
 				}
 			});
 		},
@@ -336,13 +425,8 @@ function app() {
 			if (this.in_talk) return ;
 			let yes = confirm(`确认删除  ${title} ？ 删除后将不可恢复`)
 			if (!yes) return ;
-			axios.post(urls["delete_communication"], {
+			$axios.post(urls["delete_communication"], {
 				cid: cid,
-			}, {
-				headers: {
-					"Content-Type": "application/json",
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-				}
 			})
 			.then(response => {
 				// console.log(response)
@@ -357,9 +441,10 @@ function app() {
 				}
 			})
 			.catch(error => {
-				console.error('deleteCommunication请求失败:', error);
-				if (error.response.data.reason === "sessionid expires"){
-					this.logout();
+				console.log('deleteCommunication请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
 				}
 			});
 		},
@@ -377,6 +462,9 @@ function app() {
 			if (this.in_talk) return ;
 			this.isEditingTitle = true;
 			this.newTitle = this.topBarContent;
+			setTimeout(() => {
+				document.getElementById("newTitleInput").focus();
+			})
 		},
 		cancelEditTitle(){
 			if (this.in_talk) return ;
@@ -391,14 +479,9 @@ function app() {
 				alert(`标题的长度要 <= 30 (当前长度：${this.newTitle.length})`);
 				return ;
 			}
-			axios.post(urls["change_communication_title"], {
+			$axios.post(urls["change_communication_title"], {
 				cid: this.cid,
 				newtitle: this.newTitle,
-			}, {
-				headers: {
-					"Content-Type": "application/json",
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-				}
 			})
 			.then(response => {
 				// console.log(response)
@@ -412,17 +495,16 @@ function app() {
 				this.cancelEditTitle();
 			})
 			.catch(error => {
-				console.error('saveTitle请求失败:', error);
-				if (error.response.data.reason === "sessionid expires"){
-					this.logout();
+				console.log("error in saveTitle请求失败");
+				console.log(error);
+				if (error.status == 401) {
+					window.location.href = urls["login"];
 				}
 			});
 		},
 		floating_ball_toggleButtons() {
 			if (this.in_talk) return ;
-			if (!this.floating_ball_dragging) {
-				this.floating_ball_showButtons = !this.floating_ball_showButtons;
-			}
+			this.floating_ball_showButtons = !this.floating_ball_showButtons;
 		},
 	}
 }

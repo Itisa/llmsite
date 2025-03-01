@@ -22,13 +22,28 @@ def redirect2loginResponse():
 	response.delete_cookie('username')
 	return response
 
-def require_user(views):
-	def wrapper_function(*args, **kwargs):
-		if (not hasattr(args[0],"User")) or args[0].User == None or args[0].User.sessionid_expire < timezone.now():
-			return redirect2loginResponse()
-		result = views(*args, **kwargs)
-		return result
-	return wrapper_function
+def NoAuthResponse():
+	response = HttpResponse('Unauthorized', status=401)
+	response.delete_cookie('sessionid')
+	response.delete_cookie('username')
+	return response
+
+class require_user:
+	'''decorator'''
+	def __init__(self,request_type):
+		self.request_type = request_type
+
+	def __call__(self,func):
+		def wrapper(*args, **kwargs):
+			request = args[0]
+			if request.User == None or request.User.sessionid_expire < timezone.now():
+				if request.method == "GET" and self.request_type == "page":
+					return redirect2loginResponse()
+				else:
+					return NoAuthResponse()
+			result = func(*args, **kwargs)
+			return result
+		return wrapper
 
 def generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
@@ -45,12 +60,12 @@ def add_user(username,password):
 	return True
 
 def delete_user(username):
-	if_have_user = User.objects.filter(username=username)
-
-	if len(if_have_user) == 0:
+	try:
+		user = User.objects.get(username=username)
+		user.delete()
+		return True
+	except:
 		return False
-	if_have_user[0].delete()
-	return True
 
 def get_user_by_sessionid(sessionid):
 	u = None
@@ -69,7 +84,7 @@ def get_user_by_username(username):
 	return u
 
 @require_http_methods(["GET"])
-@require_user
+@require_user("page")
 def site(request):
 	print("On request site")
 	rsp = render(request,"mainsite/mainsite.html")
@@ -101,14 +116,9 @@ def login(request):
 			request.session["id"] = sessionid
 			rsp = JsonResponse({"status": "success"}, status=200)
 			rsp.set_cookie("username",username,max_age=1209600)
-			print(123456)
 			return rsp
 		else:
-			response_data = {
-				"status": "fail",
-				"reason": "incorrect password",
-			}
-			return JsonResponse(response_data, status=403)
+			return JsonResponse({"status": "fail","reason": "incorrect password"}, status=403)
 
 @require_http_methods(["GET","POST"])
 def register(request):
@@ -123,10 +133,10 @@ def register(request):
 		if add_user(username,password):
 			return JsonResponse({"status": "success",}, status=200)
 		else:
-			return JsonResponse({"status": "fail","reason": "username exist"}, status=403)
+			return JsonResponse({"status": "fail","reason": "username exist"}, status=400)
 
 @require_http_methods(["GET","POST"])
-@require_user
+@require_user("data")
 def change_password(request):
 	if request.method == "GET":
 		return render(request,"mainsite/change_password.html")
@@ -139,14 +149,18 @@ def change_password(request):
 		
 		if not bcrypt.checkpw(ori_password.encode(), user.user_password.encode()):
 			return JsonResponse({"status": "fail","reason": "ori_password error"}, status=400)
-		new_password = request.POST.get("new_password","")
-		
+
+		if not "new_password" in request.POST.keys():
+			return JsonResponse({"status": "fail","reason": "no new_password"}, status=400)
+
+		new_password = request.POST.get("new_password")
+
 		user.user_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
 		user.save()
 		return JsonResponse({"status": "success"}, status=200)
 
 @require_http_methods(["GET"])
-@require_user
+@require_user("page")
 def logout(request):
 	rsp = HttpResponseRedirect(reverse("mainsite:login"))
 	rsp.delete_cookie("sessionid")
@@ -154,12 +168,12 @@ def logout(request):
 	return rsp
 
 @require_http_methods(["GET"])
-@require_user
+@require_user("data")
 def get_available_models(request):
 	return JsonResponse({'status': 'ok', 'data': available_models},status=200)
 
 @require_http_methods(["GET"])
-@require_user
+@require_user("data")
 def get_history(request):
 	titles = []
 	for comm in request.User.communication_set.all():
@@ -167,7 +181,7 @@ def get_history(request):
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
 
 @require_http_methods(["GET"])
-@require_user
+@require_user("data")
 def get_communication_content(request):
 	cid = request.GET["cid"]
 	comm = Communication.objects.get(pk=int(cid))
@@ -182,7 +196,7 @@ def get_communication_content(request):
 
 
 @require_http_methods(["POST"])
-@require_user
+@require_user("data")
 def talk(request):
 
 	print("On talk post")
@@ -220,11 +234,11 @@ def talk(request):
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
 
 @require_http_methods(["POST"])
-@require_user
+@require_user("data")
 def change_communication_title(request):
 	data = json.loads(request.body)
-	cid = data.get('cid')
-	newtitle = data.get('newtitle')
+	cid = data.get('cid',-2)
+	newtitle = data.get('newtitle',"")
 	if len(newtitle) > 30:
 		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=400)
 
@@ -240,10 +254,10 @@ def change_communication_title(request):
 		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
 
 @require_http_methods(["POST"])
-@require_user
+@require_user("data")
 def delete_communication(request):
 	data = json.loads(request.body)
-	cid = data.get('cid')
+	cid = data.get('cid',-2)
 	comm = Communication.objects.get(pk=cid)
 	if not comm:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
@@ -254,7 +268,7 @@ def delete_communication(request):
 	else:
 		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
 
-@require_user
+@require_user("page")
 def site_mailbox(request):
 	if request.method == "GET":
 		return render(request,"mainsite/site_mailbox.html")
