@@ -13,7 +13,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 		reasoning_content = ""
 		gen_date = timezone.now()
 
-		msglen = 6
+		msglen = 10
 		for i in range(msglen):  # 假设你生成10个JSON对象
 			usercontent = messages[-1]["content"]
 			data = {
@@ -33,7 +33,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3",base_url="https://ark.cn
 			elif data["role"] == "reasoning":
 				reasoning_content += data["message"]
 
-			time.sleep(1)  # 模拟延迟
+			time.sleep(0.5)  # 模拟延迟
 	else:
 		client = OpenAI(
 			api_key=volc_api_key,

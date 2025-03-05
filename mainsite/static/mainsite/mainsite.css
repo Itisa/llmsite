@@ -347,6 +347,8 @@ code {
 }
 
 .user_input_textarea {
+	font-family: "Arial", "Helvetica", sans-serif;
+	font-size: 1rem;
 	flex: 1 1 0%;
 	padding: 0.5rem;
 	border-radius: 0.25rem;

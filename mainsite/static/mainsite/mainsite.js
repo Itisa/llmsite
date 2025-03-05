@@ -275,16 +275,61 @@ function app() {
 				setTimeout(() => {
 					this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 				}, 0);
+				var in_assistant = false;
+				var reasoning_cache = "";
+				var assistant_cache = "";
+				var reasoning_cache_end = true;
+				var assistant_cache_end = false;
+				var reasoning_end = true;
+
+
 				const reader = response.body.getReader();
 				const decoder = new TextDecoder();
-				let firstchunk = true;
-				let in_assistant = !reasoning;
-				let lastchunk = '';
+				var firstchunk = true;
+				var lastchunk = '';
+				
+				if (reasoning) {
+					reasoning_end = false;
+					reasoning_cache_end = false;
+					const reasoning_interval = setInterval(() => {
+						
+						const lennow = this.messages[this.messages.length-1].content.length;
+						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 15);
+						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
+							reasoning_end = true;
+							clearInterval(reasoning_interval);
+						}
+					},100);
+				}
+
+				const assistant_interval = setInterval(() => {
+
+					if (!reasoning_end) return ;
+					if (!in_assistant){
+						this.messages.push({
+							id: Date.now(),
+							content: "",
+							role: 'assistant',
+							timestamp: new Date().toLocaleTimeString(),
+						});
+						in_assistant = true;
+					}
+
+					const lennow = this.messages[this.messages.length-1].content.length;
+					
+					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 15);
+					
+					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
+						this.in_talk = false;
+						clearInterval(assistant_interval);
+					}
+				},100);
+				
+
 				const readChunk = () => {
 					reader.read().then(({ done, value }) => {
 						if (done) {
-							// console.log('Stream complete');
-							this.in_talk = false;
+							assistant_cache_end = true;
 							return;
 						}
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
@@ -319,18 +364,10 @@ function app() {
 								firstchunk = false;
 							}
 							if (jsonData.role === "reasoning") {
-								this.messages[this.messages.length-1].content += jsonData.message;
+								reasoning_cache += jsonData.message
 							} else {
-								if (!in_assistant){
-									this.messages.push({
-										id: Date.now(),
-										content: "",
-										role: 'assistant',
-										timestamp: new Date().toLocaleTimeString(),
-									});
-									in_assistant = true;
-								}
-								this.messages[this.messages.length-1].content += jsonData.message;
+								reasoning_cache_end	= true;
+								assistant_cache += jsonData.message
 							}
 							
 							}
