@@ -99,15 +99,24 @@ function init_renderer() {
 		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
 		const topBar = `
-	<div class="code-top-bar">
-	<span class="code-language">${validLanguage}</span>
-	<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
-	</div>
-	`;
+		<div class="code-top-bar">
+		<span class="code-language">${validLanguage}</span>
+		<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
+		</div>
+		`;
+		
 		return `<div class="code-block">
-	${topBar}
-	<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
-	</div>`;
+		${topBar}
+		<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
+		</div>`;
+	};
+
+	renderer.codespan = function (code) {
+		// 使用 highlight.js 高亮代码
+		
+		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
+		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
+		return `<code class="hljs ${validLanguage}">${highlightedCode}</code>`;
 	};
 
 	renderer.paragraph = function(text) {
@@ -163,10 +172,10 @@ function app() {
 		models: [],
 		inputMessage: '',
 		username: null,
-		topBarContent: null,
+		topBarContent: "",
 		cid: -1,
 		isEditingTitle: false,
-		newTitle: null,
+		oldTitle: "",
 		selectedModel: null,
 		in_talk: false,
 		marked,
@@ -200,10 +209,8 @@ function app() {
 		logout() {
 			window.location.href = urls["logout"];
 		},
-		userPressEnter(event){
-			if (event.shiftKey) {
-				return ;
-			} else {
+		userPressEnterInSendMessage(event){
+			if (!event.shiftKey) {
 				event.preventDefault();
 				this.sendMessage();
 			}
@@ -382,6 +389,8 @@ function app() {
 		// 加载对话消息
 		get_communication_content(cid){
 			if (this.in_talk) return ;
+			this.isEditingTitle = false;
+			this.topBarContent = null;
 			$axios.get(urls["get_communication_content"], {
 				params:{
 					cid: cid,
@@ -461,38 +470,45 @@ function app() {
 		enableEditTitle(){
 			if (this.in_talk) return ;
 			this.isEditingTitle = true;
-			this.newTitle = this.topBarContent;
+			this.oldTitle = this.topBarContent;
 			setTimeout(() => {
 				document.getElementById("newTitleInput").focus();
 			})
 		},
-		cancelEditTitle(){
+		cancelEditTitle(){ // not used
 			if (this.in_talk) return ;
 			this.isEditingTitle = false;
-			this.newTitle = null;
+		},
+		userPressEnterInEditingTitle(event){
+			if (!event.shiftKey) {
+				event.preventDefault();
+				this.saveTitle();
+			}
 		},
 
 		// 保存新标题
 		saveTitle(){
+			this.isEditingTitle = false;
 			if (this.in_talk) return ;
-			if (this.newTitle.length > 30) {
-				alert(`标题的长度要 <= 30 (当前长度：${this.newTitle.length})`);
+			if (this.topBarContent == this.oldTitle) return ;
+			if (this.topBarContent.length > 30) {
+				alert(`标题的长度要 <= 30 (当前长度：${this.topBarContent.length})`);
 				return ;
 			}
 			$axios.post(urls["change_communication_title"], {
 				cid: this.cid,
-				newtitle: this.newTitle,
+				newtitle: this.topBarContent,
 			})
 			.then(response => {
 				// console.log(response)
 				for (let i = 0; i < this.titles.length; i++) {
 					if (this.cid === this.titles[i].id){
-						this.titles[i].title = this.newTitle;
+						this.titles[i].title = this.topBarContent;
 						this.topBarContent = this.titles[i].title;
 						break;
 					}
 				}
-				this.cancelEditTitle();
+				this.oldTitle = "";
 			})
 			.catch(error => {
 				console.log("error in saveTitle请求失败");

@@ -1,0 +1,19 @@
+.hover\:bg-blue-600:hover {
+	background-color: #2563eb;
+}
+
+.hover\:bg-green-600:hover {
+	background-color: #059669;
+}
+
+.hover\:bg-red-600:hover {
+	background-color: #dc2626;
+}
+
+.hover\:bg-yellow-600:hover {
+	background-color: #ca8a04;
+}
+
+.hover\:bg-purple-600:hover {
+	background-color: #7c3aed;
+}

@@ -4,236 +4,172 @@
 	<meta charset="UTF-8">
 	<title>DeepSeek Chat</title>
 	{% load static %}
-	<!-- <script src="{% static 'mainsite/tailwindcss.css' %}"></script>
 	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
-	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/highlight.js' %}"></script>
+
+	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/marked.min.js' %}"></script>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"  crossorigin="anonymous">
+	<!-- <link href="{% static 'mainsite/mainsite_ttt.css' %}" rel="stylesheet"> -->
+	<link href="{% static 'mainsite/mainsite.css' %}" rel="stylesheet">
+	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
+	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
+	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
+	<link rel="stylesheet" href="{% static 'mainsite/katex.min.css' %}">
 	<script src="{% static 'mainsite/katex.min.js' %}"></script>
-	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script> -->
-	
-	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css" rel="stylesheet">
+	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
+
+	<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"  crossorigin="anonymous">
 	<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-	<style>
-		pre {
-			margin: 0;
-			padding: 0;
-			overflow: auto;
-			font-size: 14px;
-			line-height: 1.45;
-			background-color: #f6f8fa;
-			border-bottom-left-radius: 6px;
-			border-bottom-right-radius: 6px;
-		}
-
-		code {
-			font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
-		}
-		.code-block {
-			position: relative;
-			border: 1px solid #e1e4e8;
-			border-radius: 6px;
-			background-color: #f6f8fa;
-			margin: 16px 0;
-		}
-
-		.code-top-bar {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 8px 12px;
-			background-color: #ffffff;
-			border-bottom: 1px solid #d1d5da;
-			border-top-left-radius: 6px;
-			border-top-right-radius: 6px;
-		}
-
-		.code-language {
-			font-size: 14px;
-			color: #586069;
-		}
-
-		.copy-button {
-			background-color: #0366d6;
-			color: white;
-			border: none;
-			padding: 5px 10px;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-		}
-
-		.copy-button:hover {
-			background-color: #0356b6;
-		}
-
-		.katex-mathml {
-			/* cause scrolling*/
-			display: none !important; 
-		}
-	</style>
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
 </head>
-<body class="bg-gray-100">
+<body class="body">
 	{% csrf_token %}
-	<div x-data="app()" class="min-h-screen">
+	<!-- 主界面 -->
+	<div x-data="app()" class="maindiv">
 
-		<!-- 主界面 -->
-		<div class="flex h-screen">
-			<!-- 侧边栏 - 历史记录 -->
-			<div class="w-64 bg-white border-r flex flex-col">
-				<div class="p-4">
-					<h3 class="text-lg font-semibold mb-4">历史对话</h3>
-					<!-- 新增的生成新对话按钮 -->
-					<button @click="createNewChat"
-							class="w-full mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600">
-						新建对话
-					</button>
-				</div>
-				<!-- 历史对话列表，单独设置滚动 -->
-				<div class="flex-1 overflow-y-auto overflow-x-hidden p-4">
-					<div class="space-y-2">
-						<template x-for="item in titles.slice().reverse()" :key="item.id">
-							<div @click="get_communication_content(item.id)"
-								 class="p-2 hover:bg-gray-100 cursor-pointer rounded flex justify-between items-start"
-								 :class="{ 'bg-blue-50': item.id === cid }">
-								<div>
-									<div class="text-sm truncate w-40 whitespace-nowrap overflow-hidden text-ellipsis" x-text="item.title"></div>
-									<div class="text-xs text-gray-500" x-text="item.date"></div>
-								</div>
-								<button @click.stop="deleteCommunication(item.id,item.title)" class="text-red-500 hover:text-red-700 text-sm m-0">
-									删除
-								</button>
-							</div>
-						</template>
-					</div>
-				</div>
-				<!-- 个人信息 -->
-				<div 
-					x-show="show_floating_ball"
-					x-ref="floating_ball"
-					@click="floating_ball_toggleButtons"
-					class="mx-auto mb-2 mt-2 w-40 h-10 bg-blue-500 rounded-lg cursor-pointer flex items-center justify-center text-white text-xl shadow-lg"
-				>
-					个人信息
-					<!-- 按钮组 -->
-					<div x-show="floating_ball_showButtons" class="bottom-16 absolute space-y-2">
-						<button class="w-24 h-12 bg-green-500 rounded-lg text-white shadow-lg text-base flex items-center justify-center" @click="logout">登出</button>
-						<button class="w-24 h-12 bg-red-500 rounded-lg text-white shadow-lg text-base flex flex-col items-center justify-center" @click="window.location.href = '{% url 'mainsite:change_password' %}'">
-							修改密码
-						</button>
-						
-						<button class="w-24 h-12 bg-purple-500 rounded-lg text-white shadow-lg text-base flex flex-col items-center justify-center" @click="window.location.href = '{% url 'mainsite:site_mailbox' %}'">
-							联系我们
-						</button>
-					</div>
-				</div>
+		<!-- 侧边栏 - 历史记录 -->
+		<div class="sidebar">
+			<div class="sidebar_top">
+				<h3 class="site_title">历史对话</h3>
+				<!-- 新增的生成新对话按钮 -->
+				<!-- <button @click="createNewChat" class="w-full mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600"> -->
+				<button @click="createNewChat" class="new_communication">
+					新建对话
+				</button>
 			</div>
-
-			<!-- 主聊天区域 -->
-			<div class="flex-1 flex flex-col">
-				<!-- 顶部横条 -->
-				<div class="p-4 bg-white border-b">
-					<div class="flex justify-between items-center">
-						<!-- 左侧：语言模型选择框和标题/输入框 -->
-						<div class="flex items-center space-x-4 my-auto">
-							<!-- 语言模型选择框 -->
-							<div>
-								<select id="model-select" x-model="selectedModel" :disabled="in_talk" class="block p-2 border rounded">
-									<template x-for="item in models">
-										<option :value="item" x-text="item"></option>
-									</template>
-								</select>
-							</div>
-							<!-- 标题和输入框 -->
-							<div class="relative flex">
-								<!-- 标题 -->
-								<div x-show="!isEditingTitle" class="text-lg font-semibold my-auto" x-text="topBarContent"></div>
-								<!-- 修改标题按钮 -->
-								<button x-show="cid !== -1 && !isEditingTitle" @click="enableEditTitle" class="ml-2 text-white rounded hover:bg-blue-600">
-									📝
-								</button>
-								<!-- 输入框 -->
-								<div x-show="isEditingTitle" class="top-0 left-0 w-full">
-									<div class="flex space-x-2">
-										<input x-model="newTitle"
-												type="text"
-												placeholder="输入新标题"
-												class="flex-1 p-2 border rounded w-96"
-												id="newTitleInput">
-										<button @click="saveTitle" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-											保存
-										</button>
-										<button @click="cancelEditTitle" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-											取消
-										</button>
-									</div>
-								</div>
-							</div>
+			<!-- 历史对话列表，单独设置滚动 -->
+			<div class="history_list">
+				<template x-for="item in titles.slice().reverse()" :key="item.id">
+					<div @click="get_communication_content(item.id)"
+						 class="history_list_item"
+						 :class="{ 'history_list_item_focus': item.id === cid }">
+						<div>
+							<div class="history_item_title" x-text="item.title"></div>
+							<div class="history_item_date" x-text="item.date"></div>
 						</div>
-						
+						<button @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">
+							删除
+						</button>
 					</div>
-				</div>
-				<!-- 消息区域 -->
-				<div class="flex-1 overflow-y-auto p-4 space-y-4 bg-white" id="message_area">
-					<template x-for="message in messages" :key="message.id">
-						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
-							<div class="inline-block p-0 rounded-lg max-w-[70%] text-left"
-							:class="message.role === 'user' ? 'pr-3' : 'pl-3'">
-								<template x-if="message.role === 'user'">
-									<div>
-										<!-- 用户消息样式 -->
-										<div class="bg-blue-500 text-white rounded-lg p-3 shadow-sm whitespace-pre-wrap" x-text="message.content"></div>
-										<!-- 时间戳（仅 user 显示） -->
-										<div class="text-xs mt-1 opacity-70" x-text="message.timestamp"></div>
-									</div>
-								</template>
-								<template x-if="message.role === 'assistant'">
-									<div>
-										<!-- Deepseek 助手消息样式 -->
-										<div class="bg-gray-100 text-gray-800 rounded-lg p-3 shadow-sm" x-html="marked.parse(message.content)"></div>
-										<!-- 时间戳（仅 assistant 显示） -->
-										<div class="text-xs mt-1 opacity-70" x-text="message.timestamp"></div>
-									</div>
-								</template>
-								<template x-if="message.role === 'reasoning'">
-
-									<!-- 深度思考内容样式 -->
-									<div class="text-gray-600 rounded-lg p-0 max-w-2xl mx-0 mb-0 text-sm" x-html="marked.parse(message.content)"></div>
-									<!-- reasoning 不显示时间戳 -->
-								</template>
-							</div>
-						</div>
 					</template>
-				</div>
-
-				<!-- 输入区域 -->
-				<div class="p-4 border-t bg-white">
-					<form @submit.prevent="sendMessage">
-						<div class="flex space-x-2">
-							<textarea x-model="inputMessage"
-									 type="text"
-									 placeholder="输入消息..."
-									 class="flex-1 p-2 border rounded"
-									 @keydown.enter="userPressEnter(event)"></textarea>
-							<button type="submit"
-									class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-								发送
-							</button>
-						</div>
-					</form>
+			</div>
+			<!-- 个人信息 -->
+			<div 
+				x-show="show_floating_ball"
+				x-ref="floating_ball"
+				@click="floating_ball_toggleButtons"
+				class="personal_info"
+			>
+				<div class="personal_info_text">个人信息</div>
+				
+				<!-- 按钮组 -->
+				<div x-show="floating_ball_showButtons" class="personal_info_btns">
+					<button class="personal_info_btn bg-green-500 hover:bg-green-600" @click="logout">登出</button>
 					
+					<button class="personal_info_btn bg-red-500 hover:bg-red-600" @click="window.location.href = '{% url 'mainsite:change_password' %}'">修改密码</button>
+					
+					<button class="personal_info_btn bg-purple-500 hover:bg-purple-600" @click="window.location.href = '{% url 'mainsite:site_mailbox' %}'">联系我们</button>
 				</div>
 			</div>
 		</div>
 
-		
+		<!-- 主聊天区域 -->
+		<div class="main_communication_area">
+			<!-- 顶部横条 -->
+
+	
+			<!-- 左侧：语言模型选择框和标题/输入框 -->
+			<div class="topbar">
+				<!-- 语言模型选择框 -->
+				<div>
+					<select id="model-select" x-model="selectedModel" :disabled="in_talk" class="model_select">
+						<template x-for="item in models">
+							<option :value="item" x-text="item"></option>
+						</template>
+					</select>
+				</div>
+				<!-- 标题和输入框 -->
+				<div class="communication_title_and_change">
+					<!-- 标题 -->
+					<div x-show="!isEditingTitle" class="communication_title" x-text="topBarContent"></div>
+					<!-- 修改标题按钮 -->
+					<button x-show="cid !== -1 && !isEditingTitle" @click="enableEditTitle" class="change_title_btn">
+						📝
+					</button>
+					<!-- 输入框 -->
+					<div x-show="isEditingTitle" class="new_title_input_and_button">
+						<input x-model="topBarContent"
+								type="text"
+								placeholder="输入新标题"
+								class="new_title_input"
+								id="newTitleInput"
+								@keydown.enter="userPressEnterInEditingTitle(event)"
+								@blur="saveTitle"
+								@keydown.escape="saveTitle">
+						<!-- <button @click="saveTitle" class="save_title">保存</button> -->
+						<!-- <button @click="cancelEditTitle" class="cancel_edit_title">取消</button> -->
+					</div>
+				</div>
+
+				
+			</div>
+
+			<!-- 消息区域 -->
+			<div class="communication_area" id="message_area">
+				<template x-for="message in messages" :key="message.id">
+					<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+						<div class="message">
+							<template x-if="message.role === 'user'">
+								<div>
+									<!-- 用户消息样式 -->
+									<div class="message_user" x-text="message.content"></div>
+									<!-- 时间戳（仅 user 显示） -->
+									<!-- <div class="message_date_user" x-text="message.timestamp"></div> -->
+								</div>
+							</template>
+							<template x-if="message.role === 'assistant'">
+								<div>
+									<!-- <div><img src="{% static 'mainsite/ds.png' %}" class="assistant_icon"></div> -->
+									<!-- Deepseek 助手消息样式 -->
+									<div class="message_assistant" x-html="marked.parse(message.content)"></div>
+									<!-- 时间戳（仅 assistant 显示） -->
+									<!-- <div class="message_date_assistant" x-text="message.timestamp"></div> -->
+								</div>
+							</template>
+							<template x-if="message.role === 'reasoning'">
+
+								<!-- 深度思考内容样式 -->
+								<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
+								<!-- reasoning 不显示时间戳 -->
+							</template>
+						</div>
+					</div>
+				</template>
+			</div>
+
+			<!-- 输入区域 -->
+			<div class="user_input_area">
+				<form @submit.prevent="sendMessage">
+					<div class="user_input_form">
+						<textarea x-model="inputMessage"
+								 type="text"
+								 placeholder="输入消息..."
+								 class="user_input_textarea"
+								 @keydown.enter="userPressEnterInSendMessage(event)"></textarea>
+						<button type="submit"
+								class="user_input_submit_btn">
+							发送
+						</button>
+					</div>
+				</form>
+				
+			</div>
+		</div>
+
 	</div>
 	<script>
 		urls = {}
