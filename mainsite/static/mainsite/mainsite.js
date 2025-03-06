@@ -180,9 +180,9 @@ function app() {
 		in_talk: false,
 		marked,
 		renderer: init_renderer(),
-		show_floating_ball: true,
-		floating_ball_showButtons: false,
+		personal_info_showButtons: false,
 		message_area_div: document.getElementById('message_area'),
+		user_input_textarea: document.getElementById('user_input_textarea'),
 		$axios,
 		csrftoken,
 		init() {
@@ -212,6 +212,7 @@ function app() {
 		userPressEnterInSendMessage(event){
 			if (!event.shiftKey) {
 				event.preventDefault();
+				event.srcElement.blur();
 				this.sendMessage();
 			}
 		},
@@ -292,18 +293,22 @@ function app() {
 					reasoning_end = false;
 					reasoning_cache_end = false;
 					const reasoning_interval = setInterval(() => {
-						
+						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 						const lennow = this.messages[this.messages.length-1].content.length;
 						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 15);
 						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
 							reasoning_end = true;
 							clearInterval(reasoning_interval);
 						}
+						if (at_bottom) {
+							setTimeout(() => {
+								this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+							}, 0);
+						}
 					},100);
 				}
 
 				const assistant_interval = setInterval(() => {
-
 					if (!reasoning_end) return ;
 					if (!in_assistant){
 						this.messages.push({
@@ -314,14 +319,17 @@ function app() {
 						});
 						in_assistant = true;
 					}
-
-					const lennow = this.messages[this.messages.length-1].content.length;
-					
+					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
+					const lennow = this.messages[this.messages.length-1].content.length;	
 					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 15);
-					
 					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
 						this.in_talk = false;
 						clearInterval(assistant_interval);
+					}
+					if (at_bottom) {
+						setTimeout(() => {
+							this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+						}, 0);
 					}
 				},100);
 				
@@ -332,52 +340,45 @@ function app() {
 							assistant_cache_end = true;
 							return;
 						}
-						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight;
+						
 						const chunk = lastchunk + decoder.decode(value);
 						lastchunk = "";
 						// console.log(chunk);
 						// 假设服务器返回的是逐行 JSON 数据
 						chunk.split('\n').forEach(line => {
 							if (line.trim()) {
-
-							
-							if (line[line.length-1] != "}"){
-								if (lastchunk != ""){
-									console.log(lastchunk);
-									console.error("exist lastchunk");
+								if (line[line.length-1] != "}"){
+									if (lastchunk != ""){
+										console.log(lastchunk);
+										console.error("exist lastchunk");
+									}
+									lastchunk = line;
+								} else {
+									const jsonData = JSON.parse(line);
+									// console.log(jsonData);
+									if (firstchunk){
+										if (this.cid === -1){ // 新对话
+											this.titles.push({
+												id: jsonData.cid,
+												title: jsonData.title,
+												date: Date.now(),
+												model: this.selectedModel,
+											});
+											this.cid = jsonData.cid;
+											this.update_topBar();
+										}
+										firstchunk = false;
+									}
+									if (jsonData.role === "reasoning") {
+										reasoning_cache += jsonData.message
+									} else {
+										reasoning_cache_end	= true;
+										assistant_cache += jsonData.message
+									}
 								}
-								lastchunk = line;
-							} else {
-							const jsonData = JSON.parse(line);
-							// console.log(jsonData);
-							if (firstchunk){
-								if (this.cid === -1){ // 新对话
-									this.titles.push({
-										id: jsonData.cid,
-										title: jsonData.title,
-										date: Date.now(),
-										model: this.selectedModel,
-									});
-									this.cid = jsonData.cid;
-									this.update_topBar();
-								}
-								firstchunk = false;
-							}
-							if (jsonData.role === "reasoning") {
-								reasoning_cache += jsonData.message
-							} else {
-								reasoning_cache_end	= true;
-								assistant_cache += jsonData.message
-							}
-							
-							}
 							}
 						});
-						if (at_bottom) {
-							setTimeout(() => {
-								this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
-							}, 0);
-						}
+						
 						readChunk();  // 继续读取下一个数据块
 					});
 				};
@@ -555,9 +556,15 @@ function app() {
 				}
 			});
 		},
-		floating_ball_toggleButtons() {
+		personal_info_toggleButtons() {
 			if (this.in_talk) return ;
-			this.floating_ball_showButtons = !this.floating_ball_showButtons;
+			this.personal_info_showButtons = !this.personal_info_showButtons;
+		},
+		focusOnInput(event) {
+			if (document.activeElement !== user_input_textarea) {
+				event.preventDefault();
+				user_input_textarea.focus();
+			}
 		},
 	}
 }

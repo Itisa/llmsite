@@ -127,7 +127,6 @@ code {
 
 .history_item_title {
 	font-size: 0.875rem;
-/*	line-height: 1.25rem;*/
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	width: 10rem;
@@ -176,7 +175,6 @@ code {
 }
 
 .personal_info_btns {
-/*	gap: 1rem;*/
 	position: absolute;
 	bottom: 4rem;
 	display: flex;
