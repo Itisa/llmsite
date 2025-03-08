@@ -185,6 +185,7 @@ function app() {
 		user_input_textarea: document.getElementById('user_input_textarea'),
 		$axios,
 		csrftoken,
+		reasoning_models: ["deepseek_r1_火山云","deepseek_r1"],
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
@@ -229,7 +230,8 @@ function app() {
 				role: 'user',
 				timestamp: new Date().toLocaleTimeString()
 			});
-
+			let reasoning = this.reasoning_models.includes(this.selectedModel);
+			this.in_talk = true;
 			fetch(urls["talk"], {
 				method: 'POST',	
 			
@@ -245,7 +247,7 @@ function app() {
 				})
 			})
 			.then(response => {
-				this.in_talk = true;
+				
 				if (!response.ok) {
 					// console.log(response);
 					if (response.status == 401){
@@ -256,7 +258,7 @@ function app() {
 					}
 					return ;
 				}
-				let reasoning = (this.selectedModel === "deepseek_r1");
+				
 				// console.log(reasoning)
 				if (reasoning){
 					this.messages.push({
@@ -387,6 +389,7 @@ function app() {
 			.catch(error => {
 				console.log(error);
 				console.log(error.message);
+				this.in_talk = false;
 			});
 		},
 		// 加载可选模型

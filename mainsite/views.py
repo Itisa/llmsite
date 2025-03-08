@@ -123,10 +123,11 @@ def login(request):
 @require_http_methods(["GET","POST"])
 def register(request):
 	if request.method == "GET":
+		return HttpResponse("注册暂时不可用，请与管理员联系") #
 		return render(request,"mainsite/register.html")
 	elif request.method == "POST":
 		
-		return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403)
+		return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403) #
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
 
