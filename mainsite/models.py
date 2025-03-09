@@ -15,7 +15,7 @@ class User(models.Model):
 
 class Communication(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	gen_date = models.DateTimeField("date published")
+	gen_date = models.DateTimeField("date published",auto_now=True)
 	model = models.CharField(max_length=20)
 	title = models.CharField(max_length=100)
 	def __str__(self):
@@ -23,7 +23,7 @@ class Communication(models.Model):
 
 class Communication_Content(models.Model):
 	communication = models.ForeignKey(Communication, on_delete=models.CASCADE)
-	gen_date = models.DateTimeField("date published")
+	gen_date = models.DateTimeField("date published",auto_now_add=True)
 	role = models.CharField(max_length=10)
 	content = models.CharField(max_length=4000)
 	def __str__(self):
@@ -31,7 +31,7 @@ class Communication_Content(models.Model):
 
 class Mailbox(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	gen_date = models.DateTimeField("date published")
+	gen_date = models.DateTimeField("date published",auto_now_add=True)
 	title = models.CharField(max_length=200)
 	content = models.CharField(max_length=4000)
 	def __str__(self):

@@ -177,7 +177,8 @@ def get_available_models(request):
 @require_user("data")
 def get_history(request):
 	titles = []
-	for comm in request.User.communication_set.all():
+	query = request.User.communication_set.all().order_by('-gen_date')
+	for comm in query.iterator():
 		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk})
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
 

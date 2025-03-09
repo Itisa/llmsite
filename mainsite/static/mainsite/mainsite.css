@@ -66,9 +66,10 @@ code {
 
 .sidebar {
 	width: 16rem;
-	border-right: 1px solid #e5e7eb;
+	border-right: 0.25px solid #e5e7eb;
 	flex-direction: column;
 	display: flex;
+	background-color: #f9fbff;
 }
 
 .sidebar_top {
@@ -76,6 +77,7 @@ code {
 }
 
 .site_title {
+	margin-left: 2rem;
 	font-size: 1.5rem;
 	line-height: 1.75rem;
 	font-weight: 600;
@@ -110,11 +112,11 @@ code {
 
 .history_list_item {
 	display: flex;
-	padding: 0.75rem;
+	padding: 0.6rem;
 	cursor: pointer;
 	border-radius: 0.5rem;
 	justify-content: space-between;
-	align-items: flex-start;
+	align-items: center;
 }
 
 .history_list_item:hover {
@@ -122,11 +124,11 @@ code {
 }
 
 .history_list_item_focus {
-	background-color: #eff6ff;
+	background-color: #dbeafe;
 }
 
 .history_item_title {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	width: 10rem;
@@ -367,4 +369,48 @@ code {
 
 .user_input_submit_btn:hover {
 	background-color: #2563eb;
+}
+
+.sidebar_top_1 {
+	display: flex;
+	justify-content: space-between;
+}
+
+.hide_sidebar_btn {
+	display: flex;
+	margin: auto;
+	margin-right: 0;
+	background-color: #f9fbff;
+	border: 0;
+	border-radius: 1rem;
+	font-size: 3rem;
+	cursor: pointer;
+}
+
+.hidden_sidebar {
+	width: 4rem;
+	border-right: 0.25px solid #e5e7eb;
+	flex-direction: column;
+	display: flex;
+	background-color: #f9fbff;
+}
+
+.show_sidebar_btn {
+	display: flex;
+	margin: auto;
+	margin-top: 2rem;
+	background-color: #f9fbff;
+	border: 0;
+	border-radius: 1rem;
+	font-size: 3rem;
+	cursor: pointer;
+}
+
+/* ··· */
+.show_delete_btn { 
+	font-size: 1.25rem;
+	padding: 0.1rem;
+	border-radius: 100rem;
+	background-color: #f9fbff;
+	border: 0;
 }

@@ -186,6 +186,7 @@ function app() {
 		$axios,
 		csrftoken,
 		reasoning_models: ["deepseek_r1_火山云","deepseek_r1"],
+		sidebar_hidden: false,
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
@@ -297,7 +298,7 @@ function app() {
 					const reasoning_interval = setInterval(() => {
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 						const lennow = this.messages[this.messages.length-1].content.length;
-						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 15);
+						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 8);
 						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
 							reasoning_end = true;
 							clearInterval(reasoning_interval);
@@ -307,7 +308,7 @@ function app() {
 								this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 							}, 0);
 						}
-					},100);
+					},50);
 				}
 
 				const assistant_interval = setInterval(() => {
@@ -323,7 +324,7 @@ function app() {
 					}
 					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 					const lennow = this.messages[this.messages.length-1].content.length;	
-					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 15);
+					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 8);
 					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
 						this.in_talk = false;
 						clearInterval(assistant_interval);
@@ -333,7 +334,7 @@ function app() {
 							this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 						}, 0);
 					}
-				},100);
+				},50);
 				
 
 				const readChunk = () => {
@@ -568,6 +569,15 @@ function app() {
 				event.preventDefault();
 				user_input_textarea.focus();
 			}
+		},
+		hide_sidebar() {
+			this.sidebar_hidden = true;
+		},
+		show_sidebar() {
+			this.sidebar_hidden = false;
+		},
+		show_delete(event) {
+			console.log(event)
 		},
 	}
 }

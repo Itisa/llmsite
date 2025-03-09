@@ -5,20 +5,14 @@
 	<title>DeepSeek Chat</title>
 	{% load static %}
 	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
-	<script src="{% static 'mainsite/highlight.js' %}"></script>
-
-	<script src="{% static 'mainsite/axios_min.js' %}"></script>
-	<script src="{% static 'mainsite/marked.min.js' %}"></script>
 	<link href="{% static 'mainsite/mainsite.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
 	<!-- <link rel="stylesheet" href="{% static 'mainsite/katex.min.css' %}"> -->
 	<!-- <script src="{% static 'mainsite/katex.min.js' %}"></script> -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
 
-	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
 
 </head>
 <body class="body">
@@ -27,9 +21,13 @@
 	<div x-data="app()" class="maindiv">
 
 		<!-- 侧边栏 - 历史记录 -->
-		<div class="sidebar">
+		<div x-show="!sidebar_hidden" class="sidebar">
+			
 			<div class="sidebar_top">
-				<h3 class="site_title">历史对话</h3>
+				<div class="sidebar_top_1">
+					<h3 class="site_title">历史对话</h3>
+					<button class="hide_sidebar_btn" @click="hide_sidebar"><</button>
+				</div>
 				<!-- 新增的生成新对话按钮 -->
 				<button @click="createNewChat" class="new_communication">
 					新建对话
@@ -43,11 +41,15 @@
 						 :class="{ 'history_list_item_focus': item.id === cid }">
 						<div>
 							<div class="history_item_title" x-text="item.title"></div>
-							<div class="history_item_date" x-text="item.date"></div>
+							<!-- <div class="history_item_date" x-text="item.date"></div> -->
 						</div>
-						<button @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">
-							删除
-						</button>
+
+						<!-- <button @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">删除</button> -->
+						<div class="delete_div">
+							
+							<button class = "show_delete_btn" @click="" id="deleteButton">···</button>
+							
+						</div>
 					</div>
 					</template>
 			</div>
@@ -69,6 +71,15 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- 隐藏后的侧边栏 -->
+		<div x-show="sidebar_hidden" class="hidden_sidebar">
+			<!-- <div class="sidebar_top_1"> -->
+				<button class="show_sidebar_btn" @click="show_sidebar">></button>
+			<!-- </div> -->
+		</div>
+
+		
 
 		<!-- 主聊天区域 -->
 		<div class="main_communication_area">
@@ -166,6 +177,11 @@
 		</div>
 
 	</div>
+	<!-- <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script> -->
+	<script src="{% static 'mainsite/highlight.js' %}"></script>
+	<script src="{% static 'mainsite/axios_min.js' %}"></script>
+	<script src="{% static 'mainsite/marked.min.js' %}"></script>
+	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
 	<script>
 		urls = {}
 		urls["login"] = "{% url 'mainsite:login' %}";
