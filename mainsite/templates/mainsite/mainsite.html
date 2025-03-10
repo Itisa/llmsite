@@ -118,7 +118,7 @@
 			</div>
 
 			<!-- 消息区域 -->
-			<div class="communication_area" id="message_area">
+			<div class="communication_area" id="message_area" :class="{ 'hidden': cid == -1 }">
 				<div class="communication_area_contract">
 					<template x-for="message in messages" :key="message.id">
 						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">

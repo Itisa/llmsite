@@ -411,3 +411,7 @@ code {
 	margin: auto;
 	width: 55rem;
 }
+
+.hidden {
+	display: none;
+}
