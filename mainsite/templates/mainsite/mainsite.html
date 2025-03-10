@@ -9,9 +9,8 @@
 	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
-	<!-- <link rel="stylesheet" href="{% static 'mainsite/katex.min.css' %}"> -->
-	<!-- <script src="{% static 'mainsite/katex.min.js' %}"></script> -->
-	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
+	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.ico' %}">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 
 
 </head>
@@ -25,7 +24,7 @@
 			
 			<div class="sidebar_top">
 				<div class="sidebar_top_1">
-					<h3 class="site_title">历史对话</h3>
+					<h3 class="site_title">这是网站名称</h3>
 					<button class="hide_sidebar_btn" @click="hide_sidebar"><</button>
 				</div>
 				<!-- 新增的生成新对话按钮 -->
@@ -37,19 +36,18 @@
 			<div class="history_list">
 				<template x-for="item in titles.slice().reverse()" :key="item.id">
 					<div @click="get_communication_content(item.id)"
-						 class="history_list_item"
-						 :class="{ 'history_list_item_focus': item.id === cid }">
+						class="history_list_item"
+						:class="{ 'history_list_item_focus': item.id === cid }"
+						x-data = "{private_show_btn : false}"
+						@mouseenter="private_show_btn = true"
+						@mouseleave="private_show_btn = false">
 						<div>
 							<div class="history_item_title" x-text="item.title"></div>
-							<!-- <div class="history_item_date" x-text="item.date"></div> -->
+							
 						</div>
 
-						<!-- <button @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">删除</button> -->
-						<div class="delete_div">
-							
-							<button class = "show_delete_btn" @click="" id="deleteButton">···</button>
-							
-						</div>
+						<button x-show = "private_show_btn" @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">❌</button>
+						
 					</div>
 					</template>
 			</div>
@@ -84,7 +82,6 @@
 		<!-- 主聊天区域 -->
 		<div class="main_communication_area">
 			<!-- 顶部横条 -->
-
 	
 			<!-- 左侧：语言模型选择框和标题/输入框 -->
 			<div class="topbar">
@@ -114,8 +111,6 @@
 								@keydown.enter="userPressEnterInEditingTitle(event)"
 								@blur="saveTitle"
 								@keydown.escape="saveTitle">
-						<!-- <button @click="saveTitle" class="save_title">保存</button> -->
-						<!-- <button @click="cancelEditTitle" class="cancel_edit_title">取消</button> -->
 					</div>
 				</div>
 
@@ -124,35 +119,33 @@
 
 			<!-- 消息区域 -->
 			<div class="communication_area" id="message_area">
-				<template x-for="message in messages" :key="message.id">
-					<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
-						<div class="message">
-							<template x-if="message.role === 'user'">
-								<div>
-									<!-- 用户消息样式 -->
-									<div class="message_user" x-text="message.content"></div>
-									<!-- 时间戳（仅 user 显示） -->
-									<!-- <div class="message_date_user" x-text="message.timestamp"></div> -->
-								</div>
-							</template>
-							<template x-if="message.role === 'assistant'">
-								<div>
-									<!-- <div><img src="{% static 'mainsite/ds.png' %}" class="assistant_icon"></div> -->
-									<!-- Deepseek 助手消息样式 -->
-									<div class="message_assistant" x-html="marked.parse(message.content)"></div>
-									<!-- 时间戳（仅 assistant 显示） -->
-									<!-- <div class="message_date_assistant" x-text="message.timestamp"></div> -->
-								</div>
-							</template>
-							<template x-if="message.role === 'reasoning'">
+				<div class="communication_area_contract">
+					<template x-for="message in messages" :key="message.id">
+						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+							<div class="message">
+								<template x-if="message.role === 'user'">
+									<div>
+										<!-- 用户消息样式 -->
+										<div class="message_user" x-text="message.content"></div>
+									</div>
+								</template>
+								<template x-if="message.role === 'assistant'">
+									<div class="message_assistant_and_icon">
+										<img src="{% static 'mainsite/101.png' %}" class="assistant_icon">
+										<!-- Deepseek 助手消息样式 -->
+										<div class="message_assistant" x-html="marked.parse(message.content)"></div>
+									</div>
+								</template>
+								<template x-if="message.role === 'reasoning'">
 
-								<!-- 深度思考内容样式 -->
-								<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
-								<!-- reasoning 不显示时间戳 -->
-							</template>
+									<!-- 深度思考内容样式 -->
+									<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
+								</template>
+
+							</div>
 						</div>
-					</div>
-				</template>
+					</template>
+				</div>
 			</div>
 
 			<!-- 输入区域 -->
@@ -161,15 +154,12 @@
 					<div class="user_input_form">
 						<textarea x-model="inputMessage"
 								 type="text"
-								 placeholder='输入消息...(按"/"快速输入)'
+								 placeholder='输入消息...(按"/"快速输入 按enter发送)'
 								 class="user_input_textarea"
 								 id="user_input_textarea"
 								 @keydown.enter="userPressEnterInSendMessage(event)"
 								 @keydown.window.slash=focusOnInput(event)></textarea>
-						<button type="submit"
-								class="user_input_submit_btn">
-							发送
-						</button>
+						<!-- <button type="submit" class="user_input_submit_btn">发送</button> -->
 					</div>
 				</form>
 				
@@ -177,7 +167,7 @@
 		</div>
 
 	</div>
-	<!-- <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script> -->
+	<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 	<script src="{% static 'mainsite/highlight.js' %}"></script>
 	<script src="{% static 'mainsite/axios_min.js' %}"></script>
 	<script src="{% static 'mainsite/marked.min.js' %}"></script>

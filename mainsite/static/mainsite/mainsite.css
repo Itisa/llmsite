@@ -117,6 +117,7 @@ code {
 	border-radius: 0.5rem;
 	justify-content: space-between;
 	align-items: center;
+	height: 1.5rem;
 }
 
 .history_list_item:hover {
@@ -128,27 +129,26 @@ code {
 }
 
 .history_item_title {
-	font-size: 1rem;
+	font-size: 0.95rem;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	width: 10rem;
+	width: 11rem;
 	overflow: hidden;
 }
 
-.history_item_date {
-	font-size: 0.75rem;
-	line-height: 1rem;
-	color: #6b7280;
-}
-
 .delete_communication_btn {
+	background-color: #f9fbff;
 	color: #ef4444;
 	white-space: nowrap;
-	height: 50%;
+	padding: 0.2rem;
+	border-radius: 20rem;
+	border: 0;
+	cursor:	pointer;
+
 }
 
 .delete_communication_btn:hover {
-	color: #d92c2c;
+	background-color: #e5e7eb;
 }
 
 .personal_info {
@@ -249,9 +249,11 @@ code {
 }
 
 .new_title_input {
+	outline: none;
 	width: 20rem;
 	font-size: 1.125rem;
 	border-radius: 0.5rem;
+	border: 2px solid #00f;
 }
 
 .save_title {
@@ -290,7 +292,7 @@ code {
 .message {
 	display: inline-block;
 	padding: 0;
-	max-width: 70%;
+
 }
 
 .message_user {
@@ -300,26 +302,20 @@ code {
 	border-radius: 1rem;
 }
 
-.message_date_user {
-	font-size: 0.75rem;
-	line-height: 1rem;
-	margin-top: 0.25rem;
-	opacity: 0.7;
-	margin-right: 1rem;
-}
-
-.message_date_assistant {
-	font-size: 0.75rem;
-	line-height: 1rem;
-	margin-top: 0.25rem;
-	opacity: 0.7;
-	margin-left: 1rem;
+.message_assistant_and_icon {
+	display: flex;
 }
 
 .message_assistant {
-	margin-left: 1rem;
 	padding: 0.75rem;
+/*	padding-left: 0;*/
 	line-height: 2;
+}
+
+.assistant_icon {
+	margin-top: 2rem;
+	height: 2rem;
+	width: 2rem;
 }
 
 .message_reasoning {
@@ -332,26 +328,31 @@ code {
 	border-left: 1px solid #e5e7eb;
 }
 
-.assistant_icon {
-	height: 2rem;
-}
+
 
 .user_input_area {
-	padding: 1rem;
-	border-top: 1px solid #e5e7eb;
+	width: 55rem;
+	margin: auto;
 }
 
 .user_input_form {
 	display: flex;
-	margin-left: 0.5rem;
+	width: 55rem;
+	height: 4rem;
+	margin-bottom: 3rem;
+	border-radius: 1rem;
 }
 
 .user_input_textarea {
+	resize: none;
+	outline: none;
+	height: 4rem;
+	background-color: #f3f4f6;
 	font-family: "Arial", "Helvetica", sans-serif;
 	font-size: 1rem;
 	flex: 1 1 0%;
 	padding: 0.5rem;
-	border-radius: 0.25rem;
+	border-radius: 1rem;
 	border: 1px solid #e5e7eb;
 }
 
@@ -406,11 +407,7 @@ code {
 	cursor: pointer;
 }
 
-/* ··· */
-.show_delete_btn { 
-	font-size: 1.25rem;
-	padding: 0.1rem;
-	border-radius: 100rem;
-	background-color: #f9fbff;
-	border: 0;
+.communication_area_contract {
+	margin: auto;
+	width: 55rem;
 }

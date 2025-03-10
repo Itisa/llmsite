@@ -12,7 +12,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3"):
 		reasoning_content = ""
 		gen_date = timezone.now()
 
-		msglen = 10
+		msglen = 4
 		for i in range(msglen):  # 假设你生成10个JSON对象
 			usercontent = messages[-1]["content"]
 			data = {
