@@ -4,6 +4,9 @@ function deleteCookie(name, path, domain) {
 		(domain ? '; domain=' + domain : '');
 }
 function renderWithKatex(input) {
+	if (typeof katex === 'undefined') {
+		return input;
+	}
 	// 正则表达式匹配行内公式 \(...\)、多行块级公式 \[...\] 以及 $$...$$
 	const regex = /(\\\(.*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
 
@@ -103,8 +106,6 @@ $axios.defaults.headers.common['X-CSRFToken'] = csrftoken;
 function init_renderer() {
 	const renderer = new marked.Renderer();
 	renderer.code = function (code) {
-		// 使用 highlight.js 高亮代码
-		
 		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
 		const topBar = `
@@ -121,8 +122,6 @@ function init_renderer() {
 	};
 
 	renderer.codespan = function (code) {
-		// 使用 highlight.js 高亮代码
-		
 		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
 		return `<code class="hljs ${validLanguage}">${highlightedCode}</code>`;
@@ -300,7 +299,7 @@ function app() {
 					const reasoning_interval = setInterval(() => {
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 						const lennow = this.messages[this.messages.length-1].content.length;
-						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 2);
+						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 1);
 						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
 							reasoning_end = true;
 							clearInterval(reasoning_interval);
@@ -326,7 +325,7 @@ function app() {
 					}
 					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 					const lennow = this.messages[this.messages.length-1].content.length;	
-					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 2);
+					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 1);
 					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
 						this.in_talk = false;
 						clearInterval(assistant_interval);
@@ -515,9 +514,8 @@ function app() {
 			if (this.in_talk) return ;
 			this.isEditingTitle = true;
 			this.oldTitle = this.topBarContent;
-			setTimeout(() => {
-				document.getElementById("newTitleInput").focus();
-			})
+			setTimeout(() => {document.getElementById("newTitleInput").focus();},0)
+			setTimeout(() => {document.getElementById("newTitleInput").focus();},50)
 		},
 		cancelEditTitle(){ // not used
 			if (this.in_talk) return ;
