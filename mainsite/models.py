@@ -9,7 +9,7 @@ class User(models.Model):
 	username = models.CharField(max_length=20)
 	user_password = models.CharField(max_length=60)
 	sessionid = models.CharField(max_length=20)
-	sessionid_expire = models.DateTimeField("sessionid expire")
+	sessionid_expire = models.DateTimeField("sessionid expire", auto_now_add=True)
 	user_level = models.IntegerField(default=-1)
 	def __str__(self):
 		return self.username
@@ -44,11 +44,17 @@ class Api_config(models.Model):
 		("CH","chat"),
 		("PC","pic2chat"),
 	]
+	MODEL_ORIGIN_CHOICES = [
+		("DS","deepseek"),
+		("DB","doubao"),
+		("OA","openai"),
+	]
 	name = models.CharField(max_length=40)
 	base_url = models.CharField(max_length=100)
 	api_key = models.CharField(max_length=100)
 	endpoint = models.CharField(max_length=100)
 	level = models.IntegerField(default=-1)
 	model_type = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
+	model_origin = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
 	def __str__(self):
 		return self.name

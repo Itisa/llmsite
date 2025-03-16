@@ -4,9 +4,11 @@ from .local_settings import *
 import time
 import json
 
-from .models import User, Communication, Communication_Content
 from django.utils import timezone
-def talk_with_AI(comm,messages,model_name="deepseek_v3"):
+from .models_api import get_model_by_name, create_communication_content
+
+def talk_with_AI(comm,messages,model_name):
+	model = get_model_by_name(model_name)
 	if talk_test:
 		content = ""
 		reasoning_content = ""
@@ -23,7 +25,7 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3"):
 				"title": comm.title,
 				"model": comm.model,
 			}
-			if i < msglen/2 and model_name == "deepseek_r1":
+			if i < msglen/2 and model.get_model_type_display() == "reasoning":
 				data["role"] = "reasoning"
 			yield json.dumps(data) + "\n"  # 每个JSON对象以换行符分隔
 			if data["role"] == "assistant":
@@ -33,89 +35,46 @@ def talk_with_AI(comm,messages,model_name="deepseek_v3"):
 
 			time.sleep(0.5)  # 模拟延迟
 	else:
-		if model_name in available_models_volcano: # 火山云
+		
+		if model.get_model_origin_display() == "deepseek" or model.get_model_origin_display() == "openai":
 			client = OpenAI(
-				api_key=volcano_api_key,
-				base_url="https://ark.cn-beijing.volces.com/api/v3",
-				timeout=1800,
+				api_key = model.api_key,
+				base_url = model.base_url,
 			)
-
 			gen_date = timezone.now()
+			
 			response = client.chat.completions.create(
-				model=volcano_ENDPOINT_ID[model_name],
-				messages=messages,
-				stream=True,
+				model = model.endpoint,
+				messages = messages,
+				stream = True,
 			)
 			content_id = 0
 			reasoning_content = ""
 			content = ""
 			for chunk in response:
+				data = {
+					"id": content_id,
+					"cid": comm.pk,
+					"title": comm.title,
+					"model": comm.model,
+				}
 				if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content != None:
 					new_content = chunk.choices[0].delta.reasoning_content
-					data = {
-						"id": content_id,
-						"message": new_content,
-						"cid": comm.pk,
-						"title": comm.title,
-						"model": comm.model,
-						"role": "reasoning",
-					}
+					data["role"] = "reasoning"
+					data["message"] = new_content
 					yield json.dumps(data) + "\n"
 					reasoning_content += new_content
 				else:
 					new_content = chunk.choices[0].delta.content
-					data = {
-						"id": content_id,
-						"message": new_content,
-						"cid": comm.pk,
-						"title": comm.title,
-						"model": comm.model,
-						"role": "assistant",
-					}
+					data["role"] = "assistant"
+					data["message"] = new_content
 					yield json.dumps(data) + "\n"
 					content += new_content
 				content_id += 1
 		
-		elif model_name in available_models_deepseek: #deepseek官方api
-			client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
-
-			gen_date = timezone.now()
-			response = client.chat.completions.create(
-				model=deepseek_model_name[model_name],
-				messages=messages,
-				stream=True
-			)
-			content_id = 0
-			reasoning_content = ""
-			content = ""
-			for chunk in response:
-				if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content != None:
-					new_content = chunk.choices[0].delta.reasoning_content
-					data = {
-						"id": content_id,
-						"message": new_content,
-						"cid": comm.pk,
-						"title": comm.title,
-						"model": comm.model,
-						"role": "reasoning",
-					}
-					yield json.dumps(data) + "\n"
-					reasoning_content += new_content
-				else:
-					new_content = chunk.choices[0].delta.content
-					data = {
-						"id": content_id,
-						"message": new_content,
-						"cid": comm.pk,
-						"title": comm.title,
-						"model": comm.model,
-						"role": "assistant",
-					}
-					yield json.dumps(data) + "\n"
-					content += chunk.choices[0].delta.content
-	
-	if model_name in ["deepseek_r1_火山云","deepseek_r1"]:
-		comm.communication_content_set.create(gen_date=gen_date,role="reasoning",content=reasoning_content)
-
-	comm.communication_content_set.create(gen_date=gen_date,role="assistant",content=content)
-	comm.save()
+		elif model.get_model_origin_display() == "doubao":
+			pass
+	if model.get_model_type_display() == "reasoning":
+		create_communication_content(comm,"reasoning",reasoning_content)
+	create_communication_content(comm,"assistant",content)
+	# comm.save()

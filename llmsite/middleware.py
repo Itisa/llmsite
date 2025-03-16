@@ -12,7 +12,7 @@ class UserAuthMiddleware:
 		if sessionid:
 			try:
 				u = User.objects.get(sessionid=sessionid)
-				request.User_expire = (request.User.sessionid_expire < timezone.now())
+				request.User_expire = (u.sessionid_expire < timezone.now())
 			except User.DoesNotExist:
 				pass
 		request.User = u

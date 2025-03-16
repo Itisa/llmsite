@@ -11,12 +11,9 @@ import bcrypt
 
 class Api_configAdmin(admin.ModelAdmin):
 	pass
-admin.site.register(Api_config)
-
+admin.site.register(Api_config,Api_configAdmin)
 
 def new_user(username, password, param3):
-	# 在这里执行你的自定义逻辑
-	print("new_user:",username,password,param3)
 	if password == "":
 		password = generate_random_string(10)
 	if add_user(username,password):
@@ -40,7 +37,6 @@ class MyCustomForm(forms.Form):
 
 def reset_pwd2username(modeladmin, request, queryset):
 	for user in queryset:
-		# 在这里执行你的自定义逻辑
 		user.user_password = bcrypt.hashpw(user.username.encode(), bcrypt.gensalt()).decode()
 		user.save()
 	modeladmin.message_user(request, "重置密码成功")
@@ -72,10 +68,15 @@ class UserAdmin(admin.ModelAdmin):
 			'form': form,
 			'opts': self.model._meta,
 		})
+
 	def changelist_view(self, request, extra_context=None):
 		extra_context = extra_context or {}
 		extra_context['new_user_url'] = 'new_user/'
 		return super().changelist_view(request, extra_context=extra_context)
+	change_list_template = "admin/user_change_list.html"
+
+	def has_add_permission(self,request):
+		return False
 	list_display = ["username"]
 	list_per_page = 50
 	actions = [reset_pwd2username]  # 注册自定义操作
@@ -84,6 +85,8 @@ admin.site.register(User,UserAdmin)
 
 class CommunicationAdmin(admin.ModelAdmin):
 	list_display = ["title","user", "gen_date", "model"]
+	list_filter = ("user",)
+
 	list_per_page = 50
 admin.site.register(Communication,CommunicationAdmin)
 
@@ -110,4 +113,10 @@ class MailboxAdmin(admin.ModelAdmin):
 	def get_mailbox_content20(self, obj):
 		return obj.content[:20]
 	get_mailbox_content20.short_description = 'content'
+	
+	def get_form(self, request, obj=None, **kwargs):
+		form = super().get_form(request, obj, **kwargs)
+		form.base_fields['content'].widget = forms.Textarea(attrs={'rows': 4, 'cols': 40})
+		return form
+
 admin.site.register(Mailbox,MailboxAdmin)

@@ -1,12 +1,14 @@
 from .models import User, Communication, Communication_Content, Mailbox
 import logging
+import bcrypt
+from django.utils import timezone
 logger = logging.getLogger(__name__)
 def add_user(username,password):
 	user_qst = User.objects.filter(username=username)
 	if len(user_qst) != 0:
 		return False
 	hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-	new_user = User(username=username,user_password=hashed_password.decode(),sessionid_expire=timezone.now())
+	new_user = User(username=username,user_password=hashed_password.decode())
 	new_user.save()
 	return True
 
@@ -57,3 +59,11 @@ def get_communication_by_pk(pk):
 def create_communication_content(communication,role,content):
 	cc = communication.communication_content_set.create(role=role,content=content)
 	return cc
+
+def get_model_by_name(model_name):
+	u = None
+	try:
+		u = Api_config.objects.get(name=model_name)
+	except:
+		pass
+	return u
