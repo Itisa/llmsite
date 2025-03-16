@@ -1,4 +1,5 @@
 from mainsite.models import User
+from django.utils import timezone
 class UserAuthMiddleware:
 	def __init__(self, get_response):
 		self.get_response = get_response
@@ -11,6 +12,7 @@ class UserAuthMiddleware:
 		if sessionid:
 			try:
 				u = User.objects.get(sessionid=sessionid)
+				request.User_expire = (request.User.sessionid_expire < timezone.now())
 			except User.DoesNotExist:
 				pass
 		request.User = u

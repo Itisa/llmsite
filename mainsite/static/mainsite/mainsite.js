@@ -299,7 +299,7 @@ function app() {
 					const reasoning_interval = setInterval(() => {
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 						const lennow = this.messages[this.messages.length-1].content.length;
-						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 1);
+						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 3);
 						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
 							reasoning_end = true;
 							clearInterval(reasoning_interval);
@@ -309,7 +309,7 @@ function app() {
 								this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 							}, 0);
 						}
-					},25);
+					},50);
 				}
 
 				const assistant_interval = setInterval(() => {
@@ -325,7 +325,7 @@ function app() {
 					}
 					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 					const lennow = this.messages[this.messages.length-1].content.length;	
-					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 1);
+					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 3);
 					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
 						this.in_talk = false;
 						clearInterval(assistant_interval);
@@ -335,7 +335,7 @@ function app() {
 							this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 						}, 0);
 					}
-				},25);
+				},50);
 				
 
 				const readChunk = () => {
@@ -416,6 +416,8 @@ function app() {
 				// console.log(response)
 				this.titles = response.data.titles
 				for (var i = 0; i < this.titles.length; i++) {
+					console.log(this.titles[i].date)
+					console.log(new Date(this.titles[i].date))
 					this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
 					this.titles[i].title = this.titles[i].title;
 				}

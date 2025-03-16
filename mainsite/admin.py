@@ -4,10 +4,16 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import path
 
-from .models import User, Communication, Communication_Content, Mailbox
+from .models import User, Communication, Communication_Content, Mailbox, Api_config
 from .views import generate_random_string,add_user
 
 import bcrypt
+
+class Api_configAdmin(admin.ModelAdmin):
+	pass
+admin.site.register(Api_config)
+
+
 def new_user(username, password, param3):
 	# 在这里执行你的自定义逻辑
 	print("new_user:",username,password,param3)

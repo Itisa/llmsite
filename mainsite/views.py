@@ -12,7 +12,7 @@ import datetime
 import logging
 logger = logging.getLogger(__name__)
 
-from .models import User, Communication, Communication_Content, Mailbox
+from .models_api import *
 from .talk_with_AI import talk_with_AI
 from .local_settings import available_models
 
@@ -36,7 +36,7 @@ class require_user:
 	def __call__(self,func):
 		def wrapper(*args, **kwargs):
 			request = args[0]
-			if request.User == None or request.User.sessionid_expire < timezone.now():
+			if request.User == None or request.User_expire == True:
 				if request.method == "GET" and self.request_type == "page":
 					return redirect2loginResponse()
 				else:
@@ -48,40 +48,6 @@ class require_user:
 def generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
 	return ''.join(random.choices(characters, k=length))
-
-def add_user(username,password):
-	if_have_user = User.objects.filter(username=username)
-
-	if len(if_have_user) != 0:
-		return False
-	hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-	new_user = User(username=username,user_password=hashed_password.decode(),sessionid_expire=timezone.now())
-	new_user.save()
-	return True
-
-def delete_user(username):
-	try:
-		user = User.objects.get(username=username)
-		user.delete()
-		return True
-	except:
-		return False
-
-def get_user_by_sessionid(sessionid):
-	u = None
-	try:
-		u = User.objects.get(sessionid=sessionid)
-	except User.DoesNotExist:
-		pass
-	return u
-
-def get_user_by_username(username):
-	u = None
-	try:
-		u = User.objects.get(username=username)
-	except User.DoesNotExist:
-		pass
-	return u
 
 @require_http_methods(["GET"])
 @require_user("page")
@@ -186,7 +152,7 @@ def get_history(request):
 @require_user("data")
 def get_communication_content(request):
 	cid = request.GET["cid"]
-	comm = Communication.objects.get(pk=int(cid))
+	comm = get_communication_by_pk(int(cid))
 	if not comm:
 		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
 	if (comm.user.pk != request.User.pk):
@@ -214,10 +180,9 @@ def talk(request):
 	cid = data.get('cid',-2)
 
 	if cid == -1:
-		comm = request.User.communication_set.create(gen_date=timezone.now(),model=model_name)
-		comm.title = message[:30]
+		comm = create_communication(request.User,model_name,message[:30])
 	else:
-		comm = Communication.objects.get(pk=int(cid))
+		comm = get_communication_by_pk(cid)
 		if not comm:
 			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=400)
 
@@ -231,8 +196,7 @@ def talk(request):
 		messages.append({"role":msg.role,"content":msg.content})
 
 	messages.append({"role": "user", "content": message})
-	# print(messages)
-	comm.communication_content_set.create(gen_date=timezone.now(),role="user",content=message)
+	create_communication_content(comm,"user",messages)
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
 
 @require_http_methods(["POST"])
@@ -244,7 +208,7 @@ def change_communication_title(request):
 	if len(newtitle) > 30:
 		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=400)
 
-	comm = Communication.objects.get(pk=cid)
+	comm = get_communication_by_pk(cid)
 	if not comm:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 	
@@ -260,7 +224,7 @@ def change_communication_title(request):
 def delete_communication(request):
 	data = json.loads(request.body)
 	cid = data.get('cid',-2)
-	comm = Communication.objects.get(pk=cid)
+	comm = get_communication_by_pk(cid)
 	if not comm:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 	
@@ -280,8 +244,7 @@ def site_mailbox(request):
 			data = json.loads(request.body)
 			title = data.get('title')
 			content = data.get('content')
-			mm = Mailbox(user=request.User,title=title,content=content,gen_date=timezone.now())
-			mm.save()
+			add_mailbox(request.User,title,content)
 			return JsonResponse({'status': 'ok'}, status=200)
 		except json.JSONDecodeError:
 			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
