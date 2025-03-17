@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 from .models_api import *
 from .talk_with_AI import talk_with_AI
-from .local_settings import available_models
 
 def redirect2loginResponse():
 	response = HttpResponseRedirect(reverse("mainsite:login"))
