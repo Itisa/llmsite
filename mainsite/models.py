@@ -1,16 +1,21 @@
 from django.db import models
 
 # Create your models here.
-import datetime
 from django.utils import timezone
 
 class User(models.Model):
+	USER_TYPE_CHOICES = [
+		("AD","admin"),
+		("NM","normal"),
+		("TM","temporary"),
+	]
 	# userid = models.IntegerField(default=-1)
 	username = models.CharField(max_length=20)
 	user_password = models.CharField(max_length=60)
 	sessionid = models.CharField(max_length=20)
-	sessionid_expire = models.DateTimeField("sessionid expire", auto_now_add=True)
+	sessionid_expire = models.DateTimeField("sessionid expire", default=timezone.datetime.min)
 	user_level = models.IntegerField(default=-1)
+	user_type = models.CharField(max_length=3, choices=USER_TYPE_CHOICES)
 	def __str__(self):
 		return self.username
 
@@ -55,6 +60,6 @@ class Api_config(models.Model):
 	endpoint = models.CharField(max_length=100)
 	level = models.IntegerField(default=-1)
 	model_type = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
-	model_origin = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
+	model_origin = models.CharField(max_length=3, choices=MODEL_ORIGIN_CHOICES)
 	def __str__(self):
 		return self.name

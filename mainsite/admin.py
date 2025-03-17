@@ -9,8 +9,31 @@ from .views import generate_random_string,add_user
 
 import bcrypt
 
+def copy_api_config(modeladmin, request, queryset):
+	newaa = []
+	for model in queryset:
+		new_name = model.name + "_copy"
+		name_qst = Api_config.objects.filter(name=new_name)
+		if len(name_qst) == 0:
+			aa = Api_config(
+				name=new_name,
+				api_key=model.api_key,
+				endpoint=model.endpoint,
+				base_url=model.base_url,
+				model_type=model.model_type,
+				model_origin=model.model_origin
+			)
+			newaa.append(aa)
+		else:
+			modeladmin.message_user(request, f"复制失败，已经存在{new_name}，请修改后再复制")
+			return 
+	for model in newaa:
+		model.save();
+	modeladmin.message_user(request, "复制成功")
+copy_api_config.short_description = "复制api配置"
+
 class Api_configAdmin(admin.ModelAdmin):
-	pass
+	actions = [copy_api_config]
 admin.site.register(Api_config,Api_configAdmin)
 
 def new_user(username, password, param3):

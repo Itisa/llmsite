@@ -36,7 +36,7 @@ class require_user:
 	def __call__(self,func):
 		def wrapper(*args, **kwargs):
 			request = args[0]
-			if request.User == None or request.User_expire == True:
+			if not if_user_valid(request.User):
 				if request.method == "GET" and self.request_type == "page":
 					return redirect2loginResponse()
 				else:
@@ -52,13 +52,11 @@ def generate_random_string(length):
 @require_http_methods(["GET"])
 @require_user("page")
 def site(request):
-	print("On request site")
 	rsp = render(request,"mainsite/mainsite.html")
 	return rsp
 
 @require_http_methods(["GET","POST"])
 def login(request):
-	print("On request login")
 	if request.method == "GET":
 		if request.User:
 			return HttpResponseRedirect(reverse("mainsite:site"))
@@ -137,7 +135,7 @@ def logout(request):
 @require_http_methods(["GET"])
 @require_user("data")
 def get_available_models(request):
-	return JsonResponse({'status': 'ok', 'data': available_models},status=200)
+	return JsonResponse({'status': 'ok', 'data': get_models()},status=200)
 
 @require_http_methods(["GET"])
 @require_user("data")
@@ -166,15 +164,13 @@ def get_communication_content(request):
 @require_http_methods(["POST"])
 @require_user("data")
 def talk(request):
-
-	print("On talk post")
 	try:
 		data = json.loads(request.body)
 	except:
 		data = {}
 	
 	model_name = data.get('model_name',"")
-	if not model_name in available_models:
+	if not model_name in get_models():
 		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=400)	
 	message = data.get('message',"")
 	cid = data.get('cid',-2)
@@ -196,7 +192,7 @@ def talk(request):
 		messages.append({"role":msg.role,"content":msg.content})
 
 	messages.append({"role": "user", "content": message})
-	create_communication_content(comm,"user",messages)
+	create_communication_content(comm,"user",message)
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
 
 @require_http_methods(["POST"])

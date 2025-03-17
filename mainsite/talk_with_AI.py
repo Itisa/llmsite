@@ -1,6 +1,12 @@
 import os
 from openai import OpenAI
-from .local_settings import *
+from volcenginesdkarkruntime import Ark
+
+talk_test = False
+try:
+	from .local_settings import talk_test
+except:
+	pass
 import time
 import json
 
@@ -12,7 +18,6 @@ def talk_with_AI(comm,messages,model_name):
 	if talk_test:
 		content = ""
 		reasoning_content = ""
-		gen_date = timezone.now()
 
 		msglen = 4
 		for i in range(msglen):  # 假设你生成10个JSON对象
@@ -41,7 +46,6 @@ def talk_with_AI(comm,messages,model_name):
 				api_key = model.api_key,
 				base_url = model.base_url,
 			)
-			gen_date = timezone.now()
 			
 			response = client.chat.completions.create(
 				model = model.endpoint,
@@ -51,13 +55,13 @@ def talk_with_AI(comm,messages,model_name):
 			content_id = 0
 			reasoning_content = ""
 			content = ""
+			data = {
+				"cid": comm.pk,
+				"title": comm.title,
+				"model": comm.model,
+			}
 			for chunk in response:
-				data = {
-					"id": content_id,
-					"cid": comm.pk,
-					"title": comm.title,
-					"model": comm.model,
-				}
+				data["id"] = content_id
 				if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content != None:
 					new_content = chunk.choices[0].delta.reasoning_content
 					data["role"] = "reasoning"
@@ -73,7 +77,34 @@ def talk_with_AI(comm,messages,model_name):
 				content_id += 1
 		
 		elif model.get_model_origin_display() == "doubao":
-			pass
+			client = Ark(
+				api_key = model.api_key
+			)
+			response = client.chat.completions.create(
+				model = model.endpoint,
+				messages = messages,
+				stream=True
+			)
+
+			data = {
+				"cid": comm.pk,
+				"title": comm.title,
+				"model": comm.model,
+				"role": "assistant"
+			}
+			content = ""
+			content_id = 0
+			for chunk in response:
+				if not chunk.choices:
+					continue
+				new_content = chunk.choices[0].delta.content
+				data["id"] = content_id
+				# data["role"] = "assistant"
+				data["message"] = new_content
+				yield json.dumps(data) + "\n"
+				content += new_content
+				content_id += 1
+			
 	if model.get_model_type_display() == "reasoning":
 		create_communication_content(comm,"reasoning",reasoning_content)
 	create_communication_content(comm,"assistant",content)

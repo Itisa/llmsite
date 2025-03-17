@@ -416,8 +416,8 @@ function app() {
 				// console.log(response)
 				this.titles = response.data.titles
 				for (var i = 0; i < this.titles.length; i++) {
-					console.log(this.titles[i].date)
-					console.log(new Date(this.titles[i].date))
+					// console.log(this.titles[i].date)
+					// console.log(new Date(this.titles[i].date))
 					this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
 					this.titles[i].title = this.titles[i].title;
 				}

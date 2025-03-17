@@ -1,4 +1,4 @@
-from .models import User, Communication, Communication_Content, Mailbox
+from .models import User, Communication, Communication_Content, Mailbox, Api_config
 import logging
 import bcrypt
 from django.utils import timezone
@@ -40,7 +40,7 @@ def add_mailbox(user,title,content):
 	mm = Mailbox(user=user,title=title,content=content)
 	mm.save()
 
-def create_communication(user,model,title):
+def create_communication(user,model_name,title):
 	comm = user.communication_set.create(model=model_name,title=title)
 	return comm
 
@@ -67,3 +67,20 @@ def get_model_by_name(model_name):
 	except:
 		pass
 	return u
+
+def if_user_valid(user):
+	if user == None:
+		return False
+	if user.sessionid_expire < timezone.now():
+		if user.get_user_type_display() == "temporary":
+			if user.sessionid_expire != timezone.datetime.min:
+				# user.delete() ########################################################
+				pass
+		return False
+	return True
+
+def get_models():
+	models = []
+	for model in Api_config.objects.all():
+		models.append(model.name)
+	return models
