@@ -4,11 +4,8 @@ function deleteCookie(name, path, domain) {
 		(domain ? '; domain=' + domain : '');
 }
 function renderWithKatex(input) {
-	if (typeof katex === 'undefined') {
-		return input;
-	}
-	// 正则表达式匹配行内公式 \(...\)、多行块级公式 \[...\] 以及 $$...$$
-	const regex = /(\\\(.*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
+	// 正则表达式匹配行内公式 \(...\)、$...$、多行块级公式 \[...\] 以及 $$...$$
+	const regex = /(\\\(.*?\\\)|\$.*?\$|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
 
 	// 将字符串拆分为普通文本和公式部分
 	const parts = input.split(regex);
@@ -23,6 +20,15 @@ function renderWithKatex(input) {
 				displayMode: false // 行内模式
 			});
 		}
+		// 检查是否是行内公式 $...$
+		else if (part.startsWith('$') && part.endsWith('$') && part.length > 1) {
+			// 去除首尾的 $，并去掉多余的换行符和空格
+			const formula = part.slice(1, -1).trim();
+			output += katex.renderToString(formula, {
+				throwOnError: false,
+				displayMode: false // 行内模式
+			});
+		}
 		// 检查是否是块级公式 \[...\]
 		else if (part.startsWith('\\[') && part.endsWith('\\]')) {
 			// 去除首尾的 \[ 和 \]，并去掉多余的换行符和空格
@@ -32,7 +38,7 @@ function renderWithKatex(input) {
 				displayMode: true // 块级模式
 			});
 		}
-		// 检查是否是 $$...$$ 公式
+		// 检查是否是块级公式 $$...$$
 		else if (part.startsWith('$$') && part.endsWith('$$')) {
 			// 去除首尾的 $$，并去掉多余的换行符和空格
 			const formula = part.slice(2, -2).trim();
