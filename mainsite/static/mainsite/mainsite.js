@@ -5,7 +5,7 @@ function deleteCookie(name, path, domain) {
 }
 function renderWithKatex(input) {
 	// 正则表达式匹配行内公式 \(...\)、$...$、多行块级公式 \[...\] 以及 $$...$$
-	const regex = /(\\\(.*?\\\)|\$.*?\$|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
+	const regex = /(\\\([\s\S]*?\\\)|\$[\s\S]*?\$|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
 
 	// 将字符串拆分为普通文本和公式部分
 	const parts = input.split(regex);
