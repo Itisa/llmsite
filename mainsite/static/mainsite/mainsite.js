@@ -181,47 +181,34 @@ function app() {
 	return {
 		// 应用状态
 		user: null,
-		messages: [],
-		titles: [],
-		models: [],
+		messages: [], // id, content, role
+		titles: [], // id, title, date ,model
+		models: [], // name, type
 		inputMessage: '',
 		username: null,
 		topBarContent: "",
 		cid: -1,
 		isEditingTitle: false,
-		oldTitle: "",
-		selectedModel: null,
+		oldTitle: "", // if no changes no post
+		selectedModelid: null,
 		in_talk: false,
 		marked,
 		renderer: init_renderer(),
 		personal_info_showButtons: false,
 		message_area_div: document.getElementById('message_area'),
 		user_input_textarea: document.getElementById('user_input_textarea'),
+		history_list: document.getElementById('history_list'),
 		$axios,
 		csrftoken,
-		reasoning_models: ["deepseek_r1_火山云","deepseek_r1"],
 		sidebar_hidden: false,
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
 			});
 			this.topBarContent = "新对话";
-			
-			if (document.cookie) {
-				const cookiePairs = document.cookie.split('; ');
-				cookiePairs.forEach(pair => {
-					const [key, value] = pair.split('=');
-					if (key==="username"){
-						this.username = decodeURIComponent(value);
-					}
-				});
-			}
-			if (this.username){
-				this.get_history();
-				this.get_available_models();
-			}
+			this.get_history();
+			this.get_available_models();
 		},
-
 		logout() {
 			window.location.href = urls["logout"];
 		},
@@ -243,31 +230,36 @@ function app() {
 				id: Date.now(),
 				content: uploadMessage,
 				role: 'user',
-				timestamp: new Date().toLocaleTimeString()
 			});
-			let reasoning = this.reasoning_models.includes(this.selectedModel);
+			let reasoning = (this.models[this.selectedModelid].type === "reasoning");
 			this.in_talk = true;
 			setTimeout(() => {
 				this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 			}, 0);
 			fetch(urls["talk"], {
 				method: 'POST',	
-			
 				headers: {
 					'Content-Type': 'application/json',
-					'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+					'X-CSRFToken': this.csrftoken,
 				},
 				body: JSON.stringify({
-					model_name: this.selectedModel,
+					model_name: this.models[this.selectedModelid].name,
 					message: uploadMessage,
-					timestamp: Date.now(),
 					cid: this.cid,
 				})
 			})
 			.then(response => {
-				this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+
+				for (var i = 0; i < this.titles.length; i++) {
+					if (this.cid == this.titles[i].id) {
+						this.titles[i].date = new Date();
+						this.titles.sort((a,b) => a.date - b.date);
+						break;
+					}
+				}
+				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
+
 				if (!response.ok) {
-					// console.log(response);
 					if (response.status == 401){
 						window.location.href = urls["login"];
 						return ;
@@ -286,19 +278,12 @@ function app() {
 				var reasoning_cache_end = true;
 				var assistant_cache_end = false;
 				var reasoning_end = true;
-
-
-				const reader = response.body.getReader();
-				const decoder = new TextDecoder();
-				var firstchunk = true;
-				var lastchunk = '';
 				
 				if (reasoning) {
 					this.messages.push({
 						id: Date.now()-1,
 						content: "",
 						role: 'reasoning',
-						timestamp: new Date().toLocaleTimeString(),
 					});	
 					reasoning_end = false;
 					reasoning_cache_end = false;
@@ -325,7 +310,6 @@ function app() {
 							id: Date.now(),
 							content: "",
 							role: 'assistant',
-							timestamp: new Date().toLocaleTimeString(),
 						});
 						in_assistant = true;
 					}
@@ -342,8 +326,10 @@ function app() {
 						}, 0);
 					}
 				},50);
-				
-
+				var firstchunk = true;
+				var lastchunk = '';				
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
 				const readChunk = () => {
 					reader.read().then(({ done, value }) => {
 						if (done) {
@@ -372,7 +358,7 @@ function app() {
 												id: jsonData.cid,
 												title: jsonData.title,
 												date: Date.now(),
-												model: this.selectedModel,
+												model: this.models[this.selectedModelid].name,
 											});
 											this.cid = jsonData.cid;
 											this.update_topBar();
@@ -405,7 +391,7 @@ function app() {
 			$axios.get(urls["get_available_models"])
 			.then(response => {
 				this.models = response.data.data;
-				this.selectedModel = this.models[0];
+				this.selectedModelid = 0;
 			})
 			.catch(error => {
 				console.log("error in get_available_models");
@@ -419,17 +405,14 @@ function app() {
 		get_history() {
 			$axios.get(urls["get_history"])
 			.then(response => {
-				// console.log(response)
-				this.titles = response.data.titles
+				this.titles = response.data.titles;
 				for (var i = 0; i < this.titles.length; i++) {
-					// console.log(this.titles[i].date)
-					// console.log(new Date(this.titles[i].date))
-					this.titles[i].date = new Date(this.titles[i].date).toLocaleString();
-					this.titles[i].title = this.titles[i].title;
+					this.titles[i].date = new Date(this.titles[i].date);
 				}
+				this.titles.sort((a,b) => a.date - b.date);
 			})
 			.catch(error => {
-				console.log('get_history请求失败:')
+				console.log('get_history请求失败:');
 				console.log(error);
 				if (error.status === 401){
 					window.location.href = urls["login"];
@@ -450,15 +433,12 @@ function app() {
 			.then(response => {
 				for (var i = 0; i < this.titles.length; i++) {
 					if (cid == this.titles[i].id){
-						this.selectedModel = this.titles[i].model;
+						this.selectedModelid = this.get_model_ind(this.titles[i].model);
 						break;
 					}
 				}
 
 				this.messages = response.data.messages
-				for (var i = 0; i < this.messages.length; i++) {
-					this.messages[i].timestamp =new Date(this.messages[i].timestamp).toLocaleString();
-				}
 				this.cid = cid;
 				this.update_topBar();
 			})
@@ -512,7 +492,7 @@ function app() {
 		// 开启新对话
 		createNewChat() {
 			if (this.in_talk) return ;
-			this.selectedModel = this.models[0];
+			this.selectedModelid = 0;
 			this.cid = -1;
 			this.topBarContent = "新对话";
 			this.messages = [];
@@ -525,7 +505,7 @@ function app() {
 			setTimeout(() => {document.getElementById("newTitleInput").focus();},0)
 			setTimeout(() => {document.getElementById("newTitleInput").focus();},50)
 		},
-		cancelEditTitle(){ // not used
+		cancelEditTitle(){
 			if (this.in_talk) return ;
 			this.isEditingTitle = false;
 		},
@@ -554,7 +534,8 @@ function app() {
 				for (let i = 0; i < this.titles.length; i++) {
 					if (this.cid === this.titles[i].id){
 						this.titles[i].title = this.topBarContent;
-						this.topBarContent = this.titles[i].title;
+						this.titles[i].date = new Date();
+						this.titles.sort((a,b) => a.date - b.date)
 						break;
 					}
 				}
@@ -584,8 +565,22 @@ function app() {
 		show_sidebar() {
 			this.sidebar_hidden = false;
 		},
-		show_delete(event) {
-			console.log(event)
+		UserPressK(event) {
+			if (event.ctrlKey == true){
+				event.preventDefault();
+				this.createNewChat();
+			}
+		},
+		get_model_ind(model_name) {
+			for (var i = 0; i < this.models.length; i++) {
+				if (this.models[i].name == model_name){
+					return i;
+				}
+			}
+			return -1;
+		},
+		UserChangeModel(event){
+			event.srcElement.blur();
 		},
 	}
 }

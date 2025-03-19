@@ -9,13 +9,19 @@ class User(models.Model):
 		("NM","normal"),
 		("TM","temporary"),
 	]
+	USER_STATUS_CHOICES = [
+		("NM","normal"),
+		("FD","forbidden"),
+		("NL","nologin"),
+	]
 	# userid = models.IntegerField(default=-1)
-	username = models.CharField(max_length=20)
+	username = models.CharField(max_length=20,unique=True)
 	user_password = models.CharField(max_length=60)
-	sessionid = models.CharField(max_length=20)
-	sessionid_expire = models.DateTimeField("sessionid expire", default=timezone.datetime.min)
+	sessionid = models.CharField(max_length=20,blank=True)
+	sessionid_expire = models.DateTimeField("sessionid expire", auto_now_add=True)
 	user_level = models.IntegerField(default=-1)
-	user_type = models.CharField(max_length=3, choices=USER_TYPE_CHOICES)
+	user_type = models.CharField(max_length=3, choices=USER_TYPE_CHOICES, default="NM")
+	user_status = models.CharField(max_length=3, choices=USER_STATUS_CHOICES, default="NL")
 	def __str__(self):
 		return self.username
 
@@ -38,7 +44,7 @@ class Communication_Content(models.Model):
 class Mailbox(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now_add=True)
-	title = models.CharField(max_length=200)
+	title = models.CharField(max_length=200,blank=True)
 	content = models.CharField(max_length=4000)
 	def __str__(self):
 		return self.title
@@ -54,10 +60,10 @@ class Api_config(models.Model):
 		("DB","doubao"),
 		("OA","openai"),
 	]
-	name = models.CharField(max_length=40)
+	name = models.CharField(max_length=40,unique=True)
 	base_url = models.CharField(max_length=100)
 	api_key = models.CharField(max_length=100)
-	endpoint = models.CharField(max_length=100)
+	endpoint = models.CharField(max_length=100,blank=True)
 	level = models.IntegerField(default=-1)
 	model_type = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
 	model_origin = models.CharField(max_length=3, choices=MODEL_ORIGIN_CHOICES)

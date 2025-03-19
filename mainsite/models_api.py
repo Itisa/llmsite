@@ -3,12 +3,21 @@ import logging
 import bcrypt
 from django.utils import timezone
 logger = logging.getLogger(__name__)
-def add_user(username,password):
+def add_user(username,password,user_type="NM"):
 	user_qst = User.objects.filter(username=username)
 	if len(user_qst) != 0:
 		return False
 	hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-	new_user = User(username=username,user_password=hashed_password.decode())
+	new_user = User(username=username,user_password=hashed_password.decode(),user_type=user_type)
+	new_user.save()
+	return True
+
+def add_tmp_user(username,password):
+	user_qst = User.objects.filter(username=username)
+	if len(user_qst) != 0:
+		return False
+	hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+	new_user = User(username=username,user_password=hashed_password.decode(),user_type="TM")
 	new_user.save()
 	return True
 
@@ -71,6 +80,8 @@ def get_model_by_name(model_name):
 def if_user_valid(user):
 	if user == None:
 		return False
+	if user.get_user_status_display() == "forbidden":
+		return False
 	if user.sessionid_expire < timezone.now():
 		if user.get_user_type_display() == "temporary":
 			if user.sessionid_expire != timezone.datetime.min:
@@ -83,4 +94,10 @@ def get_models():
 	models = []
 	for model in Api_config.objects.all():
 		models.append(model.name)
+	return models
+
+def get_typed_models():
+	models = []
+	for model in Api_config.objects.all():
+		models.append({"name":model.name,"type":model.get_model_type_display()})
 	return models

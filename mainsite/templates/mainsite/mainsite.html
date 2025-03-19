@@ -27,12 +27,12 @@
 					<button class="hide_sidebar_btn" @click="hide_sidebar"><</button>
 				</div>
 				<!-- 新增的生成新对话按钮 -->
-				<button @click="createNewChat" class="new_communication">
+				<button @click="createNewChat" class="new_communication" @keydown.window.k=UserPressK(event)>
 					新建对话
 				</button>
 			</div>
 			<!-- 历史对话列表，单独设置滚动 -->
-			<div class="history_list">
+			<div class="history_list" id="history_list">
 				<template x-for="item in titles.slice().reverse()" :key="item.id">
 					<div @click="get_communication_content(item.id)"
 						class="history_list_item"
@@ -59,7 +59,7 @@
 				<div class="personal_info_text">个人信息</div>
 				
 				<!-- 按钮组 -->
-				<div x-show="personal_info_showButtons" class="personal_info_btns">
+				<div x-show="personal_info_showButtons" style="display: none;" class="personal_info_btns">
 					<button class="personal_info_btn bg-green-500 hover:bg-green-600" @click="logout">登出</button>
 					
 					<button class="personal_info_btn bg-red-500 hover:bg-red-600" @click="window.location.href = '{% url 'mainsite:change_password' %}'">修改密码</button>
@@ -70,7 +70,7 @@
 		</div>
 
 		<!-- 隐藏后的侧边栏 -->
-		<div x-show="sidebar_hidden" class="hidden_sidebar">
+		<div x-show="sidebar_hidden" style="display: none;" class="hidden_sidebar">
 			<!-- <div class="sidebar_top_1"> -->
 				<button class="show_sidebar_btn" @click="show_sidebar">></button>
 			<!-- </div> -->
@@ -86,9 +86,9 @@
 			<div class="topbar">
 				<!-- 语言模型选择框 -->
 				<div>
-					<select id="model-select" x-model="selectedModel" :disabled="in_talk" class="model_select">
-						<template x-for="item in models">
-							<option :value="item" x-text="item"></option>
+					<select id="model-select" x-model="selectedModelid" :disabled="in_talk" class="model_select" @change="UserChangeModel(event)">
+						<template x-for="(item,index) in models">
+							<option :value="`${index}`" x-text="item.name"></option>
 						</template>
 					</select>
 				</div>
@@ -101,7 +101,7 @@
 						📝
 					</button>
 					<!-- 输入框 -->
-					<div x-show="isEditingTitle" class="new_title_input_and_button">
+					<div style="display: none;" x-show="isEditingTitle" class="new_title_input_and_button">
 						<input x-model="topBarContent"
 								type="text"
 								placeholder="输入新标题"
@@ -149,6 +149,13 @@
 
 			<!-- 输入区域 -->
 			<div class="user_input_area">
+				<div x-show = "cid === -1" class="input_service_description">
+					<div class="input_service_description_line1">
+						<img src="{% static 'mainsite/101.png' %}" class="input_service_description_icon">
+						<div class="input_service_description_text">我是 网站名称 ，很高兴见到你！</div>
+					</div>
+					
+				</div>
 				<form @submit.prevent="sendMessage">
 					<div class="user_input_form">
 						<textarea x-model="inputMessage"

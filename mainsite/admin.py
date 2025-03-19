@@ -36,26 +36,27 @@ class Api_configAdmin(admin.ModelAdmin):
 	actions = [copy_api_config]
 admin.site.register(Api_config,Api_configAdmin)
 
-def new_user(username, password, param3):
+def new_user(username, password, user_type):
 	if password == "":
 		password = generate_random_string(10)
-	if add_user(username,password):
-		result = f"successfully new user 用户名={username}, 密码={password}, param3={param3}"
+	if add_user(username,password,user_type):
+		result = f"successfully new user 用户名={username}, 密码={password}, 用户类型={user_type}"
 	else:
-		result = f"fail new user 用户名={username}, 密码={password}, param3={param3}"
+		result = f"fail new user 用户名={username}"
 	return result
 class MyCustomForm(forms.Form):
 	username = forms.CharField(label="用户名", required=True)
 	password = forms.CharField(label="密码", required=False)
-	param3 = forms.ChoiceField(
-		label="这个现在没用",
+	user_type = forms.ChoiceField(
+		label="用户类型",
 		choices=[
-			('option1', 'Option 1'),
-			('option2', 'Option 2'),
-			('option3', 'Option 3'),
+			('AD', 'admin'),
+			('NM', 'normal'),
+			('TM', 'temporary'),
 		],
 		required=True,
 	)
+
 	# param3 = forms.IntegerField(label="maxCommunications", initial=20, required=True)
 
 def reset_pwd2username(modeladmin, request, queryset):
@@ -80,8 +81,8 @@ class UserAdmin(admin.ModelAdmin):
 			if form.is_valid():
 				username = form.cleaned_data['username']
 				password = form.cleaned_data['password']
-				param3 = form.cleaned_data['param3']
-				result = new_user(username, password, param3)
+				user_type = form.cleaned_data['user_type']
+				result = new_user(username, password, user_type)
 				self.message_user(request, result)
 				return HttpResponseRedirect(request.path)
 		else:
@@ -98,9 +99,11 @@ class UserAdmin(admin.ModelAdmin):
 		return super().changelist_view(request, extra_context=extra_context)
 	change_list_template = "admin/user_change_list.html"
 
-	def has_add_permission(self,request):
+	def has_add_permission(self,request): # 禁止默认的添加操作
 		return False
-	list_display = ["username"]
+
+	list_display = ["username","user_type","user_status","user_level"]
+	list_filter = ["user_type","user_status"]
 	list_per_page = 50
 	actions = [reset_pwd2username]  # 注册自定义操作
 
@@ -108,7 +111,7 @@ admin.site.register(User,UserAdmin)
 
 class CommunicationAdmin(admin.ModelAdmin):
 	list_display = ["title","user", "gen_date", "model"]
-	list_filter = ("user",)
+	list_filter = ["user"]
 
 	list_per_page = 50
 admin.site.register(Communication,CommunicationAdmin)
@@ -131,7 +134,7 @@ class Communication_ContentAdmin(admin.ModelAdmin):
 admin.site.register(Communication_Content,Communication_ContentAdmin)
 
 class MailboxAdmin(admin.ModelAdmin):
-	list_display = ["user","title","get_mailbox_content20"]
+	list_display = ["user","title","get_mailbox_content20","gen_date"]
 	list_per_page = 50
 	def get_mailbox_content20(self, obj):
 		return obj.content[:20]

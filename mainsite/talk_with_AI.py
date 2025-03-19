@@ -99,7 +99,6 @@ def talk_with_AI(comm,messages,model_name):
 					continue
 				new_content = chunk.choices[0].delta.content
 				data["id"] = content_id
-				# data["role"] = "assistant"
 				data["message"] = new_content
 				yield json.dumps(data) + "\n"
 				content += new_content
@@ -108,4 +107,4 @@ def talk_with_AI(comm,messages,model_name):
 	if model.get_model_type_display() == "reasoning":
 		create_communication_content(comm,"reasoning",reasoning_content)
 	create_communication_content(comm,"assistant",content)
-	# comm.save()
+	comm.save() # 触发comm时间的auto_now

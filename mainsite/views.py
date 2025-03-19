@@ -61,27 +61,34 @@ def login(request):
 			return HttpResponseRedirect(reverse("mainsite:site"))
 		return render(request,"mainsite/login.html")
 	elif request.method == "POST":
-		ret_dict = {}
-		ret_dict['result'] = 0
-
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
 		
 		user = get_user_by_username(username)
 		if not user:
-			return JsonResponse( {"status": "fail","reason": "user not exist",}, status=400)
+			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=400)
 
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
+			if user.user_status == "FD":
+				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=400)
 			sessionid = generate_random_string(20)
 			user.sessionid = sessionid
 			user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
+
+			if user.user_type == "TM" and user.user_status == "NM": # 临时用户，第二次登陆就禁止了
+				user.user_status = "FD"
+				user.save()
+				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=400)
+
+			if user.user_status == "NL":
+				user.user_status = "NM"
 			user.save()
 			request.session["id"] = sessionid
 			rsp = JsonResponse({"status": "success"}, status=200)
 			rsp.set_cookie("username",username,max_age=1209600)
 			return rsp
 		else:
-			return JsonResponse({"status": "fail","reason": "incorrect password"}, status=403)
+			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=400)
 
 @require_http_methods(["GET","POST"])
 def register(request):
@@ -134,13 +141,14 @@ def logout(request):
 @require_http_methods(["GET"])
 @require_user("data")
 def get_available_models(request):
-	return JsonResponse({'status': 'ok', 'data': get_models()},status=200)
+	return JsonResponse({'status': 'ok', 'data': get_typed_models()},status=200)
 
 @require_http_methods(["GET"])
 @require_user("data")
 def get_history(request):
 	titles = []
-	query = request.User.communication_set.all().order_by('gen_date')
+	# query = request.User.communication_set.all().order_by('gen_date')
+	query = request.User.communication_set.all()
 	for comm in query.iterator():
 		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk})
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
@@ -155,7 +163,8 @@ def get_communication_content(request):
 	if (comm.user.pk != request.User.pk):
 		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
 	messages = []
-	for msg in comm.communication_content_set.all():
+	qst = comm.communication_content_set.all().order_by('gen_date')
+	for msg in qst:
 		messages.append({"role":msg.role,"content":msg.content,"timestamp":msg.gen_date,"id":msg.pk})
 	return JsonResponse({'status': 'ok', 'messages': messages},status=200)
 
