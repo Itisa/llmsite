@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 
-DEBUG = True
+DEBUG = False
 
 from pathlib import Path
 
@@ -26,10 +26,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-
-
-# ALLOWED_HOSTS = [] from .secret_settings
-
 
 # Application definition
 
