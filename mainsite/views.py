@@ -65,7 +65,7 @@ def login(request):
 		password = request.POST.get("password","")
 		
 		user = get_user_by_username(username)
-		if not user:
+		if user == None:
 			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=400)
 
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
@@ -158,7 +158,7 @@ def get_history(request):
 def get_communication_content(request):
 	cid = request.GET["cid"]
 	comm = get_communication_by_pk(int(cid))
-	if not comm:
+	if comm == None:
 		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
 	if (comm.user.pk != request.User.pk):
 		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
@@ -187,7 +187,7 @@ def talk(request):
 		comm = create_communication(request.User,model_name,message[:30])
 	else:
 		comm = get_communication_by_pk(cid)
-		if not comm:
+		if comm == None:
 			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=400)
 
 		if (comm.user.pk != request.User.pk):
@@ -213,7 +213,7 @@ def change_communication_title(request):
 		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=400)
 
 	comm = get_communication_by_pk(cid)
-	if not comm:
+	if comm == None:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 	
 	if comm.user.pk == request.User.pk:
@@ -229,7 +229,7 @@ def delete_communication(request):
 	data = json.loads(request.body)
 	cid = data.get('cid',-2)
 	comm = get_communication_by_pk(cid)
-	if not comm:
+	if comm == None:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
 	
 	if comm.user.pk == request.User.pk:

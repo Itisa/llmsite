@@ -540,6 +540,7 @@ function app() {
 					}
 				}
 				this.oldTitle = "";
+				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
 			})
 			.catch(error => {
 				console.log("error in saveTitle请求失败");
