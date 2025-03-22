@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 
 DEBUG = False
+TALK_TEST = False
 
 from pathlib import Path
 
@@ -141,4 +142,11 @@ LOGGING = {
 			"handlers": ["file"],
 		},
 	},
+}
+
+CACHES = {
+	"default": {
+		"BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+		"LOCATION": "127.0.0.1:14273",
+	}
 }

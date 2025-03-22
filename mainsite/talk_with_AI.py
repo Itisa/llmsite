@@ -1,21 +1,19 @@
 import os
 from openai import OpenAI
 from volcenginesdkarkruntime import Ark
+from django.core.cache import cache
 
-talk_test = False
-try:
-	from .local_settings import talk_test
-except:
-	pass
+from django.conf import settings
+
 import time
 import json
 
 from django.utils import timezone
-from .models_api import get_model_by_name, create_communication_content
+from mainsite.models_api import get_model_by_name, create_communication_content
 
 def talk_with_AI(comm,messages,model_name):
 	model = get_model_by_name(model_name)
-	if talk_test:
+	if settings.TALK_TEST:
 		content = ""
 		reasoning_content = ""
 
@@ -48,7 +46,7 @@ def talk_with_AI(comm,messages,model_name):
 			)
 			
 			response = client.chat.completions.create(
-				model = model.endpoint,
+				model = model.model,
 				messages = messages,
 				stream = True,
 			)
@@ -81,7 +79,7 @@ def talk_with_AI(comm,messages,model_name):
 				api_key = model.api_key
 			)
 			response = client.chat.completions.create(
-				model = model.endpoint,
+				model = model.model,
 				messages = messages,
 				stream=True
 			)

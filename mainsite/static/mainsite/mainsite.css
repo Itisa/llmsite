@@ -381,10 +381,9 @@ code {
 	display: flex;
 	margin: auto;
 	margin-right: 0;
-	background-color: #f9fbff;
-	border: 0;
-	border-radius: 1rem;
-	font-size: 3rem;
+	color: #8b8b8b;
+	height: 30px;
+	width: 30px;
 	cursor: pointer;
 }
 
@@ -400,10 +399,9 @@ code {
 	display: flex;
 	margin: auto;
 	margin-top: 2rem;
-	background-color: #f9fbff;
-	border: 0;
-	border-radius: 1rem;
-	font-size: 3rem;
+	color: #8b8b8b;
+	height: 30px;
+	width: 30px;
 	cursor: pointer;
 }
 

@@ -2,6 +2,8 @@ from .models import User, Communication, Communication_Content, Mailbox, Api_con
 import logging
 import bcrypt
 from django.utils import timezone
+from django.core.cache import cache
+import platform
 logger = logging.getLogger(__name__)
 def add_user(username,password,user_type="NM"):
 	user_qst = User.objects.filter(username=username)
@@ -91,13 +93,35 @@ def if_user_valid(user):
 	return True
 
 def get_models():
-	models = []
-	for model in Api_config.objects.all():
-		models.append(model.name)
-	return models
+	if platform.system() == "Linux":
+		cached_models = cache.get('models')
+		if cached_models is None:
+			models = []
+			for model in Api_config.objects.all():
+				models.append(model.name)
+			cache.set('models',models)
+			return models
+		else:
+			return cached_models
+	else:
+		models = []
+		for model in Api_config.objects.all():
+			models.append(model.name)
+		return models
 
 def get_typed_models():
-	models = []
-	for model in Api_config.objects.all():
-		models.append({"name":model.name,"type":model.get_model_type_display()})
-	return models
+	if platform.system() == "Linux":
+		cached_typed_models = cache.get('typed_models')
+		if cached_typed_models is None:
+			typed_models = []
+			for model in Api_config.objects.all():
+				typed_models.append({"name":model.name,"type":model.get_model_type_display()})
+			cache.set('typed_models',typed_models)
+			return typed_models
+		else:
+			return cached_typed_models
+	else:
+		typed_models = []
+		for model in Api_config.objects.all():
+			typed_models.append({"name":model.name,"type":model.get_model_type_display()})
+		return typed_models
