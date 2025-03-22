@@ -56,23 +56,21 @@ function renderWithKatex(input) {
 	return output;
 }
 
-function copyCodeToClipboard(button) {
-	const codeBlock = button.closest('.code-block').querySelector('code');
-	const codeText = codeBlock.innerText;
-
+function MessagecopyToClipboard(div) {
+	const codeText = div.childNodes[1].textContent;
 	if (navigator.clipboard) {
 		navigator.clipboard.writeText(codeText).then(() => {
-			showCopiedFeedback(button);
+			MessageshowCopiedFeedback(div);
 		}).catch(err => {
 			console.error('Failed to copy code: ', err);
-			fallbackCopyText(codeText, button);
+			MessagefallbackCopyText(codeText, div);
 		});
 	} else {
-		fallbackCopyText(codeText, button);
+		MessagefallbackCopyText(codeText, div);
 	}
 }
 
-function fallbackCopyText(text, button) {
+function MessagefallbackCopyText(text, div) {
 	const textarea = document.createElement('textarea');
 	textarea.value = text;
 	textarea.style.position = 'fixed';
@@ -83,7 +81,7 @@ function fallbackCopyText(text, button) {
 	try {
 		const success = document.execCommand('copy');
 		if (success) {
-			showCopiedFeedback(button);
+			MessageshowCopiedFeedback(div);
 		} else {
 			console.error('Failed to copy code using execCommand');
 		}
@@ -94,7 +92,50 @@ function fallbackCopyText(text, button) {
 	}
 }
 
-function showCopiedFeedback(button) {
+function MessageshowCopiedFeedback(div) {
+	return ;
+}
+
+
+function CodecopyToClipboard(button) {
+	const codeBlock = button.closest('.code-block').querySelector('code');
+	const codeText = codeBlock.innerText;
+
+	if (navigator.clipboard) {
+		navigator.clipboard.writeText(codeText).then(() => {
+			CodeshowCopiedFeedback(button);
+		}).catch(err => {
+			console.error('Failed to copy code: ', err);
+			CodefallbackCopyText(codeText, button);
+		});
+	} else {
+		CodefallbackCopyText(codeText, button);
+	}
+}
+
+function CodefallbackCopyText(text, button) {
+	const textarea = document.createElement('textarea');
+	textarea.value = text;
+	textarea.style.position = 'fixed';
+	textarea.style.opacity = 0;
+	document.body.appendChild(textarea);
+	textarea.select();
+
+	try {
+		const success = document.execCommand('copy');
+		if (success) {
+			CodeshowCopiedFeedback(button);
+		} else {
+			console.error('Failed to copy code using execCommand');
+		}
+	} catch (err) {
+		console.error('Failed to copy code: ', err);
+	} finally {
+		document.body.removeChild(textarea);
+	}
+}
+
+function CodeshowCopiedFeedback(button) {
 	button.textContent = 'Copied!';
 	setTimeout(() => {
 		button.textContent = 'Copy';
@@ -117,7 +158,7 @@ function init_renderer() {
 		const topBar = `
 		<div class="code-top-bar">
 		<span class="code-language">${validLanguage}</span>
-		<button class="copy-button" onclick="copyCodeToClipboard(this)">Copy</button>
+		<button class="copy-button" onclick="CodecopyToClipboard(this)">Copy</button>
 		</div>
 		`;
 		
@@ -181,9 +222,10 @@ function app() {
 	return {
 		// 应用状态
 		user: null,
-		messages: [], // id, content, role
-		titles: [], // id, title, date ,model
-		models: [], // name, type
+		messages: [], // content, role, model(effect when role == 'assistant')
+		titles: [], // id, title, date
+		title_diff_days: [],
+		models: [], // name, type, origin
 		inputMessage: '',
 		username: null,
 		topBarContent: "",
@@ -201,6 +243,7 @@ function app() {
 		$axios,
 		csrftoken,
 		sidebar_hidden: false,
+
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
@@ -208,7 +251,30 @@ function app() {
 			this.topBarContent = "新对话";
 			this.get_history();
 			this.get_available_models();
+			this.title_diff_days = [ // 需要确保days递增，最后一个是-1
+				{name:"今天",days:1},
+				{name:"昨天",days:2},
+				{name:"7天内",days:7},
+				{name:"30天内",days:30},
+				{name:"其它",days:-1}, 
+			]; 
+			for (var i = 0; i < this.title_diff_days.length; i++) {
+				this.titles.push([]);
+			}
 		},
+
+		find_title_by_cid(cid) {
+			for (let i = 0; i < this.titles.length; i++) {
+				for (let j = 0; j < this.titles[i].length; j++){
+					if (cid == this.titles[i][j].id){
+						return [i,j];
+					}
+				}
+			}
+			console.log("cid not found cid: " + cid);
+			return [-1,-1];
+		},
+
 		logout() {
 			window.location.href = urls["logout"];
 		},
@@ -227,7 +293,7 @@ function app() {
 			const uploadMessage = this.inputMessage;
 			this.inputMessage = "";
 			this.messages.push({
-				id: Date.now(),
+				model: '',
 				content: uploadMessage,
 				role: 'user',
 			});
@@ -249,14 +315,8 @@ function app() {
 				})
 			})
 			.then(response => {
-
-				for (var i = 0; i < this.titles.length; i++) {
-					if (this.cid == this.titles[i].id) {
-						this.titles[i].date = new Date();
-						this.titles.sort((a,b) => a.date - b.date);
-						break;
-					}
-				}
+				if(this.cid !== -1) this.update_title(this.cid);
+				
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
 
 				if (!response.ok) {
@@ -281,7 +341,7 @@ function app() {
 				
 				if (reasoning) {
 					this.messages.push({
-						id: Date.now()-1,
+						model: '',
 						content: "",
 						role: 'reasoning',
 					});	
@@ -307,7 +367,7 @@ function app() {
 					if (!reasoning_end) return ;
 					if (!in_assistant){
 						this.messages.push({
-							id: Date.now(),
+							model: this.models[this.selectedModelid].origin,
 							content: "",
 							role: 'assistant',
 						});
@@ -354,11 +414,10 @@ function app() {
 									// console.log(jsonData);
 									if (firstchunk){
 										if (this.cid === -1){ // 新对话
-											this.titles.push({
+											this.insert_title({
 												id: jsonData.cid,
 												title: jsonData.title,
 												date: Date.now(),
-												model: this.models[this.selectedModelid].name,
 											});
 											this.cid = jsonData.cid;
 											this.update_topBar();
@@ -405,11 +464,7 @@ function app() {
 		get_history() {
 			$axios.get(urls["get_history"])
 			.then(response => {
-				this.titles = response.data.titles;
-				for (var i = 0; i < this.titles.length; i++) {
-					this.titles[i].date = new Date(this.titles[i].date);
-				}
-				this.titles.sort((a,b) => a.date - b.date);
+				this.order_title(response.data.titles);
 			})
 			.catch(error => {
 				console.log('get_history请求失败:');
@@ -431,14 +486,9 @@ function app() {
 				}
 			})
 			.then(response => {
-				for (var i = 0; i < this.titles.length; i++) {
-					if (cid == this.titles[i].id){
-						this.selectedModelid = this.get_model_ind(this.titles[i].model);
-						break;
-					}
-				}
-
+				let [i,j] = this.find_title_by_cid(cid);
 				this.messages = response.data.messages
+				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
 				this.cid = cid;
 				this.update_topBar();
 			})
@@ -453,12 +503,8 @@ function app() {
 
 		// 更新当前对话标题
 		update_topBar() {
-			for (let i = 0; i < this.titles.length; i++) {
-				if (this.cid === this.titles[i].id){
-					this.topBarContent = this.titles[i].title;
-					break;
-				}
-			}
+			let [i,j] = this.find_title_by_cid(this.cid)
+			this.topBarContent = this.titles[i][j].title;
 		},
 
 		deleteCommunication(cid,title) {
@@ -470,15 +516,11 @@ function app() {
 			})
 			.then(response => {
 				// console.log(response)
-				for (var i = 0; i < this.titles.length; i++) {
-					if (cid === this.titles[i].id){
-						if (cid === this.cid) {
-							this.createNewChat();
-						}
-						this.titles.splice(i,1);
-						break;
-					}
+				let [i,j] = this.find_title_by_cid(cid);
+				if (cid === this.cid) {
+					this.createNewChat();
 				}
+				this.titles[i].splice(j,1);
 			})
 			.catch(error => {
 				console.log('deleteCommunication请求失败:')
@@ -531,14 +573,8 @@ function app() {
 			})
 			.then(response => {
 				// console.log(response)
-				for (let i = 0; i < this.titles.length; i++) {
-					if (this.cid === this.titles[i].id){
-						this.titles[i].title = this.topBarContent;
-						this.titles[i].date = new Date();
-						this.titles.sort((a,b) => a.date - b.date)
-						break;
-					}
-				}
+				this.update_title(this.cid);
+
 				this.oldTitle = "";
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
 			})
@@ -574,14 +610,55 @@ function app() {
 		},
 		get_model_ind(model_name) {
 			for (var i = 0; i < this.models.length; i++) {
-				if (this.models[i].name == model_name){
+				if (this.models[i].name === model_name){
 					return i;
 				}
 			}
-			return -1;
+			return 0;
 		},
 		UserChangeModel(event){
 			event.srcElement.blur();
+		},
+		order_title(line_titles){
+			for (var i = 0; i < line_titles.length; i++) {
+				line_titles[i].date = new Date(line_titles[i].date);
+			}
+			line_titles.sort((a, b) => b.date - a.date);
+			let tmparr = []
+			tmparr = [];
+			for (var i = 0; i < this.title_diff_days.length; i++) {
+				tmparr.push([]);
+			}
+			let ind = 0;
+			let now = new Date();
+			for (var i = 0; i < line_titles.length; i++) {
+				let daysDifference = Math.ceil((now - line_titles[i].date) / (1000 * 60 * 60 * 24));
+				while(true){
+					let d = this.title_diff_days[ind].days;
+					if (d == -1 || daysDifference <= d) {
+						tmparr[ind].push(line_titles[i]);
+						break;
+					}
+					ind += 1;
+				}	
+			}
+			this.titles = tmparr;
+
+		},
+		insert_title(dict){
+			this.titles[0].unshift(dict); //unshift 在数组开头插入元素
+		},
+		update_title(cid) {
+			let [i,j] = this.find_title_by_cid(this.cid)
+			let oldtitle = this.titles[i][j];
+			this.titles[i].splice(j,1);
+			oldtitle.date = new Date();
+			oldtitle.title = this.topBarContent;
+			this.titles[0].unshift(oldtitle);
+		},
+		UserCopyMessage(event){
+			let element = event.srcElement.parentElement;
+			MessagecopyToClipboard(element);
 		},
 	}
 }

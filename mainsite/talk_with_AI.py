@@ -26,7 +26,6 @@ def talk_with_AI(comm,messages,model_name):
 				"message": f"Message {i} **你好\n你好{usercontent}**\n\n",
 				"cid": comm.pk,
 				"title": comm.title,
-				"model": comm.model,
 			}
 			if i < msglen/2 and model.get_model_type_display() == "reasoning":
 				data["role"] = "reasoning"
@@ -56,7 +55,6 @@ def talk_with_AI(comm,messages,model_name):
 			data = {
 				"cid": comm.pk,
 				"title": comm.title,
-				"model": comm.model,
 			}
 			for chunk in response:
 				data["id"] = content_id
@@ -87,7 +85,6 @@ def talk_with_AI(comm,messages,model_name):
 			data = {
 				"cid": comm.pk,
 				"title": comm.title,
-				"model": comm.model,
 				"role": "assistant"
 			}
 			content = ""
@@ -103,6 +100,6 @@ def talk_with_AI(comm,messages,model_name):
 				content_id += 1
 			
 	if model.get_model_type_display() == "reasoning":
-		create_communication_content(comm,"reasoning",reasoning_content)
-	create_communication_content(comm,"assistant",content)
+		create_communication_content(comm,"reasoning",reasoning_content,model.get_model_origin_display())
+	create_communication_content(comm,"assistant",content,model.get_model_origin_display())
 	comm.save() # 触发comm时间的auto_now

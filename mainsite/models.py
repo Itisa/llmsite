@@ -26,18 +26,30 @@ class User(models.Model):
 		return self.username
 
 class Communication(models.Model):
+	MODEL_ORIGIN_CHOICES = [
+		("DS","deepseek"),
+		("DB","doubao"),
+		("OA","openai"),
+	]
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now=True)
-	model = models.CharField(max_length=20)
+	model = models.CharField(max_length=100,default='none') #用户最后使用的model
 	title = models.CharField(max_length=100)
 	def __str__(self):
 		return self.title
 
 class Communication_Content(models.Model):
+	MODEL_CHOICES = [
+		("DS","deepseek"),
+		("DB","doubao"),
+		("OA","openai"),
+		("NN","none"),
+	]
 	communication = models.ForeignKey(Communication, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now_add=True)
 	role = models.CharField(max_length=10)
 	content = models.CharField(max_length=4000)
+	model = models.CharField(max_length=3, choices=MODEL_CHOICES,default="NN")
 	def __str__(self):
 		return self.content[:20]
 

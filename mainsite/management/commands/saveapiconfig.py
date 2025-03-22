@@ -14,7 +14,7 @@ class Command(BaseCommand):
 				"name": api.name,
 				"base_url": api.base_url,
 				"api_key": api.api_key,
-				"endpoint": api.endpoint,
+				"model": api.model,
 				"model_type": api.model_type,
 				"model_origin": api.model_origin
 			})

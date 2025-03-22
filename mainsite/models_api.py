@@ -3,7 +3,6 @@ import logging
 import bcrypt
 from django.utils import timezone
 from django.core.cache import cache
-import platform
 logger = logging.getLogger(__name__)
 def add_user(username,password,user_type="NM"):
 	user_qst = User.objects.filter(username=username)
@@ -51,8 +50,8 @@ def add_mailbox(user,title,content):
 	mm = Mailbox(user=user,title=title,content=content)
 	mm.save()
 
-def create_communication(user,model_name,title):
-	comm = user.communication_set.create(model=model_name,title=title)
+def create_communication(user,title,model_name):
+	comm = user.communication_set.create(title=title,model=model_name)
 	return comm
 
 def get_communication_by_pk(pk):
@@ -67,8 +66,8 @@ def get_communication_by_pk(pk):
 		pass
 	return u
 
-def create_communication_content(communication,role,content):
-	cc = communication.communication_content_set.create(role=role,content=content)
+def create_communication_content(communication,role,content,model='none'):
+	cc = communication.communication_content_set.create(role=role,content=content,model=model)
 	return cc
 
 def get_model_by_name(model_name):
@@ -80,7 +79,7 @@ def get_model_by_name(model_name):
 	return u
 
 def if_user_valid(user):
-	if user == None:
+	if user is None:
 		return False
 	if user.get_user_status_display() == "forbidden":
 		return False
@@ -93,35 +92,36 @@ def if_user_valid(user):
 	return True
 
 def get_models():
-	if platform.system() == "Linux":
-		cached_models = cache.get('models')
-		if cached_models is None:
-			models = []
-			for model in Api_config.objects.all():
-				models.append(model.name)
-			cache.set('models',models)
-			return models
-		else:
-			return cached_models
-	else:
+	cached_models = cache.get('models')
+	if cached_models is None:
 		models = []
 		for model in Api_config.objects.all():
 			models.append(model.name)
+		cache.set('models',models)
 		return models
+	else:
+		return cached_models
 
 def get_typed_models():
-	if platform.system() == "Linux":
-		cached_typed_models = cache.get('typed_models')
-		if cached_typed_models is None:
-			typed_models = []
-			for model in Api_config.objects.all():
-				typed_models.append({"name":model.name,"type":model.get_model_type_display()})
-			cache.set('typed_models',typed_models)
-			return typed_models
-		else:
-			return cached_typed_models
-	else:
+	cached_typed_models = cache.get('typed_models')
+	if cached_typed_models is None:
 		typed_models = []
 		for model in Api_config.objects.all():
-			typed_models.append({"name":model.name,"type":model.get_model_type_display()})
+			typed_models.append({"name":model.name,"type":model.get_model_type_display(), "origin":model.get_model_origin_display()})
+		cache.set('typed_models',typed_models)
 		return typed_models
+	else:
+		return cached_typed_models
+
+def get_model_origin_by_name(name):
+	cached_model_origin = cache.get(f'model_origin_{name}')
+	if cached_model_origin is None:
+		model = get_model_by_name(name)
+		if model is None:
+			ret = 'none'
+		else:
+			ret = model.get_model_origin_display();
+		cache.set(f'model_origin_{name}',ret)
+		return ret
+	else:
+		return cached_model_origin

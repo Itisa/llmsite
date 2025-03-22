@@ -165,7 +165,7 @@ def get_communication_content(request):
 	messages = []
 	qst = comm.communication_content_set.all().order_by('gen_date')
 	for msg in qst:
-		messages.append({"role":msg.role,"content":msg.content,"timestamp":msg.gen_date,"id":msg.pk})
+		messages.append({"role":msg.role,"content":msg.content,"model":msg.get_model_display()})
 	return JsonResponse({'status': 'ok', 'messages': messages},status=200)
 
 
@@ -184,7 +184,7 @@ def talk(request):
 	cid = data.get('cid',-2)
 
 	if cid == -1:
-		comm = create_communication(request.User,model_name,message[:30])
+		comm = create_communication(request.User,message[:30],model_name)
 	else:
 		comm = get_communication_by_pk(cid)
 		if comm == None:
@@ -200,7 +200,7 @@ def talk(request):
 		messages.append({"role":msg.role,"content":msg.content})
 
 	messages.append({"role": "user", "content": message})
-	create_communication_content(comm,"user",message)
+	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
 
 @require_http_methods(["POST"])

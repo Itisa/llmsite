@@ -9,7 +9,7 @@
 	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
-	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.ico' %}">
+	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.svg' %}">
 	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
 
 </head>
@@ -24,11 +24,7 @@
 			<div class="sidebar_top">
 				<div class="sidebar_top_1">
 					<h3 class="site_title">这是网站名称</h3>
-					<svg class="hide_sidebar_btn" @click="hide_sidebar">
-							<rect id="rect" x="17.420410" y="12.316406" rx="1.000947" width="5.995172" height="2.001895" transform="rotate(137.159 17.420410 12.316406)" fill="currentColor" fill-opacity="1.000000"></rect>
-							<rect id="rect" x="12.959473" y="13.728516" rx="0.995190" width="6.002943" height="1.990380" transform="rotate(40.853 12.959473 13.728516)" fill="currentColor" fill-opacity="1.000000"></rect>
-							<path id="path" d="M20.1 25.5L9.9 25.51C9.48 25.51 9.06 25.47 8.65 25.39C8.24 25.3 7.84 25.18 7.45 25.02C7.06 24.86 6.69 24.66 6.34 24.43C5.99 24.19 5.67 23.92 5.37 23.63C5.07 23.33 4.81 23 4.58 22.65C4.34 22.3 4.15 21.93 3.98 21.54C3.82 21.15 3.7 20.75 3.62 20.34C3.54 19.93 3.5 19.51 3.5 19.09L3.5 10.93C3.5 10.51 3.54 10.1 3.62 9.68C3.7 9.27 3.82 8.87 3.98 8.48C4.15 8.09 4.34 7.72 4.58 7.37C4.81 7.02 5.07 6.69 5.37 6.39C5.67 6.1 5.99 5.83 6.34 5.6C6.69 5.36 7.06 5.16 7.45 5C7.84 4.84 8.24 4.72 8.65 4.64C9.06 4.55 9.48 4.51 9.9 4.51L20.1 4.5C20.52 4.5 20.94 4.54 21.35 4.62C21.76 4.7 22.16 4.83 22.55 4.99C22.94 5.15 23.31 5.35 23.66 5.58C24 5.82 24.33 6.08 24.62 6.38C24.92 6.68 25.19 7 25.42 7.35C25.65 7.7 25.85 8.07 26.01 8.46C26.17 8.85 26.3 9.25 26.38 9.67C26.46 10.08 26.5 10.5 26.5 10.92L26.5 19.07C26.5 19.5 26.46 19.91 26.38 20.32C26.3 20.74 26.17 21.14 26.01 21.53C25.85 21.92 25.65 22.29 25.42 22.64C25.19 22.99 24.92 23.31 24.62 23.61C24.33 23.91 24 24.17 23.66 24.41C23.31 24.64 22.94 24.84 22.55 25C22.16 25.16 21.76 25.29 21.35 25.37C20.94 25.45 20.52 25.5 20.1 25.5ZM9.9 6.6C9.61 6.6 9.33 6.63 9.05 6.69C8.78 6.74 8.51 6.82 8.24 6.93C7.98 7.04 7.73 7.18 7.5 7.33C7.26 7.49 7.04 7.67 6.84 7.87C6.64 8.07 6.46 8.29 6.31 8.53C6.15 8.77 6.02 9.01 5.91 9.28C5.8 9.54 5.72 9.81 5.66 10.09C5.61 10.37 5.58 10.65 5.58 10.93L5.58 19.09C5.58 19.37 5.61 19.65 5.66 19.93C5.72 20.21 5.8 20.48 5.91 20.74C6.02 21.01 6.15 21.26 6.31 21.49C6.46 21.73 6.64 21.95 6.84 22.15C7.04 22.35 7.26 22.53 7.5 22.69C7.73 22.85 7.98 22.98 8.24 23.09C8.51 23.2 8.78 23.28 9.05 23.33C9.33 23.39 9.61 23.42 9.9 23.42L20.1 23.41C20.38 23.41 20.67 23.37 20.94 23.32C21.22 23.26 21.49 23.18 21.75 23.07C22.01 22.96 22.26 22.83 22.5 22.67C22.73 22.51 22.95 22.33 23.15 22.13C23.35 21.93 23.53 21.71 23.69 21.48C23.85 21.24 23.98 20.99 24.09 20.73C24.2 20.47 24.28 20.2 24.33 19.92C24.39 19.64 24.42 19.36 24.42 19.07L24.42 10.92C24.42 10.64 24.39 10.35 24.33 10.07C24.28 9.79 24.2 9.52 24.09 9.26C23.98 9 23.85 8.75 23.69 8.51C23.53 8.28 23.35 8.06 23.15 7.86C22.95 7.66 22.73 7.48 22.5 7.32C22.26 7.16 22.01 7.03 21.75 6.92C21.49 6.81 21.22 6.73 20.94 6.67C20.67 6.62 20.38 6.59 20.1 6.59L9.9 6.6Z" fill="currentColor" fill-opacity="1.000000" fill-rule="nonzero"></path><path id="rect" d="M8.5 5.51L10.54 5.51L10.6 24.43L8.55 24.43L8.5 5.51Z" fill="currentColor" fill-opacity="1.000000" fill-rule="evenodd"></path>
-					</svg>
+					<img class="hide_sidebar_btn" @click="hide_sidebar" src="{% static 'mainsite/hidesidebar.png' %}"></img>
 				</div>
 				<!-- 新增的生成新对话按钮 -->
 				<button @click="createNewChat" class="new_communication" @keydown.window.k=UserPressK(event)>
@@ -37,22 +33,26 @@
 			</div>
 			<!-- 历史对话列表，单独设置滚动 -->
 			<div class="history_list" id="history_list">
-				<template x-for="item in titles.slice().reverse()" :key="item.id">
-					<div @click="get_communication_content(item.id)"
-						class="history_list_item"
-						:class="{ 'history_list_item_focus': item.id === cid }"
-						x-data = "{private_show_btn : false}"
-						@mouseenter="private_show_btn = true"
-						@mouseleave="private_show_btn = false">
-						<div>
-							<div class="history_item_title" x-text="item.title"></div>
-							
-						</div>
+				<template x-for="(diff_item,index) in title_diff_days">
+					<div x-show="titles[index].length !== 0">
+						<div x-text="diff_item.name" class="time_diff"></div>
+						<template x-for="item in titles[index]">
+							<div @click="get_communication_content(item.id)"
+								class="history_list_item"
+								:class="{ 'history_list_item_focus': item.id === cid }"
+								x-data = "{private_show_btn : false}"
+								@mouseenter="private_show_btn = true"
+								@mouseleave="private_show_btn = false">
+								<div>
+									<div class="history_item_title" x-text="item.title"></div>
+								</div>
 
-						<button x-show = "private_show_btn" @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">❌</button>
-						
+								<button x-show = "private_show_btn" @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">❌</button>
+								
+							</div>
+						</template>
 					</div>
-					</template>
+				</template>
 			</div>
 			<!-- 个人信息 -->
 			<div 
@@ -75,11 +75,7 @@
 
 		<!-- 隐藏后的侧边栏 -->
 		<div x-show="sidebar_hidden" style="display: none;" class="hidden_sidebar">
-			<svg class="show_sidebar_btn" @click="show_sidebar">
-				<rect id="rect" x="11.572754" y="17.683594" rx="1.000947" width="5.995172" height="2.001895" transform="rotate(-42.841 11.572754 17.683594)" fill="currentColor" fill-opacity="1.000000"></rect>
-				<rect id="rect" x="16.033691" y="16.271484" rx="0.995190" width="6.002943" height="1.990380" transform="rotate(-139.147 16.033691 16.271484)" fill="currentColor" fill-opacity="1.000000"></rect>
-				<path id="path" d="M20.09 25.48L9.89 25.5C9.47 25.5 9.05 25.45 8.64 25.37C8.23 25.29 7.83 25.17 7.44 25C7.05 24.84 6.68 24.64 6.33 24.41C5.98 24.18 5.66 23.91 5.36 23.61C5.07 23.31 4.8 22.99 4.57 22.64C4.34 22.29 4.14 21.92 3.98 21.53C3.82 21.14 3.69 20.74 3.61 20.32C3.53 19.91 3.49 19.49 3.49 19.07L3.49 10.92C3.49 10.5 3.53 10.08 3.61 9.67C3.69 9.25 3.82 8.85 3.98 8.46C4.14 8.07 4.34 7.7 4.57 7.35C4.8 7 5.07 6.68 5.36 6.38C5.66 6.08 5.98 5.81 6.33 5.58C6.68 5.35 7.05 5.15 7.44 4.99C7.83 4.82 8.23 4.7 8.64 4.62C9.05 4.54 9.47 4.5 9.89 4.5L20.09 4.48C20.51 4.48 20.93 4.52 21.34 4.6C21.75 4.69 22.15 4.81 22.54 4.97C22.93 5.13 23.3 5.33 23.65 5.57C24 5.8 24.32 6.06 24.62 6.36C24.92 6.66 25.18 6.98 25.41 7.33C25.65 7.69 25.84 8.06 26.01 8.45C26.17 8.84 26.29 9.24 26.37 9.65C26.45 10.06 26.49 10.48 26.5 10.91L26.5 19.06C26.49 19.48 26.45 19.89 26.37 20.31C26.29 20.72 26.17 21.12 26.01 21.51C25.84 21.9 25.65 22.27 25.41 22.62C25.18 22.97 24.92 23.3 24.62 23.6C24.32 23.89 24 24.16 23.65 24.39C23.3 24.63 22.93 24.83 22.54 24.99C22.15 25.15 21.75 25.27 21.34 25.35C20.93 25.44 20.51 25.48 20.09 25.48ZM9.89 6.59C9.61 6.59 9.32 6.62 9.05 6.67C8.77 6.73 8.5 6.81 8.24 6.92C7.98 7.03 7.73 7.16 7.49 7.32C7.26 7.48 7.04 7.66 6.84 7.86C6.64 8.06 6.46 8.28 6.3 8.51C6.14 8.75 6.01 9 5.9 9.26C5.79 9.52 5.71 9.8 5.66 10.07C5.6 10.35 5.57 10.63 5.57 10.92L5.57 19.07C5.57 19.36 5.6 19.64 5.66 19.92C5.71 20.19 5.79 20.47 5.9 20.73C6.01 20.99 6.14 21.24 6.3 21.48C6.46 21.71 6.64 21.93 6.84 22.13C7.04 22.33 7.26 22.51 7.49 22.67C7.73 22.83 7.98 22.96 8.24 23.07C8.5 23.18 8.77 23.26 9.05 23.32C9.32 23.37 9.61 23.4 9.89 23.4L20.09 23.39C20.38 23.39 20.66 23.36 20.94 23.3C21.21 23.25 21.48 23.17 21.75 23.06C22.01 22.95 22.26 22.81 22.49 22.66C22.73 22.5 22.95 22.32 23.15 22.12C23.35 21.91 23.52 21.7 23.68 21.46C23.84 21.22 23.97 20.98 24.08 20.71C24.19 20.45 24.27 20.18 24.33 19.9C24.38 19.62 24.41 19.34 24.41 19.06L24.41 10.91C24.41 10.62 24.38 10.34 24.33 10.06C24.27 9.78 24.19 9.51 24.08 9.25C23.97 8.98 23.84 8.74 23.68 8.5C23.52 8.26 23.35 8.04 23.15 7.84C22.95 7.64 22.73 7.46 22.49 7.3C22.26 7.15 22.01 7.01 21.75 6.9C21.48 6.79 21.21 6.71 20.94 6.66C20.66 6.6 20.38 6.57 20.09 6.57L9.89 6.59Z" fill="currentColor" fill-opacity="1.000000" fill-rule="nonzero"></path><path id="rect" d="M8.49 5.5L10.53 5.5L10.59 24.41L8.54 24.41L8.49 5.5Z" fill="currentColor" fill-opacity="1.000000" fill-rule="evenodd"></path>
-			</svg>
+			<img class="show_sidebar_btn" @click="show_sidebar" src="{% static 'mainsite/showsidebar.png' %}"></img>
 		</div>
 
 		<!-- 主聊天区域 -->
@@ -121,29 +117,48 @@
 			<!-- 消息区域 -->
 			<div class="communication_area" id="message_area" :class="{ 'hidden': cid == -1 }">
 				<div class="communication_area_contract">
-					<template x-for="message in messages" :key="message.id">
-						<div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+					<template x-for="message in messages">
+						<div :class="message.role === 'user' ? 'text-right' : 'text-left'"
+							 x-data = "{ifenter : false}" 
+							 @mouseenter="ifenter = true" 
+							 @mouseleave="ifenter = false">
 							<div class="message">
 								<template x-if="message.role === 'user'">
-									<div>
+									<div class="message_user_block">
+										<div style="display: none;" x-text="message.content"></div>
+										<img class="message_user_copy" src="{% static 'mainsite/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
 										<!-- 用户消息样式 -->
 										<div class="message_user" x-text="message.content"></div>
 									</div>
 								</template>
 								<template x-if="message.role === 'assistant'">
+									
 									<div class="message_assistant_and_icon">
-										<img src="{% static 'mainsite/101.png' %}" class="assistant_icon">
+										
+										<template x-if="message.model === 'deepseek'"><img src="{% static 'mainsite/ds_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'doubao'"><img src="{% static 'mainsite/db_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
+
 										<!-- Deepseek 助手消息样式 -->
-										<div class="message_assistant" x-html="marked.parse(message.content)"></div>
+										<div>
+											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
+											<div class="assistant_user_copy_div">
+												<div style="display: none;" x-text="message.content"></div>
+												<img class="assistant_user_copy" src="{% static 'mainsite/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
+											</div>
+											
+										</div>
 									</div>
+									
 								</template>
 								<template x-if="message.role === 'reasoning'">
 
 									<!-- 深度思考内容样式 -->
 									<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
 								</template>
-
 							</div>
+							
 						</div>
 					</template>
 				</div>
@@ -193,6 +208,6 @@
 	</script>
 	<script src="{% static 'mainsite/mainsite.js' %}"> </script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ class Command(BaseCommand):
 			try:
 				name = api["name"]
 				api_key = api["api_key"]
-				endpoint = api["endpoint"]
+				model = api["model"]
 				base_url = api.get("base_url","")
 				model_type = api.get("model_type","chat")
 				model_origin = api.get("model_origin","openai")
@@ -24,7 +24,7 @@ class Command(BaseCommand):
 					aa = Api_config(
 						name=name,
 						api_key=api_key,
-						endpoint=endpoint,
+						model=model,
 						base_url=base_url,
 						model_type=model_type,
 						model_origin=model_origin
