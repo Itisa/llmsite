@@ -1,7 +1,8 @@
 from django.db import models
-
+from django.core.cache import cache
 # Create your models here.
 from django.utils import timezone
+
 
 class User(models.Model):
 	USER_TYPE_CHOICES = [
@@ -79,5 +80,17 @@ class Api_config(models.Model):
 	level = models.IntegerField(default=-1)
 	model_type = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
 	model_origin = models.CharField(max_length=3, choices=MODEL_ORIGIN_CHOICES)
+	disabled = models.BooleanField(default=False)
 	def __str__(self):
 		return self.name
+
+class GlobalSetting(models.Model):
+	key = models.CharField(max_length=50,unique=True)
+	value = models.CharField(max_length=100)
+	comment = models.CharField(max_length=100)
+	def __str__(self):
+		return self.key
+
+	def save(self, **kwargs):
+		super().save(**kwargs)
+		cache.set(self.key, self.value, None)

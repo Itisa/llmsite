@@ -14,6 +14,7 @@ from mainsite.models_api import get_model_by_name, create_communication_content
 def talk_with_AI(comm,messages,model_name):
 	model = get_model_by_name(model_name)
 	if settings.TALK_TEST:
+		time.sleep(3)
 		content = ""
 		reasoning_content = ""
 

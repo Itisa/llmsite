@@ -23,7 +23,7 @@
 			
 			<div class="sidebar_top">
 				<div class="sidebar_top_1">
-					<h3 class="site_title">这是网站名称</h3>
+					<h3 class="site_title">{{ website_name }}</h3>
 					<img class="hide_sidebar_btn" @click="hide_sidebar" src="{% static 'mainsite/hidesidebar.png' %}"></img>
 				</div>
 				<!-- 新增的生成新对话按钮 -->
@@ -140,6 +140,8 @@
 										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
 
+										<!-- <img src="{% static 'mainsite/circle-loading.gif' %}" style="height: 20px; width: 20px;"> -->
+
 										<!-- Deepseek 助手消息样式 -->
 										<div>
 											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
@@ -169,7 +171,7 @@
 				<div x-show = "cid === -1" class="input_service_description">
 					<div class="input_service_description_line1">
 						<img src="{% static 'mainsite/101.png' %}" class="input_service_description_icon">
-						<div class="input_service_description_text">我是 网站名称 ，很高兴见到你！</div>
+						<div class="input_service_description_text">我是 {{ website_name }} ，很高兴见到你！</div>
 					</div>
 					
 				</div>

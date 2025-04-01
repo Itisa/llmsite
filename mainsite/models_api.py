@@ -95,7 +95,7 @@ def get_models():
 	cached_models = cache.get('models')
 	if cached_models is None:
 		models = []
-		for model in Api_config.objects.all():
+		for model in Api_config.objects.filter(disabled=False):
 			models.append(model.name)
 		cache.set('models',models)
 		return models
@@ -106,7 +106,7 @@ def get_typed_models():
 	cached_typed_models = cache.get('typed_models')
 	if cached_typed_models is None:
 		typed_models = []
-		for model in Api_config.objects.all():
+		for model in Api_config.objects.filter(disabled=False):
 			typed_models.append({"name":model.name,"type":model.get_model_type_display(), "origin":model.get_model_origin_display()})
 		cache.set('typed_models',typed_models)
 		return typed_models
@@ -125,3 +125,29 @@ def get_model_origin_by_name(name):
 		return ret
 	else:
 		return cached_model_origin
+
+def get_setting(name):
+	try:
+		u = GlobalSetting.objects.get(key=name)
+		return u
+	except:
+		return None
+
+def get_can_register():
+	qrystr = "can_register"
+	cached = cache.get(qrystr)
+	if cached is None:
+		g = get_setting(qrystr)
+		cached = g.value
+		cache.set(qrystr, cached, None)
+	
+	return (cached == "True")
+
+def get_website_name():
+	qrystr = "website_name"
+	cached = cache.get(qrystr)
+	if cached is None:
+		g = get_setting(qrystr)
+		cached = g.value
+		cache.set(qrystr, cached, None)
+	return cached

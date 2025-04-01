@@ -297,11 +297,14 @@ function app() {
 				content: uploadMessage,
 				role: 'user',
 			});
+			console.log(this.messages)
 			let reasoning = (this.models[this.selectedModelid].type === "reasoning");
 			this.in_talk = true;
 			setTimeout(() => {
 				this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 			}, 0);
+
+
 			fetch(urls["talk"], {
 				method: 'POST',	
 				headers: {
@@ -329,6 +332,18 @@ function app() {
 					return ;
 				}
 				
+
+				// if (this.cid === -1){ // 新对话 //////////////////////////////
+				// 	this.insert_title({
+				// 		id: jsonData.cid,
+				// 		title: jsonData.title,
+				// 		date: Date.now(),
+				// 	});
+				// 	this.cid = jsonData.cid;
+				// 	this.update_topBar();
+				// }
+
+
 				setTimeout(() => {
 					this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 				}, 0);
@@ -412,8 +427,8 @@ function app() {
 								} else {
 									const jsonData = JSON.parse(line);
 									// console.log(jsonData);
-									if (firstchunk){
-										if (this.cid === -1){ // 新对话
+									if (firstchunk){ /////////////////////////////////////
+										if (this.cid === -1){ // 新对话 
 											this.insert_title({
 												id: jsonData.cid,
 												title: jsonData.title,
@@ -538,6 +553,7 @@ function app() {
 			this.cid = -1;
 			this.topBarContent = "新对话";
 			this.messages = [];
+			this.focusOnInput();
 		},
 		// 开启/关闭标题编辑
 		enableEditTitle(){
@@ -590,9 +606,11 @@ function app() {
 			if (this.in_talk) return ;
 			this.personal_info_showButtons = !this.personal_info_showButtons;
 		},
-		focusOnInput(event) {
+		focusOnInput(event=undefined) {
 			if (document.activeElement !== user_input_textarea) {
-				event.preventDefault();
+				if (event !== undefined){
+					event.preventDefault();
+				}
 				user_input_textarea.focus();
 			}
 		},

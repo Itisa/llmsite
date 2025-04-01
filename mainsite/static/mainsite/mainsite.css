@@ -311,6 +311,7 @@ code {
 	text-align: right;
 }
 .message_user {
+	text-align: left;
 	max-width: 50rem;
 	margin-right: 1rem;
 	background-color: #eff6ff;

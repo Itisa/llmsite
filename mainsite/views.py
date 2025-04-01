@@ -51,7 +51,10 @@ def generate_random_string(length):
 @require_http_methods(["GET"])
 @require_user("page")
 def site(request):
-	rsp = render(request,"mainsite/mainsite.html")
+	data = {
+		"website_name" : get_website_name(),
+	}
+	rsp = render(request,"mainsite/mainsite.html",data)
 	return rsp
 
 @require_http_methods(["GET","POST"])
@@ -93,11 +96,14 @@ def login(request):
 @require_http_methods(["GET","POST"])
 def register(request):
 	if request.method == "GET":
-		return HttpResponse("注册暂时不可用，请与管理员联系") #
-		return render(request,"mainsite/register.html")
+		if get_can_register():
+			return render(request,"mainsite/register.html")
+		else:
+			return HttpResponse("注册暂时不可用，请与管理员联系") #
 	elif request.method == "POST":
+		if not get_can_register():
+			return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403) #
 		
-		return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403) #
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
 

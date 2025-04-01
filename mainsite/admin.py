@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import path
 
-from .models import User, Communication, Communication_Content, Mailbox, Api_config
+from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
 from .views import generate_random_string,add_user
 
 import bcrypt
@@ -146,3 +146,9 @@ class MailboxAdmin(admin.ModelAdmin):
 		return form
 
 admin.site.register(Mailbox,MailboxAdmin)
+
+
+class GlobalSettingAdmin(admin.ModelAdmin):
+	list_display = ["key","value","comment"]
+
+admin.site.register(GlobalSetting,GlobalSettingAdmin)
