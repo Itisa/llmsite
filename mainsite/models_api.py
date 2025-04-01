@@ -1,4 +1,4 @@
-from .models import User, Communication, Communication_Content, Mailbox, Api_config
+from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
 import logging
 import bcrypt
 from django.utils import timezone
