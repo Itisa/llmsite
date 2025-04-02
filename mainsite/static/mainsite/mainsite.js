@@ -182,6 +182,12 @@ function init_renderer() {
 		rsp = `<strong>${renderWithKatex(this.parser.parseInline(text.tokens))}</strong>`;
 		return rsp
 	}
+
+	// renderer.del = function(text) {
+	// 	rsp = renderWithKatex(this.parser.parseInline(text.tokens));
+	// 	return rsp
+	// }
+
 	renderer.text = function(token) {
 		return 'tokens' in token && token.tokens ? this.parser.parseInline(token.tokens) : (token.raw);
 	}
@@ -249,6 +255,8 @@ function app() {
 			marked.setOptions({
 				renderer: this.renderer,
 			});
+			// console.log(marked.parseInline[1]["J"]["breaks"]["del"])
+			// console.log(marked.parse('这是 ~~删除线~~ 测试'));
 			this.topBarContent = "新对话";
 			this.get_history();
 			this.get_available_models();
