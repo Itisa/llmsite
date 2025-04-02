@@ -1,4 +1,4 @@
-from .models import User, Communication, Communication_Content, Mailbox, Api_config
+from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
 import logging
 import bcrypt
 from django.utils import timezone
@@ -127,11 +127,7 @@ def get_model_origin_by_name(name):
 		return cached_model_origin
 
 def get_setting(name):
-	try:
-		u = GlobalSetting.objects.get(key=name)
-		return u
-	except:
-		return None
+	return GlobalSetting.objects.get(key=name)
 
 def get_can_register():
 	qrystr = "can_register"
