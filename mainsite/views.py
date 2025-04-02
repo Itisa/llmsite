@@ -187,6 +187,7 @@ def talk(request):
 	if not model_name in get_models():
 		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=400)	
 	message = data.get('message',"")
+	system = data.get('system',"")
 	cid = data.get('cid',-2)
 
 	if cid == -1:
@@ -200,12 +201,15 @@ def talk(request):
 			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
 
 	messages = []
+	if system != "":
+		messages.append({"role": "system", "content": system})
 	for msg in comm.communication_content_set.all():
 		if msg.role == "reasoning":
 			continue
 		messages.append({"role":msg.role,"content":msg.content})
 
 	messages.append({"role": "user", "content": message})
+	comm.system = system
 	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
 
@@ -260,3 +264,15 @@ def site_mailbox(request):
 			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
 		except KeyError as e:
 			return JsonResponse({'status': 'error', 'reason': f'Missing key: {str(e)}'}, status=400)
+
+@require_http_methods(["GET"])
+@require_user("data")
+def get_system_content(request):
+	cid = request.GET["cid"]
+	comm = get_communication_by_pk(int(cid))
+	if comm == None:
+		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
+	if (comm.user.pk != request.User.pk):
+		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
+	
+	return JsonResponse({'status': 'ok', 'data': comm.system},status=200)

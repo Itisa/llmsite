@@ -35,6 +35,7 @@ class Communication(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now=True)
 	model = models.CharField(max_length=100,default='none') #用户最后使用的model
+	system = models.TextField(default='',blank=True) #用户最后使用的system
 	title = models.CharField(max_length=100)
 	def __str__(self):
 		return self.title
@@ -49,7 +50,7 @@ class Communication_Content(models.Model):
 	communication = models.ForeignKey(Communication, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now_add=True)
 	role = models.CharField(max_length=10)
-	content = models.CharField(max_length=4000)
+	content = models.TextField()
 	model = models.CharField(max_length=3, choices=MODEL_CHOICES,default="NN")
 	def __str__(self):
 		return self.content[:20]
@@ -58,7 +59,7 @@ class Mailbox(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now_add=True)
 	title = models.CharField(max_length=200,blank=True)
-	content = models.CharField(max_length=4000)
+	content = models.TextField()
 	def __str__(self):
 		return self.title
 
@@ -87,7 +88,7 @@ class Api_config(models.Model):
 class GlobalSetting(models.Model):
 	key = models.CharField(max_length=50,unique=True)
 	value = models.CharField(max_length=100)
-	comment = models.CharField(max_length=100)
+	comment = models.TextField()
 	def __str__(self):
 		return self.key
 

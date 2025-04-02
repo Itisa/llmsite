@@ -16,4 +16,5 @@ urlpatterns = [
 	path("change_communication_title", views.change_communication_title, name="change_communication_title"),
 	path("delete_communication", views.delete_communication, name="delete_communication"),
 	path("site_mailbox", views.site_mailbox, name="site_mailbox"),
+	path("get_system_content", views.get_system_content, name="get_system_content"),
 ]

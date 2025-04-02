@@ -9,7 +9,7 @@
 	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
 	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
-	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.svg' %}">
+	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.ico' %}">
 	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
 
 </head>
@@ -115,7 +115,7 @@
 			</div>
 
 			<!-- 消息区域 -->
-			<div class="communication_area" id="message_area" :class="{ 'hidden': cid == -1 }">
+			<div class="communication_area" id="message_area" :class="{ 'hidden': cid === -1 }">
 				<div class="communication_area_contract">
 					<template x-for="message in messages">
 						<div :class="message.role === 'user' ? 'text-right' : 'text-left'"
@@ -140,8 +140,6 @@
 										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
 
-										<!-- <img src="{% static 'mainsite/circle-loading.gif' %}" style="height: 20px; width: 20px;"> -->
-
 										<!-- Deepseek 助手消息样式 -->
 										<div>
 											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
@@ -158,6 +156,17 @@
 
 									<!-- 深度思考内容样式 -->
 									<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
+								</template>
+
+								<!-- 等待服务器返回消息，转圈圈 -->
+								<template x-if="message.role === 'waiting'">
+									<div>
+										<template x-if="message.model === 'deepseek'"><img src="{% static 'mainsite/ds_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'doubao'"><img src="{% static 'mainsite/db_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
+										<img src="{% static 'mainsite/circle-loading.gif' %}" class="chat_loading_gif">
+									</div>
 								</template>
 							</div>
 							
@@ -177,20 +186,36 @@
 				</div>
 				<form @submit.prevent="sendMessage">
 					<div class="user_input_form">
-						<textarea x-model="inputMessage"
+						<div>
+							<textarea x-model="inputMessage"
 								 type="text"
 								 placeholder='输入消息...(按"/"快速输入 按enter发送)'
 								 class="user_input_textarea"
 								 id="user_input_textarea"
 								 @keydown.enter="userPressEnterInSendMessage(event)"
 								 @keydown.window.slash=focusOnInput(event)></textarea>
+						</div>
+						<div>
+							<img src="{% static 'mainsite/settings.png' %}" class="settings_btn" @click="UserEnterSettings(event)">
+
+						</div>
 						<!-- <button type="submit" class="user_input_submit_btn">发送</button> -->
 					</div>
 				</form>
 				
 			</div>
 		</div>
-
+		<div style="display: none;" x-show="show_settings" class="settings_background" @keydown.window.escape="CloseSettings()">
+			<div class="settings_div" @click.away="CloseSettings()">
+				<div>
+					<img src="{% static 'mainsite/close.png' %}" class="settings_close_img" @click="CloseSettings()">
+				</div>
+				<div>
+					<div style="margin-bottom: 10px;">系统提示词：</div>
+					<textarea class="system_content_textarea" x-model="system_content"></textarea>
+				</div>
+			</div>
+		</div>
 	</div>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script> -->
 	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
@@ -207,6 +232,9 @@
 		urls["get_communication_content"] = "{% url 'mainsite:get_communication_content' %}";
 		urls["delete_communication"] = "{% url 'mainsite:delete_communication' %}";
 		urls["change_communication_title"] = "{% url 'mainsite:change_communication_title' %}";
+		urls["copybtn_png"] = "{% static 'mainsite/copybtn.png' %}";
+		urls["check_png"] = "{% static 'mainsite/check.png' %}";
+		urls["get_system_content"] = "{% url 'mainsite:get_system_content' %}";
 	</script>
 	<script src="{% static 'mainsite/mainsite.js' %}"> </script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">

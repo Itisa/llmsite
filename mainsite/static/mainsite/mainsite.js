@@ -243,7 +243,8 @@ function app() {
 		$axios,
 		csrftoken,
 		sidebar_hidden: false,
-
+		show_settings: false,
+		system_content: "",
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
@@ -291,19 +292,30 @@ function app() {
 			if (this.in_talk) return ;
 			this.cancelEditTitle();
 			const uploadMessage = this.inputMessage;
+			const uploadSystem = this.system_content;
+			const uploadCid = this.cid;
 			this.inputMessage = "";
 			this.messages.push({
 				model: '',
 				content: uploadMessage,
 				role: 'user',
 			});
-			console.log(this.messages)
+			
 			let reasoning = (this.models[this.selectedModelid].type === "reasoning");
 			this.in_talk = true;
 			setTimeout(() => {
 				this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 			}, 0);
 
+			this.messages.push({
+				model: this.models[this.selectedModelid].origin,
+				content: "",
+				role: 'waiting',
+			});
+
+			if (this.cid === -1) {
+				this.cid = -2;
+			}
 
 			fetch(urls["talk"], {
 				method: 'POST',	
@@ -314,11 +326,13 @@ function app() {
 				body: JSON.stringify({
 					model_name: this.models[this.selectedModelid].name,
 					message: uploadMessage,
-					cid: this.cid,
+					system: uploadSystem,
+					cid: uploadCid,
 				})
 			})
 			.then(response => {
-				if(this.cid !== -1) this.update_title(this.cid);
+				this.messages.pop()
+				if(this.cid >= 0) this.update_title(this.cid);
 				
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
 
@@ -331,18 +345,6 @@ function app() {
 					}
 					return ;
 				}
-				
-
-				// if (this.cid === -1){ // 新对话 //////////////////////////////
-				// 	this.insert_title({
-				// 		id: jsonData.cid,
-				// 		title: jsonData.title,
-				// 		date: Date.now(),
-				// 	});
-				// 	this.cid = jsonData.cid;
-				// 	this.update_topBar();
-				// }
-
 
 				setTimeout(() => {
 					this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
@@ -427,8 +429,8 @@ function app() {
 								} else {
 									const jsonData = JSON.parse(line);
 									// console.log(jsonData);
-									if (firstchunk){ /////////////////////////////////////
-										if (this.cid === -1){ // 新对话 
+									if (firstchunk){
+										if (this.cid < 0){ // 新对话 
 											this.insert_title({
 												id: jsonData.cid,
 												title: jsonData.title,
@@ -495,6 +497,7 @@ function app() {
 			if (this.in_talk) return ;
 			this.isEditingTitle = false;
 			this.topBarContent = null;
+			this.system_content = ""; // 重置掉用户的 system
 			$axios.get(urls["get_communication_content"], {
 				params:{
 					cid: cid,
@@ -506,6 +509,7 @@ function app() {
 				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
 				this.cid = cid;
 				this.update_topBar();
+				this.get_system_content(cid);
 			})
 			.catch(error => {
 				console.log('get_communication_content请求失败:')
@@ -553,6 +557,7 @@ function app() {
 			this.cid = -1;
 			this.topBarContent = "新对话";
 			this.messages = [];
+			this.system_content = "";
 			this.focusOnInput();
 		},
 		// 开启/关闭标题编辑
@@ -677,6 +682,36 @@ function app() {
 		UserCopyMessage(event){
 			let element = event.srcElement.parentElement;
 			MessagecopyToClipboard(element);
+			event.srcElement.src = urls["check_png"];
+			setTimeout(() => {
+				event.srcElement.src = urls["copybtn_png"];
+			},1500);
 		},
+
+		get_system_content(cid) {
+			if (this.in_talk) return ;
+			$axios.get(urls["get_system_content"], {
+				params:{
+					cid: cid,
+				}
+			})
+			.then(response => {				
+				this.system_content = response.data.data
+			})
+			.catch(error => {
+				console.log('get_system_content请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
+				}
+			});
+		},
+
+		UserEnterSettings(event) {
+			this.show_settings = true;
+		},
+		CloseSettings() {
+			this.show_settings = false;
+		}
 	}
 }
