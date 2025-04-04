@@ -85,6 +85,11 @@ class Api_config(models.Model):
 	def __str__(self):
 		return self.name
 
+	def save(self, **kwargs):
+		super().save(**kwargs)
+		cache.delete("models")
+		cache.delete("typed_models")
+
 class GlobalSetting(models.Model):
 	website_name = models.CharField(max_length=40,default="Deepseek chat")
 	enable_register = models.BooleanField(default=False)
