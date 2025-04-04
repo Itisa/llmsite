@@ -76,7 +76,7 @@ class Api_config(models.Model):
 	]
 	name = models.CharField(max_length=40,unique=True)
 	base_url = models.CharField(max_length=100,blank=True)
-	api_key = models.CharField(max_length=100)
+	api_key = models.CharField(max_length=256)
 	model = models.CharField(max_length=100)
 	level = models.IntegerField(default=-1)
 	model_type = models.CharField(max_length=3, choices=MODEL_TYPE_CHOICES)
