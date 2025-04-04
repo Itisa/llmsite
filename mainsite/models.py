@@ -86,12 +86,7 @@ class Api_config(models.Model):
 		return self.name
 
 class GlobalSetting(models.Model):
-	key = models.CharField(max_length=50,unique=True)
-	value = models.CharField(max_length=100)
-	comment = models.TextField()
+	website_name = models.CharField(max_length=40,default="Deepseek chat")
+	enable_register = models.BooleanField(default=False)
 	def __str__(self):
-		return self.key
-
-	def save(self, **kwargs):
-		super().save(**kwargs)
-		cache.set(self.key, self.value, None)
+		return "settings"

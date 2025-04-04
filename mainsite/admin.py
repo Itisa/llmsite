@@ -149,6 +149,6 @@ admin.site.register(Mailbox,MailboxAdmin)
 
 
 class GlobalSettingAdmin(admin.ModelAdmin):
-	list_display = ["key","value","comment"]
+	list_display = ["website_name","enable_register"]
 
 admin.site.register(GlobalSetting,GlobalSettingAdmin)

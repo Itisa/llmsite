@@ -127,24 +127,14 @@ def get_model_origin_by_name(name):
 	else:
 		return cached_model_origin
 
-def get_setting(name):
-	return GlobalSetting.objects.get(key=name)
+def get_setting():
+	return GlobalSetting.objects.all().first()
 
-def get_can_register():
-	qrystr = "can_register"
-	cached = cache.get(qrystr)
-	if cached is None:
-		g = get_setting(qrystr)
-		cached = g.value
-		cache.set(qrystr, cached, None)
-	
-	return (cached == "True")
+def is_enable_register():
+	s = get_setting()
+	return s.enable_register
 
 def get_website_name():
-	qrystr = "website_name"
-	cached = cache.get(qrystr)
-	if cached is None:
-		g = get_setting(qrystr)
-		cached = g.value
-		cache.set(qrystr, cached, None)
-	return cached
+	s = get_setting()
+	return s.website_name
+	

@@ -99,7 +99,7 @@ def login(request):
 @require_http_methods(["GET","POST"])
 def register(request):
 	if request.method == "GET":
-		if get_can_register():
+		if is_enable_register():
 			data = {
 				"website_name" : get_website_name(),
 			}
@@ -107,7 +107,7 @@ def register(request):
 		else:
 			return HttpResponse("注册暂时不可用，请与管理员联系") #
 	elif request.method == "POST":
-		if not get_can_register():
+		if not is_enable_register():
 			return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403) #
 		
 		username = request.POST.get("username","")
