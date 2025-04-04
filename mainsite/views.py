@@ -17,14 +17,14 @@ from .talk_with_AI import talk_with_AI
 
 def redirect2loginResponse():
 	response = HttpResponseRedirect(reverse("mainsite:login"))
-	response.delete_cookie('sessionid')
-	response.delete_cookie('username')
+	# response.delete_cookie('sessionid')
+	# response.delete_cookie('username')
 	return response
 
 def NoAuthResponse():
 	response = HttpResponse('Unauthorized', status=401)
-	response.delete_cookie('sessionid')
-	response.delete_cookie('username')
+	# response.delete_cookie('sessionid')
+	# response.delete_cookie('username')
 	return response
 
 class require_user:
@@ -62,7 +62,10 @@ def login(request):
 	if request.method == "GET":
 		if request.User:
 			return HttpResponseRedirect(reverse("mainsite:site"))
-		return render(request,"mainsite/login.html")
+		data = {
+			"website_name" : get_website_name(),
+		}
+		return render(request,"mainsite/login.html",data)
 	elif request.method == "POST":
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
@@ -97,6 +100,9 @@ def login(request):
 def register(request):
 	if request.method == "GET":
 		if get_can_register():
+			data = {
+				"website_name" : get_website_name(),
+			}
 			return render(request,"mainsite/register.html")
 		else:
 			return HttpResponse("注册暂时不可用，请与管理员联系") #
@@ -116,7 +122,10 @@ def register(request):
 @require_user("data")
 def change_password(request):
 	if request.method == "GET":
-		return render(request,"mainsite/change_password.html")
+		data = {
+			"website_name" : get_website_name(),
+		}
+		return render(request,"mainsite/change_password.html",data)
 	elif request.method == "POST":
 		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=403)
 		user = request.User

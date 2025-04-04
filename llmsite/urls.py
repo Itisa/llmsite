@@ -1,3 +1,4 @@
+
 """
 URL configuration for llmsite project.
 
@@ -17,7 +18,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from mainsite import views
+
 urlpatterns = [
     path("site/", include("mainsite.urls")),
+    path("", views.site, name="site"),
     path("admin/", admin.site.urls),
 ]
