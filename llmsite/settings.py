@@ -76,16 +76,6 @@ WSGI_APPLICATION = 'llmsite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-	'default': {
-		'ENGINE': DATABASE_ENGINE, # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-		'NAME': DATABASE_NAME,                      # Or path to database file if using sqlite3.
-		'USER': DATABASE_USER,                      # Not used with sqlite3.
-		'PASSWORD': DATABASE_PASSWORD,                  # Not used with sqlite3.
-		'HOST': DATABASE_HOST,                      # Set to empty string for localhost. Not used with sqlite3.
-		'PORT': DATABASE_PORT,                      # Set to empty string for default. Not used with sqlite3.
-	}
-}
 DATABASE_ENGINE = 'django.db.backends.sqlite3'
 DATABASE_NAME = BASE_DIR / 'db.sqlite3'
 DATABASE_USER = ""
@@ -100,6 +90,16 @@ try:
 except:
 	pass
 
+DATABASES = {
+	'default': {
+		'ENGINE': DATABASE_ENGINE, # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+		'NAME': DATABASE_NAME,                      # Or path to database file if using sqlite3.
+		'USER': DATABASE_USER,                      # Not used with sqlite3.
+		'PASSWORD': DATABASE_PASSWORD,                  # Not used with sqlite3.
+		'HOST': DATABASE_HOST,                      # Set to empty string for localhost. Not used with sqlite3.
+		'PORT': DATABASE_PORT,                      # Set to empty string for default. Not used with sqlite3.
+	}
+}
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
