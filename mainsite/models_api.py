@@ -67,13 +67,8 @@ def get_communication_by_pk(pk):
 	return u
 
 def create_communication_content(communication,role,content,model='NN'):
-	logger.info("1111")
-	logger.info(f"{role} {content} {model}")
 	cc = Communication_Content(communication=communication,role=role,content=content,model=model)
-	logger.info("2222")
 	cc.save()
-	logger.info(f"{cc.role} {cc.content} {cc.model}")
-	logger.info("3333")
 	return cc
 
 def get_model_by_name(model_name):

@@ -101,6 +101,6 @@ def talk_with_AI(comm,messages,model_name):
 				content_id += 1
 			
 	if model.get_model_type_display() == "reasoning":
-		create_communication_content(comm,"reasoning",reasoning_content,model.get_model_origin_display())
-	create_communication_content(comm,"assistant",content,model.get_model_origin_display())
+		create_communication_content(comm,"reasoning",reasoning_content,model.model_origin)
+	create_communication_content(comm,"assistant",content,model.model_origin)
 	comm.save() # 触发comm时间的auto_now
