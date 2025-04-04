@@ -33,6 +33,7 @@ def copy_api_config(modeladmin, request, queryset):
 copy_api_config.short_description = "复制api配置"
 
 class Api_configAdmin(admin.ModelAdmin):
+	list_display = ["name","disabled"]
 	actions = [copy_api_config]
 admin.site.register(Api_config,Api_configAdmin)
 

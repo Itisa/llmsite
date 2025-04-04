@@ -561,7 +561,6 @@ function app() {
 		// 开启新对话
 		createNewChat() {
 			if (this.in_talk) return ;
-			this.selectedModelid = 0;
 			this.cid = -1;
 			this.topBarContent = "新对话";
 			this.messages = [];
