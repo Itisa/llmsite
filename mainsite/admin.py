@@ -18,7 +18,7 @@ def copy_api_config(modeladmin, request, queryset):
 			aa = Api_config(
 				name=new_name,
 				api_key=model.api_key,
-				endpoint=model.endpoint,
+				model=model.model,
 				base_url=model.base_url,
 				model_type=model.model_type,
 				model_origin=model.model_origin
