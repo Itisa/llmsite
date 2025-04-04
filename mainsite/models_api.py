@@ -96,7 +96,7 @@ def get_models():
 	cached_models = cache.get('models')
 	if cached_models is None:
 		models = []
-		for model in Api_config.objects.filter(disabled=False):
+		for model in Api_config.objects.filter(disabled=False).order_by("pk"):
 			models.append(model.name)
 		cache.set('models',models)
 		return models
@@ -107,7 +107,7 @@ def get_typed_models():
 	cached_typed_models = cache.get('typed_models')
 	if cached_typed_models is None:
 		typed_models = []
-		for model in Api_config.objects.filter(disabled=False):
+		for model in Api_config.objects.filter(disabled=False).order_by("pk"):
 			typed_models.append({"name":model.name,"type":model.get_model_type_display(), "origin":model.get_model_origin_display()})
 		cache.set('typed_models',typed_models)
 		return typed_models
