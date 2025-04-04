@@ -66,7 +66,7 @@ def get_communication_by_pk(pk):
 		pass
 	return u
 
-def create_communication_content(communication,role,content,model='none'):
+def create_communication_content(communication,role,content,model='NN'):
 	cc = communication.communication_content_set.create(role=role,content=content,model=model)
 	return cc
 
@@ -118,9 +118,9 @@ def get_model_origin_by_name(name):
 	if cached_model_origin is None:
 		model = get_model_by_name(name)
 		if model is None:
-			ret = 'none'
+			ret = 'NN'
 		else:
-			ret = model.get_model_origin_display();
+			ret = model.model_origin;
 		cache.set(f'model_origin_{name}',ret)
 		return ret
 	else:
