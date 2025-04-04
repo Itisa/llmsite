@@ -39,7 +39,7 @@ def talk_with_AI(comm,messages,model_name):
 			time.sleep(0.5)  # 模拟延迟
 	else:
 		
-		if model.get_model_origin_display() == "deepseek" or model.get_model_origin_display() == "openai":
+		if model.get_model_origin_display() == "deepseek":
 			client = OpenAI(
 				api_key = model.api_key,
 				base_url = model.base_url,
@@ -98,6 +98,41 @@ def talk_with_AI(comm,messages,model_name):
 				data["message"] = new_content
 				yield json.dumps(data) + "\n"
 				content += new_content
+				content_id += 1
+		elif model.get_model_origin_display() == "openai":
+			client = OpenAI(
+				api_key = model.api_key,
+				base_url = model.base_url,
+			)
+			
+			response = client.chat.completions.create(
+				model = model.model,
+				messages = messages,
+				stream = True,
+			)
+			content_id = 0
+			reasoning_content = ""
+			content = ""
+			data = {
+				"cid": comm.pk,
+				"title": comm.title,
+			}
+			for chunk in response:
+				if hasattr(chunk.choices[0],'finish_reason') and chunk.choices[0].finish_reason != None:
+					break
+				data["id"] = content_id
+				if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content != None:
+					new_content = chunk.choices[0].delta.reasoning_content
+					data["role"] = "reasoning"
+					data["message"] = new_content
+					yield json.dumps(data) + "\n"
+					reasoning_content += new_content
+				else:
+					new_content = chunk.choices[0].delta.content
+					data["role"] = "assistant"
+					data["message"] = new_content
+					yield json.dumps(data) + "\n"
+					content += new_content
 				content_id += 1
 			
 	if model.get_model_type_display() == "reasoning":
