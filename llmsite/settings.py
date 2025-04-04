@@ -78,10 +78,20 @@ WSGI_APPLICATION = 'llmsite.wsgi.application'
 
 DATABASES = {
 	'default': {
-		'ENGINE': 'django.db.backends.sqlite3',
-		'NAME': BASE_DIR / 'db.sqlite3',
+		'ENGINE': DATABASE_ENGINE, # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+		'NAME': DATABASE_NAME,                      # Or path to database file if using sqlite3.
+		'USER': DATABASE_USER,                      # Not used with sqlite3.
+		'PASSWORD': DATABASE_PASSWORD,                  # Not used with sqlite3.
+		'HOST': DATABASE_HOST,                      # Set to empty string for localhost. Not used with sqlite3.
+		'PORT': DATABASE_PORT,                      # Set to empty string for default. Not used with sqlite3.
 	}
 }
+DATABASE_ENGINE = 'django.db.backends.sqlite3'
+DATABASE_NAME = BASE_DIR / 'db.sqlite3'
+DATABASE_USER = ""
+DATABASE_PASSWORD = ""
+DATABASE_HOST = "127.0.0.1"
+DATABASE_PORT = ""
 
 SECRET_KEY = 'django-insecure-#w@25vu=80@@y&(arepi@=j$ad!f#iy2q9^ga#t5%5*c12d^o&'
 ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
