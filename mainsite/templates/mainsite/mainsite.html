@@ -4,12 +4,12 @@
 	<meta charset="UTF-8">
 	<title>DeepSeek Chat</title>
 	{% load static %}
-	<link rel="stylesheet" href="{% static 'mainsite/highlight.css' %}">
-	<link href="{% static 'mainsite/mainsite.css' %}" rel="stylesheet">
-	<link href="{% static 'mainsite/mainsite_ex.css' %}" rel="stylesheet">
-	<link href="{% static 'mainsite/bg-color.css' %}" rel="stylesheet">
-	<link href="{% static 'mainsite/hover-color.css' %}" rel="stylesheet">
-	<link rel="icon" type="image/x-icon" href="{% static 'mainsite/favicon.ico' %}">
+	<link rel="stylesheet" href="{% static 'css/highlight.css' %}">
+	<link href="{% static 'css/mainsite.css' %}" rel="stylesheet">
+	<link href="{% static 'css/mainsite_ex.css' %}" rel="stylesheet">
+	<link href="{% static 'css/bg-color.css' %}" rel="stylesheet">
+	<link href="{% static 'css/hover-color.css' %}" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
 
 </head>
@@ -24,7 +24,7 @@
 			<div class="sidebar_top">
 				<div class="sidebar_top_1">
 					<h3 class="site_title">{{ website_name }}</h3>
-					<img class="hide_sidebar_btn" @click="hide_sidebar" src="{% static 'mainsite/hidesidebar.png' %}"></img>
+					<img class="hide_sidebar_btn" @click="hide_sidebar" src="{% static 'images/hidesidebar.png' %}"></img>
 				</div>
 				<!-- 新增的生成新对话按钮 -->
 				<button @click="createNewChat" class="new_communication" @keydown.window.k=UserPressK(event)>
@@ -75,7 +75,7 @@
 
 		<!-- 隐藏后的侧边栏 -->
 		<div x-show="sidebar_hidden" style="display: none;" class="hidden_sidebar">
-			<img class="show_sidebar_btn" @click="show_sidebar" src="{% static 'mainsite/showsidebar.png' %}"></img>
+			<img class="show_sidebar_btn" @click="show_sidebar" src="{% static 'images/showsidebar.png' %}"></img>
 		</div>
 
 		<!-- 主聊天区域 -->
@@ -126,7 +126,7 @@
 								<template x-if="message.role === 'user'">
 									<div class="message_user_block">
 										<div style="display: none;" x-text="message.content"></div>
-										<img class="message_user_copy" src="{% static 'mainsite/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
+										<img class="message_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
 										<!-- 用户消息样式 -->
 										<div class="message_user" x-text="message.content"></div>
 									</div>
@@ -135,17 +135,17 @@
 									
 									<div class="message_assistant_and_icon">
 										
-										<template x-if="message.model === 'deepseek'"><img src="{% static 'mainsite/ds_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'doubao'"><img src="{% static 'mainsite/db_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'deepseek'"><img src="{% static 'images/ds_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'doubao'"><img src="{% static 'images/db_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'openai'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'none'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
 
 										<!-- Deepseek 助手消息样式 -->
 										<div>
 											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
 											<div class="assistant_user_copy_div">
 												<div style="display: none;" x-text="message.content"></div>
-												<img class="assistant_user_copy" src="{% static 'mainsite/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
+												<img class="assistant_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
 											</div>
 											
 										</div>
@@ -161,11 +161,11 @@
 								<!-- 等待服务器返回消息，转圈圈 -->
 								<template x-if="message.role === 'waiting'">
 									<div>
-										<template x-if="message.model === 'deepseek'"><img src="{% static 'mainsite/ds_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'doubao'"><img src="{% static 'mainsite/db_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'openai'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
-										<template x-if="message.model === 'none'"><img src="{% static 'mainsite/default_dialog.png' %}" class="assistant_icon"></template>
-										<img src="{% static 'mainsite/circle-loading.gif' %}" class="chat_loading_gif">
+										<template x-if="message.model === 'deepseek'"><img src="{% static 'images/ds_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'doubao'"><img src="{% static 'images/db_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'openai'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'none'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
+										<img src="{% static 'images/circle-loading.gif' %}" class="chat_loading_gif">
 									</div>
 								</template>
 							</div>
@@ -179,7 +179,7 @@
 			<div class="user_input_area">
 				<div x-show = "cid === -1" class="input_service_description">
 					<div class="input_service_description_line1">
-						<img src="{% static 'mainsite/101.png' %}" class="input_service_description_icon">
+						<img src="{% static 'images/101.png' %}" class="input_service_description_icon">
 						<div class="input_service_description_text">我是 {{ website_name }} ，很高兴见到你！</div>
 					</div>
 					
@@ -196,7 +196,7 @@
 								 @keydown.window.slash=focusOnInput(event)></textarea>
 						</div>
 						<div>
-							<img src="{% static 'mainsite/settings.png' %}" class="settings_btn" @click="UserEnterSettings(event)">
+							<img src="{% static 'images/settings.png' %}" class="settings_btn" @click="UserEnterSettings(event)">
 
 						</div>
 						<!-- <button type="submit" class="user_input_submit_btn">发送</button> -->
@@ -208,7 +208,7 @@
 		<div style="display: none;" x-show="show_settings" class="settings_background" @keydown.window.escape="CloseSettings()">
 			<div class="settings_div" @click.away="CloseSettings()">
 				<div>
-					<img src="{% static 'mainsite/close.png' %}" class="settings_close_img" @click="CloseSettings()">
+					<img src="{% static 'images/close.png' %}" class="settings_close_img" @click="CloseSettings()">
 				</div>
 				<div>
 					<div style="margin-bottom: 10px;">系统提示词：</div>
@@ -218,10 +218,10 @@
 		</div>
 	</div>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script> -->
-	<script defer src="{% static 'mainsite/alpinejs_min.js' %}"></script>
-	<script src="{% static 'mainsite/highlight.js' %}"></script>
-	<script src="{% static 'mainsite/axios_min.js' %}"></script>
-	<script src="{% static 'mainsite/my_marked.js' %}"></script>
+	<script defer src="{% static 'js/alpinejs_min.js' %}"></script>
+	<script src="{% static 'js/highlight.js' %}"></script>
+	<script src="{% static 'js/axios_min.js' %}"></script>
+	<script src="{% static 'js/my_marked.js' %}"></script>
 	<script>
 		urls = {}
 		urls["login"] = "{% url 'mainsite:login' %}";
@@ -232,11 +232,11 @@
 		urls["get_communication_content"] = "{% url 'mainsite:get_communication_content' %}";
 		urls["delete_communication"] = "{% url 'mainsite:delete_communication' %}";
 		urls["change_communication_title"] = "{% url 'mainsite:change_communication_title' %}";
-		urls["copybtn_png"] = "{% static 'mainsite/copybtn.png' %}";
-		urls["check_png"] = "{% static 'mainsite/check.png' %}";
+		urls["copybtn_png"] = "{% static 'images/copybtn.png' %}";
+		urls["check_png"] = "{% static 'images/check.png' %}";
 		urls["get_system_content"] = "{% url 'mainsite:get_system_content' %}";
 	</script>
-	<script src="{% static 'mainsite/mainsite.js' %}"> </script>
+	<script src="{% static 'js/mainsite.js' %}"> </script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 </body>
