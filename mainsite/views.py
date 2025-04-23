@@ -298,7 +298,7 @@ def site_mailbox(request):
 
 @require_http_methods(["GET"])
 @require_user("data")
-def get_params(request):
+def get_params(request): # 获取服务器存的对话参数
 	cid = request.GET["cid"]
 	comm = get_communication_by_pk(int(cid))
 	if comm == None:

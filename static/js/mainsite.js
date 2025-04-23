@@ -96,7 +96,6 @@ function MessageshowCopiedFeedback(div) {
 	return ;
 }
 
-
 function CodecopyToClipboard(button) {
 	const codeBlock = button.closest('.code-block').querySelector('code');
 	const codeText = codeBlock.innerText;
@@ -210,14 +209,11 @@ function init_renderer() {
 				itemBody += checkbox + ' ';
 			}
 		}
-
 		itemBody += this.parser.parse(item.tokens, !!item.loose);
 		return `<li>${renderWithKatex(itemBody)}</li>\n`;
 	}
 	return renderer;
 }
-
-
 
 function app() {
 	return {
@@ -246,8 +242,8 @@ function app() {
 		sidebar_hidden: false,
 		show_settings: false,
 		system_content: "",
-		communication_temperature: "1", // [0, 2.0]
-		communication_top_p: "1", // [0, 1.0]
+		communication_temperature: "0.7", // [0, 2.0]
+		communication_top_p: "0.9", // [0, 1.0]
 		communication_max_tokens: "4096", // [1, 8192]
 		communication_frequency_penalty: "0", // [-2.0, 2.0]
 		communication_presence_penalty: "0", // [-2.0, 2.0]
@@ -285,6 +281,8 @@ function app() {
 		logout() {
 			window.location.href = urls["logout"];
 		},
+		
+		// 用户发送消息
 		userPressEnterInSendMessage(event){
 			if (!event.shiftKey) {
 				event.preventDefault();
@@ -292,6 +290,7 @@ function app() {
 				this.sendMessage();
 			}
 		},
+		
 		// 发送消息
 		sendMessage() {
 			if (!this.inputMessage.trim()) return ;
@@ -529,13 +528,14 @@ function app() {
 				}
 			});
 		},
-
+		
 		// 更新当前对话标题
 		update_topBar() {
 			let [i,j] = this.find_title_by_cid(this.cid)
 			this.topBarContent = this.titles[i][j].title;
 		},
-
+		
+		// 删除对话
 		deleteCommunication(cid,title) {
 			if (this.in_talk) return ;
 			let yes = confirm(`确认删除  ${title} ？ 删除后将不可恢复`)
@@ -569,6 +569,7 @@ function app() {
 			this.focusOnInput();
 			this.InitParams();
 		},
+		
 		// 开启/关闭标题编辑
 		enableEditTitle(){
 			if (this.in_talk) return ;
@@ -577,10 +578,12 @@ function app() {
 			setTimeout(() => {document.getElementById("newTitleInput").focus();},0)
 			setTimeout(() => {document.getElementById("newTitleInput").focus();},50)
 		},
+		
 		cancelEditTitle(){
 			if (this.in_talk) return ;
 			this.isEditingTitle = false;
 		},
+		
 		userPressEnterInEditingTitle(event){
 			if (!event.shiftKey) {
 				event.preventDefault();
@@ -616,10 +619,13 @@ function app() {
 				}
 			});
 		},
+		
+		// 是否显示个人信息
 		personal_info_toggleButtons() {
 			if (this.in_talk) return ;
 			this.personal_info_showButtons = !this.personal_info_showButtons;
 		},
+		
 		focusOnInput(event=undefined) {
 			if (document.activeElement !== user_input_textarea) {
 				if (event !== undefined){
@@ -628,18 +634,24 @@ function app() {
 				user_input_textarea.focus();
 			}
 		},
+		
 		hide_sidebar() {
 			this.sidebar_hidden = true;
 		},
+		
 		show_sidebar() {
 			this.sidebar_hidden = false;
 		},
+		
+		// Ctrl+K 新建对话
 		UserPressK(event) {
 			if (event.ctrlKey == true){
 				event.preventDefault();
 				this.createNewChat();
 			}
 		},
+
+		//获取模型在 this.models 中的下标
 		get_model_ind(model_name) {
 			for (var i = 0; i < this.models.length; i++) {
 				if (this.models[i].name === model_name){
@@ -648,9 +660,12 @@ function app() {
 			}
 			return 0;
 		},
+
 		UserChangeModel(event){
 			event.srcElement.blur();
 		},
+
+		// 将标题排序
 		order_title(line_titles){
 			for (var i = 0; i < line_titles.length; i++) {
 				line_titles[i].date = new Date(line_titles[i].date);
@@ -675,11 +690,13 @@ function app() {
 				}	
 			}
 			this.titles = tmparr;
-
 		},
+
 		insert_title(dict){
 			this.titles[0].unshift(dict); //unshift 在数组开头插入元素
 		},
+
+		// 更新修改后的标题
 		update_title(cid) {
 			let [i,j] = this.find_title_by_cid(this.cid)
 			let oldtitle = this.titles[i][j];
@@ -688,6 +705,7 @@ function app() {
 			oldtitle.title = this.topBarContent;
 			this.titles[0].unshift(oldtitle);
 		},
+
 		UserCopyMessage(event){
 			let element = event.srcElement.parentElement;
 			MessagecopyToClipboard(element);
@@ -697,6 +715,7 @@ function app() {
 			},1500);
 		},
 
+		// 获取服务器存的对话参数
 		get_params(cid) {
 			if (this.in_talk) return ;
 			$axios.get(urls["get_params"], {
@@ -722,23 +741,25 @@ function app() {
 			});
 		},
 
-
 		UserEnterSettings(event) {
 			this.show_settings = true;
 		},
 		CloseSettings() {
 			this.show_settings = false;
 		},
+		
+		// 聚焦元素
 		focusByName(name) {
 			const elements = document.getElementsByName(name);
 			if (elements.length > 0) {
 				setTimeout(() => {
-					elements[0].focus(); // 聚焦第一个匹配的元素
+					elements[0].focus(); 
 				},0)
 			} else {
 				console.warn(`Element with name "${name}" not found`);
 			}
 		},
+
 		InitParams() {
 			this.communication_temperature = 0.7;
 			this.communication_top_p = 0.9;
