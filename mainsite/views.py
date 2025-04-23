@@ -183,7 +183,6 @@ def get_communication_content(request):
 		messages.append({"role":msg.role,"content":msg.content,"model":msg.get_model_display()})
 	return JsonResponse({'status': 'ok', 'messages': messages},status=200)
 
-
 @require_http_methods(["POST"])
 @require_user("data")
 def talk(request):
@@ -210,6 +209,7 @@ def talk(request):
 		if l <= val and val <= r:
 			return
 		raise Exception(f"ERROR in ensure_range: except [{l}, {r}], get {val}")
+
 	try:
 		ensure_range(params["temperature"],0,2)
 		ensure_range(params["top_p"],0,1)

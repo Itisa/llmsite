@@ -740,8 +740,8 @@ function app() {
 			}
 		},
 		InitParams() {
-			this.communication_temperature = 1;
-			this.communication_top_p = 1;
+			this.communication_temperature = 0.7;
+			this.communication_top_p = 0.9;
 			this.communication_max_tokens = 4096;
 			this.communication_frequency_penalty = 0;
 			this.communication_presence_penalty = 0;

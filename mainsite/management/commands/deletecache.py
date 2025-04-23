@@ -4,6 +4,5 @@ class Command(BaseCommand):
 	help = '删除缓存'
 
 	def handle(self, *args, **kwargs):
-		cache.delete("models")
-		cache.delete("typed_models")
+		cache.clear()
 		self.stdout.write(self.style.SUCCESS('删除缓存成功！'))
