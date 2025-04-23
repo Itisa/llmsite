@@ -289,7 +289,7 @@ code {
 	flex: 1 1 0%;
 	padding: 1rem;
 	overflow-y: auto;
-	padding-bottom: 4rem;
+	padding-bottom: 2rem;
 }
 
 .message {
@@ -529,4 +529,28 @@ code {
 	height: 30px;
 	width: 30px;
 	cursor: pointer;
+}
+
+.params_help {
+	position: fixed;
+	background-color: rgba(255, 255, 255, 0.95);
+	max-width: 600px;
+	padding: 0.5rem;
+	border-radius: 0.25rem;
+	border: 1px solid #f0f0f0;
+}
+
+.params_modify_input {
+	width: 2rem;
+	margin-left: 0.5rem;
+}
+
+.params_value {
+	margin-left: 0.5rem;
+}
+
+.params_help_img {
+	height: 20px;
+	width: 20px;
+	margin-top: 3px;
 }

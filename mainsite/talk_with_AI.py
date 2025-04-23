@@ -11,7 +11,7 @@ import json
 from django.utils import timezone
 from mainsite.models_api import get_model_by_name, create_communication_content
 
-def talk_with_AI(comm,messages,model_name):
+def talk_with_AI(comm,messages,model_name,params):
 	model = get_model_by_name(model_name)
 	if settings.TALK_TEST:
 		time.sleep(3)
@@ -20,6 +20,7 @@ def talk_with_AI(comm,messages,model_name):
 
 		msglen = 4
 		for i in range(msglen):  # 假设你生成10个JSON对象
+
 			usercontent = messages[-1]["content"]
 			data = {
 				"id": i,
@@ -28,6 +29,10 @@ def talk_with_AI(comm,messages,model_name):
 				"cid": comm.pk,
 				"title": comm.title,
 			}
+
+			if i == 0:
+				data["message"] = json.dumps(params) + "\n"
+
 			if i < msglen/2 and model.get_model_type_display() == "reasoning":
 				data["role"] = "reasoning"
 			yield json.dumps(data) + "\n"  # 每个JSON对象以换行符分隔
@@ -49,6 +54,11 @@ def talk_with_AI(comm,messages,model_name):
 				model = model.model,
 				messages = messages,
 				stream = True,
+				temperature = params["temperature"],
+				top_p = params["top_p"],
+				max_tokens = params["max_tokens"],
+				frequency_penalty = params["frequency_penalty"],
+				presence_penalty = params["presence_penalty"],
 			)
 			content_id = 0
 			reasoning_content = ""
@@ -80,7 +90,12 @@ def talk_with_AI(comm,messages,model_name):
 			response = client.chat.completions.create(
 				model = model.model,
 				messages = messages,
-				stream=True
+				stream=True,
+				temperature = params["temperature"],
+				top_p = params["top_p"],
+				max_tokens = params["max_tokens"],
+				frequency_penalty = params["frequency_penalty"],
+				presence_penalty = params["presence_penalty"],
 			)
 
 			data = {
@@ -109,6 +124,11 @@ def talk_with_AI(comm,messages,model_name):
 				model = model.model,
 				messages = messages,
 				stream = True,
+				temperature = params["temperature"],
+				top_p = params["top_p"],
+				max_tokens = params["max_tokens"],
+				frequency_penalty = params["frequency_penalty"],
+				presence_penalty = params["presence_penalty"],
 			)
 			content_id = 0
 			reasoning_content = ""
@@ -138,4 +158,10 @@ def talk_with_AI(comm,messages,model_name):
 	if model.get_model_type_display() == "reasoning":
 		create_communication_content(comm,"reasoning",reasoning_content,model.model_origin)
 	create_communication_content(comm,"assistant",content,model.model_origin)
+	
+	comm.temperature = params["temperature"]
+	comm.top_p = params["top_p"]
+	comm.max_tokens = params["max_tokens"]
+	comm.frequency_penalty = params["frequency_penalty"]
+	comm.presence_penalty = params["presence_penalty"]
 	comm.save() # 触发comm时间的auto_now

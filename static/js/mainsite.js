@@ -183,11 +183,6 @@ function init_renderer() {
 		return rsp
 	}
 
-	// renderer.del = function(text) {
-	// 	rsp = renderWithKatex(this.parser.parseInline(text.tokens));
-	// 	return rsp
-	// }
-
 	renderer.text = function(token) {
 		return 'tokens' in token && token.tokens ? this.parser.parseInline(token.tokens) : (token.raw);
 	}
@@ -251,12 +246,15 @@ function app() {
 		sidebar_hidden: false,
 		show_settings: false,
 		system_content: "",
+		communication_temperature: "1", // [0, 2.0]
+		communication_top_p: "1", // [0, 1.0]
+		communication_max_tokens: "4096", // [1, 8192]
+		communication_frequency_penalty: "0", // [-2.0, 2.0]
+		communication_presence_penalty: "0", // [-2.0, 2.0]
 		init() {
 			marked.setOptions({
 				renderer: this.renderer,
 			});
-			// console.log(marked.parseInline[1]["J"]["breaks"]["del"])
-			// console.log(marked.parse('这是 ~~删除线~~ 测试'));
 			this.topBarContent = "新对话";
 			this.get_history();
 			this.get_available_models();
@@ -322,7 +320,7 @@ function app() {
 			});
 
 			if (this.cid === -1) {
-				this.cid = -2;
+				this.cid = -2; // 先把转圈圈显示出来，(不是-1就会显示)
 			}
 
 			fetch(urls["talk"], {
@@ -336,6 +334,11 @@ function app() {
 					message: uploadMessage,
 					system: uploadSystem,
 					cid: uploadCid,
+					temperature: Number(this.communication_temperature),
+					top_p: Number(this.communication_top_p),
+					max_tokens: Number(this.communication_max_tokens),
+					frequency_penalty: Number(this.communication_frequency_penalty),
+					presence_penalty: Number(this.communication_presence_penalty),
 				})
 			})
 			.then(response => {
@@ -505,7 +508,6 @@ function app() {
 			if (this.in_talk) return ;
 			this.isEditingTitle = false;
 			this.topBarContent = null;
-			this.system_content = ""; // 重置掉用户的 system
 			$axios.get(urls["get_communication_content"], {
 				params:{
 					cid: cid,
@@ -514,10 +516,10 @@ function app() {
 			.then(response => {
 				let [i,j] = this.find_title_by_cid(cid);
 				this.messages = response.data.messages
-				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
+				// this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
 				this.cid = cid;
 				this.update_topBar();
-				this.get_system_content(cid);
+				this.get_params(cid);
 			})
 			.catch(error => {
 				console.log('get_communication_content请求失败:')
@@ -564,8 +566,8 @@ function app() {
 			this.cid = -1;
 			this.topBarContent = "新对话";
 			this.messages = [];
-			this.system_content = "";
 			this.focusOnInput();
+			this.InitParams();
 		},
 		// 开启/关闭标题编辑
 		enableEditTitle(){
@@ -695,18 +697,24 @@ function app() {
 			},1500);
 		},
 
-		get_system_content(cid) {
+		get_params(cid) {
 			if (this.in_talk) return ;
-			$axios.get(urls["get_system_content"], {
+			$axios.get(urls["get_params"], {
 				params:{
 					cid: cid,
 				}
 			})
-			.then(response => {				
-				this.system_content = response.data.data
+			.then(response => {
+				const data = JSON.parse(response.data.data)
+				this.system_content = data.system;
+				this.communication_temperature = data.temperature;
+				this.communication_top_p = data.top_p;
+				this.communication_max_tokens = data.max_tokens;
+				this.communication_frequency_penalty = data.frequency_penalty;
+				this.communication_presence_penalty = data.presence_penalty;
 			})
 			.catch(error => {
-				console.log('get_system_content请求失败:')
+				console.log('get_params请求失败:')
 				console.log(error);
 				if (error.status === 401){
 					window.location.href = urls["login"];
@@ -714,11 +722,30 @@ function app() {
 			});
 		},
 
+
 		UserEnterSettings(event) {
 			this.show_settings = true;
 		},
 		CloseSettings() {
 			this.show_settings = false;
+		},
+		focusByName(name) {
+			const elements = document.getElementsByName(name);
+			if (elements.length > 0) {
+				setTimeout(() => {
+					elements[0].focus(); // 聚焦第一个匹配的元素
+				},0)
+			} else {
+				console.warn(`Element with name "${name}" not found`);
+			}
+		},
+		InitParams() {
+			this.communication_temperature = 1;
+			this.communication_top_p = 1;
+			this.communication_max_tokens = 4096;
+			this.communication_frequency_penalty = 0;
+			this.communication_presence_penalty = 0;
+			this.system_content = "";
 		}
 	}
 }

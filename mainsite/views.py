@@ -199,6 +199,28 @@ def talk(request):
 	system = data.get('system',"")
 	cid = data.get('cid',-2)
 
+	params = {}
+	params["temperature"] = data.get("temperature",1)
+	params["top_p"] = data.get("top_p",1)
+	params["max_tokens"] = data.get("max_tokens",4096)
+	params["frequency_penalty"] = data.get("frequency_penalty",0)
+	params["presence_penalty"] = data.get("presence_penalty",0)
+
+	def ensure_range(val,l,r):
+		if l <= val and val <= r:
+			return
+		raise Exception(f"ERROR in ensure_range: except [{l}, {r}], get {val}")
+	try:
+		ensure_range(params["temperature"],0,2)
+		ensure_range(params["top_p"],0,1)
+		ensure_range(params["max_tokens"],1,8192)
+		ensure_range(params["frequency_penalty"],-2,2)
+		ensure_range(params["presence_penalty"],-2,2)
+	except Exception as e:
+		logger.warning(e)
+		print(e)
+		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=400)
+
 	if cid == -1:
 		comm = create_communication(request.User,message[:30],model_name)
 	else:
@@ -220,7 +242,7 @@ def talk(request):
 	messages.append({"role": "user", "content": message})
 	comm.system = system
 	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
-	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name), content_type="application/json")
+	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name,params), content_type="application/json")
 
 @require_http_methods(["POST"])
 @require_user("data")
@@ -276,12 +298,18 @@ def site_mailbox(request):
 
 @require_http_methods(["GET"])
 @require_user("data")
-def get_system_content(request):
+def get_params(request):
 	cid = request.GET["cid"]
 	comm = get_communication_by_pk(int(cid))
 	if comm == None:
 		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
 	if (comm.user.pk != request.User.pk):
 		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
-	
-	return JsonResponse({'status': 'ok', 'data': comm.system},status=200)
+	ret_data = {}
+	ret_data["system"] = comm.system
+	ret_data["temperature"] = comm.temperature
+	ret_data["top_p"] = comm.top_p
+	ret_data["max_tokens"] = comm.max_tokens
+	ret_data["frequency_penalty"] = comm.frequency_penalty
+	ret_data["presence_penalty"] = comm.presence_penalty
+	return JsonResponse({'status': 'ok', 'data': json.dumps(ret_data)},status=200)

@@ -207,9 +207,80 @@
 		</div>
 		<div style="display: none;" x-show="show_settings" class="settings_background" @keydown.window.escape="CloseSettings()">
 			<div class="settings_div" @click.away="CloseSettings()">
+				<div style="color: red; font-size: 0.8rem;">
+					注意，在这里修改的东西只有在发送消息到服务器后才会写入数据库，切换对话会消失，载入对话时会自动载入数据库中存储的设置
+				</div>
 				<div>
 					<img src="{% static 'images/close.png' %}" class="settings_close_img" @click="CloseSettings()">
 				</div>
+				
+				<div style="display: flex;" x-data = "{show_help : false, is_modify : false}">
+					<div>
+						<img src="{% static 'images/help.png' %}" class="params_help_img" @mouseenter="show_help = true" @mouseleave="show_help = false">
+						<div x-show="show_help" class="params_help">采样温度，介于 0 和 2 之间。更高的值，如 0.8，会使输出更随机，而更低的值，如 0.2，会使其更加集中和确定。 我们通常建议可以更改这个值或者更改 top_p，但不建议同时对两者进行修改。
+						<p style="margin: 0px;"></p>
+						我们建议您根据如下表格，按使用场景设置 temperature。
+						<table><thead><tr><th>场景</th><th>温度</th></tr></thead><tbody><tr><td>代码生成/数学解题</td><td>0.0</td></tr><tr><td>数据抽取/分析</td><td>1.0</td></tr><tr><td>通用对话</td><td>1.3</td></tr><tr><td>翻译</td><td>1.3</td></tr><tr><td>创意类写作/诗歌创作</td><td>1.5</td></tr></tbody></table>
+						</div>
+					</div>
+					<div>temperature</div>
+					<input type="range" min="0" max="2" step="0.1" x-model="communication_temperature">
+					<div x-show="!is_modify" x-text="Number(communication_temperature).toFixed(1)" @click="is_modify=true;focusByName('communication_temperature_input')" class="params_value"></div>
+					
+					<input name="communication_temperature_input" x-show="is_modify" @click.away="is_modify=false" type="text" x-model="communication_temperature" class="params_modify_input">
+				</div>
+				<div style="display: flex;" x-data = "{show_help : false, is_modify : false}">
+					<div>
+						<img src="{% static 'images/help.png' %}" class="params_help_img" @mouseenter="show_help = true" @mouseleave="show_help = false">
+						<div x-show="show_help" class="params_help">
+							top_p 作为调节采样温度的替代方案，模型会考虑前 top_p 概率的 token 的结果。所以 0.1 就意味着只有包括在最高 10% 概率中的 token 会被考虑。 我们通常建议修改这个值或者更改 temperature，但不建议同时对两者进行修改。
+						</div>
+					</div>
+					<div>top_p</div>
+					<input type="range" min="0" max="1" step="0.1" x-model="communication_top_p">
+					<div x-show="!is_modify" x-text="Number(communication_top_p).toFixed(1)" @click="is_modify=true;focusByName('communication_top_p_input')" class="params_value"></div>
+					
+					<input name="communication_top_p_input" x-show="is_modify" @click.away="is_modify=false" type="text" x-model="communication_top_p" class="params_modify_input">
+				</div>
+				
+				<div style="display: flex;" x-data = "{show_help : false, is_modify : false}">
+					<div>
+						<img src="{% static 'images/help.png' %}" class="params_help_img" @mouseenter="show_help = true" @mouseleave="show_help = false">
+						<div x-show="show_help" class="params_help">
+							介于 1 到 8192 间的整数，限制一次请求中模型生成 completion 的最大 token 数。输入 token 和输出 token 的总长度受模型的上下文长度的限制。
+						</div>
+					</div>
+					<div>max_tokens</div>
+					<input type="range" min="1" max="8192" step="1" x-model="communication_max_tokens">
+					<div x-show="!is_modify" x-text="communication_max_tokens" @click="is_modify=true;focusByName('communication_max_tokens_input')" class="params_value"></div>
+					
+					<input name="communication_max_tokens_input" x-show="is_modify" @click.away="is_modify=false" type="text" x-model="communication_max_tokens" class="params_modify_input">
+				</div>
+
+				<div style="display: flex;" x-data = "{show_help : false, is_modify : false}">
+					<div>
+						<img src="{% static 'images/help.png' %}" class="params_help_img" @mouseenter="show_help = true" @mouseleave="show_help = false">
+						<div x-show="show_help" class="params_help">介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其在已有文本中的出现频率受到相应的惩罚，降低模型重复相同内容的可能性。</div>
+					</div>
+					<div>frequency_penalty</div>
+					<input type="range" min="-2" max="2" step="0.1" x-model="communication_frequency_penalty">
+					<div x-show="!is_modify" x-text="Number(communication_frequency_penalty).toFixed(1)" @click="is_modify=true;focusByName('communication_frequency_penalty_input')" class="params_value"></div>
+					
+					<input name="communication_frequency_penalty_input" x-show="is_modify" @click.away="is_modify=false" type="text" x-model="communication_frequency_penalty" class="params_modify_input">
+				</div>
+
+				<div style="display: flex;" x-data = "{show_help : false, is_modify : false}">
+					<div>
+						<img src="{% static 'images/help.png' %}" class="params_help_img" @mouseenter="show_help = true" @mouseleave="show_help = false">
+						<div x-show="show_help" class="params_help">介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。</div>
+					</div>
+					<div>presence_penalty</div>
+					<input type="range" min="-2" max="2" step="0.1" x-model="communication_presence_penalty">
+					<div x-show="!is_modify" x-text="Number(communication_presence_penalty).toFixed(1)" @click="is_modify=true;focusByName('communication_presence_penalty_input')" class="params_value"></div>
+					
+					<input name="communication_presence_penalty_input" x-show="is_modify" @click.away="is_modify=false" type="text" x-model="communication_presence_penalty" class="params_modify_input">
+				</div>
+
 				<div>
 					<div style="margin-bottom: 10px;">系统提示词：</div>
 					<textarea class="system_content_textarea" x-model="system_content"></textarea>
@@ -234,7 +305,7 @@
 		urls["change_communication_title"] = "{% url 'mainsite:change_communication_title' %}";
 		urls["copybtn_png"] = "{% static 'images/copybtn.png' %}";
 		urls["check_png"] = "{% static 'images/check.png' %}";
-		urls["get_system_content"] = "{% url 'mainsite:get_system_content' %}";
+		urls["get_params"] = "{% url 'mainsite:get_params' %}";
 	</script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">

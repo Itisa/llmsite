@@ -2,7 +2,7 @@ from django.db import models
 from django.core.cache import cache
 # Create your models here.
 from django.utils import timezone
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class User(models.Model):
 	USER_TYPE_CHOICES = [
@@ -34,8 +34,13 @@ class Communication(models.Model):
 	]
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now=True)
-	model = models.CharField(max_length=100,default='none') #用户最后使用的model
+	model = models.CharField(max_length=100,default='none') #用户最后使用的model 已被弃用
 	system = models.TextField(default='',blank=True) #用户最后使用的system
+	temperature = models.FloatField(default=1.0,validators=[MinValueValidator(0.0), MaxValueValidator(2.0)])
+	top_p = models.FloatField(default=1.0,validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+	max_tokens = models.PositiveSmallIntegerField(default=4096,validators=[MinValueValidator(1),MaxValueValidator(8192)])
+	frequency_penalty = models.FloatField(default=0.0,validators=[MinValueValidator(-2.0), MaxValueValidator(2.0)])
+	presence_penalty = models.FloatField(default=0.0,validators=[MinValueValidator(-2.0), MaxValueValidator(2.0)])
 	title = models.CharField(max_length=100)
 	def __str__(self):
 		return self.title
