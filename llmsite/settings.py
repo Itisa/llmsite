@@ -20,14 +20,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-
-# SECURITY WARNING: don't run with debug turned on in production!
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -82,7 +74,7 @@ DATABASE_USER = ""
 DATABASE_PASSWORD = ""
 DATABASE_HOST = "127.0.0.1"
 DATABASE_PORT = ""
-
+DATABASE_OPTIONS = {}
 SECRET_KEY = 'django-insecure-#w@25vu=80@@y&(arepi@=j$ad!f#iy2q9^ga#t5%5*c12d^o&'
 ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
 try:
@@ -98,9 +90,7 @@ DATABASES = {
 		'PASSWORD': DATABASE_PASSWORD,                  # Not used with sqlite3.
 		'HOST': DATABASE_HOST,                      # Set to empty string for localhost. Not used with sqlite3.
 		'PORT': DATABASE_PORT,                      # Set to empty string for default. Not used with sqlite3.
-		'OPTIONS': {
-			'charset': 'utf8mb4',
-		},
+		'OPTIONS': DATABASE_OPTIONS,
 	}
 }
 # Password validation
@@ -121,7 +111,6 @@ AUTH_PASSWORD_VALIDATORS = [
 	},
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -132,7 +121,6 @@ TIME_ZONE = 'Asia/Shanghai'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -146,6 +134,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 LOGGING = {
 	"version": 1,  # the dictConfig format version
 	"disable_existing_loggers": False,  # retain the default loggers
@@ -162,4 +151,3 @@ LOGGING = {
 		},
 	},
 }
-

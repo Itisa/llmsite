@@ -45,14 +45,15 @@ def new_user(username, password, user_type):
 	else:
 		result = f"fail new user 用户名={username}"
 	return result
+
 class MyCustomForm(forms.Form):
 	username = forms.CharField(label="用户名", required=True)
 	password = forms.CharField(label="密码", required=False)
 	user_type = forms.ChoiceField(
 		label="用户类型",
 		choices=[
-			('AD', 'admin'),
 			('NM', 'normal'),
+			('AD', 'admin'),
 			('TM', 'temporary'),
 		],
 		required=True,
@@ -65,7 +66,6 @@ def reset_pwd2username(modeladmin, request, queryset):
 		user.user_password = bcrypt.hashpw(user.username.encode(), bcrypt.gensalt()).decode()
 		user.save()
 	modeladmin.message_user(request, "重置密码成功")
-
 reset_pwd2username.short_description = "重置密码为用户名"
 
 class UserAdmin(admin.ModelAdmin):
@@ -107,7 +107,6 @@ class UserAdmin(admin.ModelAdmin):
 	list_filter = ["user_type","user_status"]
 	list_per_page = 50
 	actions = [reset_pwd2username]  # 注册自定义操作
-
 admin.site.register(User,UserAdmin)
 
 class CommunicationAdmin(admin.ModelAdmin):
@@ -131,7 +130,6 @@ class Communication_ContentAdmin(admin.ModelAdmin):
 	def get_communication_user(self, obj):
 		return obj.communication.user
 	get_communication_user.short_description = 'User'
-
 admin.site.register(Communication_Content,Communication_ContentAdmin)
 
 class MailboxAdmin(admin.ModelAdmin):
@@ -145,11 +143,8 @@ class MailboxAdmin(admin.ModelAdmin):
 		form = super().get_form(request, obj, **kwargs)
 		form.base_fields['content'].widget = forms.Textarea(attrs={'rows': 4, 'cols': 40})
 		return form
-
 admin.site.register(Mailbox,MailboxAdmin)
-
 
 class GlobalSettingAdmin(admin.ModelAdmin):
 	list_display = ["website_name","enable_register"]
-
 admin.site.register(GlobalSetting,GlobalSettingAdmin)
