@@ -477,7 +477,13 @@ function app() {
 			$axios.get(urls["get_available_models"])
 			.then(response => {
 				this.models = response.data.data;
-				this.selectedModelid = 0;
+				
+				const last_used_model = localStorage.getItem("last_used_model");
+				if (last_used_model === null) {
+					this.selectedModelid = 0;
+				} else {
+					this.selectedModelid = this.get_model_ind(last_used_model);
+				}
 			})
 			.catch(error => {
 				console.log("error in get_available_models");
@@ -662,6 +668,8 @@ function app() {
 		},
 
 		UserChangeModel(event){
+			const model_name = this.models[Number(event.srcElement.value)].name;
+			localStorage.setItem("last_used_model",model_name);
 			event.srcElement.blur();
 		},
 
