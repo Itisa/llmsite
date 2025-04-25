@@ -163,14 +163,14 @@ function init_renderer() {
 		
 		return `<div class="code-block">
 		${topBar}
-		<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>
+		<pre><code style="word-break: break-all; white-space: pre-wrap;" class="hljs ${validLanguage}">${highlightedCode}</code></pre>
 		</div>`;
 	};
 
 	renderer.codespan = function (code) {
 		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
-		return `<code class="hljs ${validLanguage}">${highlightedCode}</code>`;
+		return `<code style="word-break: break-all; white-space: pre-wrap;" class="hljs ${validLanguage}">${highlightedCode}</code>`;
 	};
 
 	renderer.paragraph = function(text) {

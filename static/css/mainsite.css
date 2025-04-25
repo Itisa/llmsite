@@ -326,6 +326,7 @@ code {
 }
 
 .message_assistant {
+	max-width: 53rem;
 	padding: 0.75rem;
 	padding-bottom: 0;
 	line-height: 2;
