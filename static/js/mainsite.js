@@ -210,7 +210,8 @@ function init_renderer() {
 			}
 		}
 		itemBody += this.parser.parse(item.tokens, !!item.loose);
-		return `<li>${renderWithKatex(itemBody)}</li>\n`;
+		// return `<li>${renderWithKatex(itemBody)}</li>\n`;
+		return `<li>${itemBody}</li>\n`;
 	}
 	return renderer;
 }
@@ -521,7 +522,7 @@ function app() {
 			.then(response => {
 				let [i,j] = this.find_title_by_cid(cid);
 				this.messages = response.data.messages
-				// this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
+				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
 				this.cid = cid;
 				this.update_topBar();
 				this.get_params(cid);
