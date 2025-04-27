@@ -3,7 +3,10 @@ import logging
 import bcrypt
 from django.utils import timezone
 from django.core.cache import cache
+from django.db.models import F
+
 logger = logging.getLogger(__name__)
+
 def add_user(username,password,user_type="NM"):
 	user_qst = User.objects.filter(username=username)
 	if len(user_qst) != 0:
@@ -138,3 +141,25 @@ def get_website_name():
 	s = get_setting()
 	return s.website_name
 	
+def get_user_talk_limit():
+	s = get_setting()
+	return s.user_talk_limit
+
+def user_try_talk(user):
+	cnt = user.user_talk_cnt_left
+	if cnt == 0:
+		return False
+	if cnt == -1:
+		return True
+	user.user_talk_cnt_left = F("user_talk_cnt_left") - 1
+	user.save()
+	return True
+
+def reset_user_talk_limit():
+	limit = get_user_talk_limit()
+	User.objects.all().update(
+		user_talk_limit = Case(
+			When(user_type='AD', then=Value(-1)),
+			default=Value(limit)
+		)
+	)

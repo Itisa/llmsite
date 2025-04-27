@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .models_api import *
-from .talk_with_AI import talk_with_AI
+from .talk_with_AI import talk_with_AI, talk_limit_exceeded
 
 def redirect2loginResponse():
 	response = HttpResponseRedirect(reverse("mainsite:login"))
@@ -221,6 +221,7 @@ def talk(request):
 		print(e)
 		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=400)
 
+	# 获取对话
 	if cid == -1:
 		comm = create_communication(request.User,message[:30],model_name)
 	else:
@@ -230,6 +231,13 @@ def talk(request):
 
 		if (comm.user.pk != request.User.pk):
 			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
+	
+	comm.system = system
+	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
+
+	# 判断是否超过日对话上限
+	if not user_try_talk(request.User):
+		return StreamingHttpResponse(talk_limit_exceeded(comm,model_name,params), content_type="application/json")
 
 	messages = []
 	if system != "":
@@ -240,8 +248,6 @@ def talk(request):
 		messages.append({"role":msg.role,"content":msg.content})
 
 	messages.append({"role": "user", "content": message})
-	comm.system = system
-	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
 	return StreamingHttpResponse(talk_with_AI(comm,messages,model_name,params), content_type="application/json")
 
 @require_http_methods(["POST"])

@@ -23,6 +23,7 @@ class User(models.Model):
 	user_level = models.IntegerField(default=-1)
 	user_type = models.CharField(max_length=3, choices=USER_TYPE_CHOICES, default="NM")
 	user_status = models.CharField(max_length=3, choices=USER_STATUS_CHOICES, default="NL")
+	user_talk_cnt_left = models.IntegerField(default=-1)
 	def __str__(self):
 		return self.username
 
@@ -98,5 +99,6 @@ class Api_config(models.Model):
 class GlobalSetting(models.Model):
 	website_name = models.CharField(max_length=40,default="Deepseek chat")
 	enable_register = models.BooleanField(default=False)
+	user_talk_limit = models.IntegerField(default=-1)
 	def __str__(self):
 		return "settings"

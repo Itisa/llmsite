@@ -11,6 +11,13 @@ import json
 from django.utils import timezone
 from mainsite.models_api import get_model_by_name, create_communication_content
 
+def update_comm_params(comm, params):
+	comm.temperature = params["temperature"]
+	comm.top_p = params["top_p"]
+	comm.max_tokens = params["max_tokens"]
+	comm.frequency_penalty = params["frequency_penalty"]
+	comm.presence_penalty = params["presence_penalty"]
+
 def talk_with_AI(comm,messages,model_name,params):
 	model = get_model_by_name(model_name)
 	if settings.TALK_TEST:
@@ -159,9 +166,21 @@ def talk_with_AI(comm,messages,model_name,params):
 		create_communication_content(comm,"reasoning",reasoning_content,model.model_origin)
 	create_communication_content(comm,"assistant",content,model.model_origin)
 	
-	comm.temperature = params["temperature"]
-	comm.top_p = params["top_p"]
-	comm.max_tokens = params["max_tokens"]
-	comm.frequency_penalty = params["frequency_penalty"]
-	comm.presence_penalty = params["presence_penalty"]
+	update_comm_params(comm,params)
 	comm.save() # 触发comm时间的auto_now
+
+def talk_limit_exceeded(comm, model_name, params):
+	model = get_model_by_name(model_name)
+	content = f"Your talk limit exceed today, please contact the administrator."
+	data = {
+		"id": 0,
+		"role": "assistant",
+		"message": content,
+		"cid": comm.pk,
+		"title": comm.title,
+	}
+	yield json.dumps(data) + "\n"
+	create_communication_content(comm,"assistant",content,model.model_origin)
+	
+	update_comm_params(comm,params)
+	comm.save()
