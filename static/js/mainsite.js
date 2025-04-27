@@ -4,56 +4,61 @@ function deleteCookie(name, path, domain) {
 		(domain ? '; domain=' + domain : '');
 }
 function renderWithKatex(input) {
-	// 正则表达式匹配行内公式 \(...\)、$...$、多行块级公式 \[...\] 以及 $$...$$
-	const regex = /(\\\([\s\S]*?\\\)|\$[\s\S]*?\$|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
+	try {
+		// 正则表达式匹配行内公式 \(...\)、$...$、多行块级公式 \[...\] 以及 $$...$$
+		const regex = /(\\\([\s\S]*?\\\)|\$[\s\S]*?\$|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)/g;
 
-	// 将字符串拆分为普通文本和公式部分
-	const parts = input.split(regex);
-	let output = '';
-	parts.forEach(part => {
-		if (!part) return; // 跳过空字符串
+		// 将字符串拆分为普通文本和公式部分
+		const parts = input.split(regex);
+		let output = '';
+		parts.forEach(part => {
+			if (!part) return; // 跳过空字符串
 
-		// 检查是否是行内公式 \(...\)
-		if (part.startsWith('\\(') && part.endsWith('\\)')) {
-			output += katex.renderToString(part.slice(2, -2), {
-				throwOnError: false,
-				displayMode: false // 行内模式
-			});
-		}
-		// 检查是否是行内公式 $...$
-		else if (part.startsWith('$') && part.endsWith('$') && part.length > 1) {
-			// 去除首尾的 $，并去掉多余的换行符和空格
-			const formula = part.slice(1, -1).trim();
-			output += katex.renderToString(formula, {
-				throwOnError: false,
-				displayMode: false // 行内模式
-			});
-		}
-		// 检查是否是块级公式 \[...\]
-		else if (part.startsWith('\\[') && part.endsWith('\\]')) {
-			// 去除首尾的 \[ 和 \]，并去掉多余的换行符和空格
-			const formula = part.slice(2, -2).trim();
-			output += katex.renderToString(formula, {
-				throwOnError: false,
-				displayMode: true // 块级模式
-			});
-		}
-		// 检查是否是块级公式 $$...$$
-		else if (part.startsWith('$$') && part.endsWith('$$')) {
-			// 去除首尾的 $$，并去掉多余的换行符和空格
-			const formula = part.slice(2, -2).trim();
-			output += katex.renderToString(formula, {
-				throwOnError: false,
-				displayMode: true // 块级模式
-			});
-		}
-		// 普通文本
-		else {
-			output += part;
-		}
-	});
+			// 检查是否是行内公式 \(...\)
+			if (part.startsWith('\\(') && part.endsWith('\\)')) {
+				output += katex.renderToString(part.slice(2, -2), {
+					throwOnError: true,
+					displayMode: false // 行内模式
+				});
+			}
+			// 检查是否是行内公式 $...$
+			else if (part.startsWith('$') && part.endsWith('$') && part.length > 1) {
+				// 去除首尾的 $，并去掉多余的换行符和空格
+				const formula = part.slice(1, -1).trim();
+				output += katex.renderToString(formula, {
+					throwOnError: true,
+					displayMode: false // 行内模式
+				});
+			}
+			// 检查是否是块级公式 \[...\]
+			else if (part.startsWith('\\[') && part.endsWith('\\]')) {
+				// 去除首尾的 \[ 和 \]，并去掉多余的换行符和空格
+				const formula = part.slice(2, -2).trim();
+				output += katex.renderToString(formula, {
+					throwOnError: true,
+					displayMode: true // 块级模式
+				});
+			}
+			// 检查是否是块级公式 $$...$$
+			else if (part.startsWith('$$') && part.endsWith('$$')) {
+				// 去除首尾的 $$，并去掉多余的换行符和空格
+				const formula = part.slice(2, -2).trim();
+				output += katex.renderToString(formula, {
+					throwOnError: true,
+					displayMode: true // 块级模式
+				});
+			}
+			// 普通文本
+			else {
+				output += part;
+			}
+		});
 
-	return output;
+		return output;
+	} catch (error) {
+		console.log(`error in katex render: ${error}`);
+		return input;
+	}
 }
 
 function MessagecopyToClipboard(div) {
@@ -210,8 +215,7 @@ function init_renderer() {
 			}
 		}
 		itemBody += this.parser.parse(item.tokens, !!item.loose);
-		// return `<li>${renderWithKatex(itemBody)}</li>\n`;
-		return `<li>${itemBody}</li>\n`;
+		return `<li>${renderWithKatex(itemBody)}</li>\n`;
 	}
 	return renderer;
 }
