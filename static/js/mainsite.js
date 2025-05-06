@@ -1,3 +1,5 @@
+var in_talk = false;
+
 function deleteCookie(name, path, domain) {
 	document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
 		(path ? '; path=' + path : '') +
@@ -157,6 +159,28 @@ $axios.defaults.headers.common['X-CSRFToken'] = csrftoken;
 function init_renderer() {
 	const renderer = new marked.Renderer();
 	renderer.code = function (code) {
+		if (code.lang === "mermaid") {
+		return `
+		<div class="mermaid-box" x-data="mermaidChart">
+			<div class="mermaid-controls">
+				<button @click="zoomOut">-</button>
+				<span class="scale-display" x-text="\`\${Math.round(scale * 100)}%\`"></span>
+				<button @click="zoomIn">+</button>
+				<button @click="downloadPNG">PNG</button>
+				<button @click="downloadSVG">SVG</button>
+				<button @click="resetZoom">重置</button>
+			</div>
+			<div class="mermaid-content" @wheel.ctrl="handleWheel($event)">
+				<div class="mermaid-wrapper" x-ref="wrapper" :style="\`transform: translate(\${transx}px,\${transy}px) scale(\${scale})\`">
+					<div class="mermaid">
+						${code.text}
+					</div>
+				</div>
+			</div>
+		</div>`
+
+		
+		}
 		const validLanguage = hljs.getLanguage(code.lang) ? code.lang : 'plaintext';
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
 		const topBar = `
@@ -253,6 +277,89 @@ function app() {
 		communication_frequency_penalty: "0", // [-2.0, 2.0]
 		communication_presence_penalty: "0", // [-2.0, 2.0]
 		init() {
+			mermaid.initialize({
+				startOnLoad: false,
+			});
+			Alpine.data('mermaidChart', () => ({
+				scale: 1,
+				scaleStep: 0.1,
+				minScale: 0.5,
+				maxScale: 3,
+				transx: 0,
+				transy: 0,
+				init() {
+					
+				},
+				
+				zoomIn() {
+					if (this.scale < this.maxScale) {
+						this.scale = Math.min(this.scale + this.scaleStep, this.maxScale);
+					}
+				},
+				
+				zoomOut() {
+					if (this.scale > this.minScale) {
+						this.scale = Math.max(this.scale - this.scaleStep, this.minScale);
+					}
+				},
+				
+				resetZoom() {
+					this.scale = 1;
+				},
+				
+				handleWheel(event) {
+					if (event.ctrlKey) {
+						event.preventDefault();
+						if (event.deltaY < 0) {
+							this.zoomIn();
+						} else {
+							this.zoomOut();
+						}
+					}
+				},
+				
+				downloadPNG() {
+					const svg = this.$root.querySelector('svg');
+					if (!svg) return;
+					
+					const svgData = new XMLSerializer().serializeToString(svg);
+					const canvas = document.createElement('canvas');
+					const ctx = canvas.getContext('2d');
+					const img = new Image();
+					
+					img.onload = () => {
+						canvas.width = svg.width.baseVal.value * this.scale;
+						canvas.height = svg.height.baseVal.value * this.scale;
+						ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+						
+						const pngData = canvas.toDataURL('image/png');
+						this.triggerDownload(pngData, 'mermaid-diagram.png');
+					};
+					
+					img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+				},
+				
+				downloadSVG() {
+					const svg = this.$root.querySelector('svg');
+					if (!svg) return;
+					
+					const svgData = new XMLSerializer().serializeToString(svg);
+					const blob = new Blob([svgData], { type: 'image/svg+xml' });
+					const url = URL.createObjectURL(blob);
+					this.triggerDownload(url, 'mermaid-diagram.svg');
+					URL.revokeObjectURL(url);
+				},
+				
+				triggerDownload(url, filename) {
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = filename;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+				}
+			}));
+
 			marked.setOptions({
 				renderer: this.renderer,
 			});
@@ -313,6 +420,7 @@ function app() {
 			
 			let reasoning = (this.models[this.selectedModelid].type === "reasoning");
 			this.in_talk = true;
+			in_talk = true;
 			setTimeout(() => {
 				this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 			}, 0);
@@ -409,7 +517,7 @@ function app() {
 					const lennow = this.messages[this.messages.length-1].content.length;	
 					this.messages[this.messages.length-1].content = assistant_cache.slice(0,lennow + 3);
 					if (assistant_cache_end && this.messages[this.messages.length-1].content.length === assistant_cache.length) {
-						this.in_talk = false;
+						this.end_talk();
 						clearInterval(assistant_interval);
 					}
 					if (at_bottom) {
@@ -477,6 +585,14 @@ function app() {
 				this.in_talk = false;
 			});
 		},
+		end_talk() {
+			in_talk = false;
+			this.in_talk = false;
+			setTimeout(() => {
+				mermaid.run();
+			},0);
+		},
+
 		// 加载可选模型
 		get_available_models() {
 			$axios.get(urls["get_available_models"])
@@ -530,6 +646,12 @@ function app() {
 				this.cid = cid;
 				this.update_topBar();
 				this.get_params(cid);
+				setTimeout(() => {
+					mermaid.run();
+					setTimeout(() => {
+						this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+					},0);
+				},0);
 			})
 			.catch(error => {
 				console.log('get_communication_content请求失败:')

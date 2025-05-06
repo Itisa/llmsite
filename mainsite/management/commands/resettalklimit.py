@@ -12,4 +12,4 @@ class Command(BaseCommand):
 				default=Value(limit)
 			)
 		)
-		self.stdout.write("重置成功")
+		self.stdout.write(self.style.SUCCESS("重置成功!"))

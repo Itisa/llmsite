@@ -138,7 +138,7 @@ class UserAdmin(admin.ModelAdmin):
 	def has_add_permission(self,request): # 禁止默认的添加操作
 		return False
 
-	list_display = ["username","user_type","user_status","user_level"]
+	list_display = ["username","user_type","user_status","user_level", "user_talk_cnt_left"]
 	list_filter = ["user_type","user_status"]
 	list_per_page = 50
 	actions = [reset_pwd2username]  # 注册自定义操作

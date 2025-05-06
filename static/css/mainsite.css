@@ -22,6 +22,8 @@ code {
 }
 
 .code-top-bar {
+	position: sticky;
+	top: 0;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -287,7 +289,6 @@ code {
 
 .communication_area {
 	flex: 1 1 0%;
-	padding: 1rem;
 	overflow-y: auto;
 	padding-bottom: 2rem;
 }
@@ -370,7 +371,7 @@ code {
 	flex-direction: column;
 	width: 55rem;
 	height: 6rem;
-	margin-bottom: 2rem;
+	margin-bottom: 1rem;
 	border-radius: 1rem;
 	padding: 0.5rem;
 	color: #f3f4f6;
@@ -439,6 +440,7 @@ code {
 }
 
 .communication_area_contract {
+	padding-top: 1rem;
 	margin: auto;
 	width: 55rem;
 }
@@ -555,4 +557,87 @@ code {
 	height: 20px;
 	width: 20px;
 	margin-top: 3px;
+}
+
+.mermaid-box {
+	width: 53rem;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	margin: 1.5rem 0;
+	background: white;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 控制条样式 - 类似 DeepSeek 代码框 */
+.mermaid-controls {
+	position: sticky;
+	top: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	background: #f9fafb;
+	border-bottom: 1px solid #e5e7eb;
+	border-top-left-radius: 0.5rem;
+	border-top-right-radius: 0.5rem;
+	z-index: 5;
+}
+
+.mermaid-controls button {
+	background: white;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.25rem 0.5rem;
+	font-size: 0.875rem;
+	cursor: pointer;
+	color: #4b5563;
+	transition: all 0.2s;
+}
+
+.mermaid-controls button:hover {
+	background: #f3f4f6;
+	border-color: #9ca3af;
+}
+
+.mermaid-controls .scale-display {
+	font-size: 0.875rem;
+	color: #6b7280;
+	min-width: 3rem;
+	text-align: center;
+}
+
+/* 图表容器 */
+.mermaid-content {
+	padding: 1rem;
+	overflow: auto;
+}
+
+.mermaid-wrapper {
+	transform-origin: 0 0;
+	transition: transform 0.1s ease;
+}
+
+/* 滚动条样式 */
+.mermaid-content::-webkit-scrollbar {
+	height: 8px;
+	width: 8px;
+}
+
+.mermaid-content::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 4px;
+}
+
+.mermaid-content::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 4px;
+}
+
+.mermaid-content::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}
+
+.mermaid {
+	user-select: none;
 }
