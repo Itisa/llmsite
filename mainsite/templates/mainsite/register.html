@@ -21,6 +21,18 @@
 					type="password"
 					placeholder="确认密码"
 					class="w-full mb-3 p-2 border rounded" name="password_confirm">
+			<input  x-model="registerForm.invitation_code"
+					type="text"
+					placeholder="邀请码（选填）"
+					class="w-full mb-3 p-2 border rounded" name="invitation_code">
+			<div style="display: none;" 
+				 x-show="errormsg !== ''" 
+				 x-text="errormsg" 
+				 class="text-red-500 text-sm text-right mb-2"></div>
+			 <div style="display: none;" 
+				 x-show="okmsg !== ''" 
+				 x-text="okmsg" 
+				 class="text-green-500 text-sm text-right mb-2"></div>
 			<button  type="submit"
 					class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
 				注册
@@ -36,12 +48,16 @@
 				csrfmiddlewaretoken: "",
 				username: '',
 				password: '',
+				invitation_code: '',
 			},
 			password_confirm: '',
+			errormsg: '',
+			okmsg: '',
 			init(){
 				
 			},
 			register() {
+				this.errormsg = "";
 				if (!this.registerForm.password.trim()){
 					alert("密码为空");
 					return ;
@@ -57,11 +73,20 @@
 					registerParams.toString(),
 				)
 				.then(response => {
-					window.location.href = "{% url 'mainsite:site' %}";
+					this.okmsg = "注册成功 1秒后跳转到登录页面";
+					setTimeout(() => {
+						window.location.href = "{% url 'mainsite:site' %}";
+					}, 1000);
 				})
 				.catch(error => {
 					console.error('注册失败:', error);
-					alert("注册失败");
+					if (error.response.data.reason === "register unavailable"){
+						this.errormsg = "注册暂时不可用";
+					} else if (error.response.data.reason === "username exist") {
+						this.errormsg = "用户名已存在";
+					} else {
+						this.errormsg = "出现其它错误";
+					}
 				});
 			},
 

@@ -112,6 +112,7 @@ def register(request):
 		
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
+		invitation_code = request.POST.get("invitation_code","")
 
 		if add_user(username,password):
 			return JsonResponse({"status": "success",}, status=200)
