@@ -3,9 +3,11 @@ from django import forms
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import path
+from django.contrib import messages
 
 from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
 from .views import generate_random_string,add_user
+from .models_api import get_user_by_username
 
 import bcrypt
 
@@ -41,12 +43,12 @@ def new_user(username, password, user_type):
 	if password == "":
 		password = generate_random_string(10)
 	if add_user(username,password,user_type):
-		result = f"successfully new user 用户名={username}, 密码={password}, 用户类型={user_type}"
+		result = (messages.SUCCESS,f"successfully new user 用户名={username}, 密码={password}, 用户类型={user_type}")
 	else:
-		result = f"fail new user 用户名={username}"
+		result = (messages.ERROR,f"用户名已存在 用户名={username}")
 	return result
 
-class MyCustomForm(forms.Form):
+class AddUserForm(forms.Form):
 	username = forms.CharField(label="用户名", required=True)
 	password = forms.CharField(label="密码", required=False)
 	user_type = forms.ChoiceField(
@@ -60,6 +62,9 @@ class MyCustomForm(forms.Form):
 	)
 
 	# param3 = forms.IntegerField(label="maxCommunications", initial=20, required=True)
+class ChangeUserPwdForm(forms.Form):
+	username = forms.CharField(label="用户名", required=True)
+	password = forms.CharField(label="密码", required=False)
 
 def reset_pwd2username(modeladmin, request, queryset):
 	for user in queryset:
@@ -68,28 +73,57 @@ def reset_pwd2username(modeladmin, request, queryset):
 	modeladmin.message_user(request, "重置密码成功")
 reset_pwd2username.short_description = "重置密码为用户名"
 
+def change_password(username, password):
+	if password == "":
+		password = generate_random_string(10)
+	user = get_user_by_username(username)
+	if user is None:
+		return (messages.ERROR, f"用户不存在 用户名={username}, 密码={password}")
+
+	user.user_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+	user.save()
+	return (messages.SUCCESS, f"成功修改密码 用户名={username}, 密码={password}")
+
 class UserAdmin(admin.ModelAdmin):
 	def get_urls(self):
 		urls = super().get_urls()
 		custom_urls = [
-			path('new_user/', self.admin_site.admin_view(self.custom_action_view), name='new_user'),
+			path('new_user/', self.admin_site.admin_view(self.add_user_view), name='new_user'),
+			path('change_user_pwd/', self.admin_site.admin_view(self.change_user_pwd_view), name='change_user_pwd'),
 		]
 		return custom_urls + urls
 
-	def custom_action_view(self, request):
+	def add_user_view(self, request):
 		if request.method == 'POST':
-			form = MyCustomForm(request.POST)
+			form = AddUserForm(request.POST)
 			if form.is_valid():
 				username = form.cleaned_data['username']
 				password = form.cleaned_data['password']
 				user_type = form.cleaned_data['user_type']
-				result = new_user(username, password, user_type)
-				self.message_user(request, result)
+				status, result = new_user(username, password, user_type)
+				self.message_user(request, result, status)
 				return HttpResponseRedirect(request.path)
 		else:
-			form = MyCustomForm()
+			form = AddUserForm()
 
 		return render(request, 'admin/new_user.html', {
+			'form': form,
+			'opts': self.model._meta,
+		})
+
+	def change_user_pwd_view(self, request):
+		if request.method == 'POST':
+			form = ChangeUserPwdForm(request.POST)
+			if form.is_valid():
+				username = form.cleaned_data['username']
+				password = form.cleaned_data['password']
+				status, result = change_password(username, password)
+				self.message_user(request, result, status)
+				return HttpResponseRedirect(request.path)
+		else:
+			form = ChangeUserPwdForm()
+
+		return render(request, 'admin/change_user_pwd.html', {
 			'form': form,
 			'opts': self.model._meta,
 		})
@@ -97,6 +131,7 @@ class UserAdmin(admin.ModelAdmin):
 	def changelist_view(self, request, extra_context=None):
 		extra_context = extra_context or {}
 		extra_context['new_user_url'] = 'new_user/'
+		extra_context['change_user_pwd_url'] = 'change_user_pwd/'
 		return super().changelist_view(request, extra_context=extra_context)
 	change_list_template = "admin/user_change_list.html"
 
@@ -146,5 +181,5 @@ class MailboxAdmin(admin.ModelAdmin):
 admin.site.register(Mailbox,MailboxAdmin)
 
 class GlobalSettingAdmin(admin.ModelAdmin):
-	list_display = ["website_name","enable_register"]
+	list_display = ["website_name","enable_register","user_talk_limit"]
 admin.site.register(GlobalSetting,GlobalSettingAdmin)

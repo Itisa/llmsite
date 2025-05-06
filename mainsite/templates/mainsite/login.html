@@ -47,6 +47,7 @@ function app() {
 		},
 		// 登录方法
 		login() {
+			this.errormsg = "";
 			this.loginForm.csrfmiddlewaretoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 			axios.post(
 				"{% url 'mainsite:login' %}",
