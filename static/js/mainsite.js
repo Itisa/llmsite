@@ -1,4 +1,44 @@
 var in_talk = false;
+const languageAbbreviations = {
+	'javascript': 'js',
+	'typescript': 'ts',
+	'python': 'py',
+	'java': 'java',
+	'csharp': 'cs',
+	'cpp': 'cpp', // C++
+	'c': 'c',
+	'ruby': 'rb',
+	'go': 'go',
+	'php': 'php',
+	'html': 'html',
+	'css': 'css',
+	'json': 'json',
+	'markdown': 'md',
+	'xml': 'xml',
+	'bash': 'sh',
+	'shell': 'sh',
+	'sql': 'sql',
+	'swift': 'swift',
+	'kotlin': 'kt',
+	'rust': 'rs',
+	'dart': 'dart',
+	'scala': 'scala',
+	'yaml': 'yml',
+	'plaintext': 'txt'
+};
+function downloadStringAsFile(content, filename, contentType = 'text/plain') {
+	const blob = new Blob([content], { type: contentType });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	setTimeout(() => {
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	}, 0);
+}
 
 function deleteCookie(name, path, domain) {
 	document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT;' +
@@ -103,6 +143,18 @@ function MessageshowCopiedFeedback(div) {
 	return ;
 }
 
+function getLanguageAbbreviation(fullName) {
+	const normalized = fullName.toLowerCase().trim();
+	if (languageAbbreviations.hasOwnProperty(normalized)) {
+		return languageAbbreviations[normalized];
+	}
+	return normalized;
+}
+function DownloadCode(button, language) {
+	const codeBlock = button.closest('.code-block').querySelector('code');
+	const codeText = codeBlock.innerText;
+	downloadStringAsFile(codeText,`sitedownload_${Math.floor(Math.random()*1000000000)}.${getLanguageAbbreviation(language)}`)
+}
 function CodecopyToClipboard(button) {
 	const codeBlock = button.closest('.code-block').querySelector('code');
 	const codeText = codeBlock.innerText;
@@ -185,8 +237,11 @@ function init_renderer() {
 		const highlightedCode = hljs.highlight(code.text, { language: validLanguage }).value;
 		const topBar = `
 		<div class="code-top-bar">
-		<span class="code-language">${validLanguage}</span>
-		<button class="copy-button" onclick="CodecopyToClipboard(this)">Copy</button>
+			<span class="code-language">${validLanguage}</span>
+			<div>
+				<button class="copy-button" onclick="CodecopyToClipboard(this)">Copy</button>
+				<button class="copy-button" onclick="DownloadCode(this, '${validLanguage}')">Download</button>
+			</div>
 		</div>
 		`;
 		
@@ -249,7 +304,7 @@ function app() {
 		// 应用状态
 		user: null,
 		messages: [], // content, role, model(effect when role == 'assistant')
-		titles: [], // id, title, date
+		titles: [], // id, title, date, starred
 		title_diff_days: [],
 		models: [], // name, type, origin
 		inputMessage: '',
@@ -367,6 +422,7 @@ function app() {
 			this.get_history();
 			this.get_available_models();
 			this.title_diff_days = [ // 需要确保days递增，最后一个是-1
+				{name:"我的收藏",days:0},
 				{name:"今天",days:1},
 				{name:"昨天",days:2},
 				{name:"7天内",days:7},
@@ -668,6 +724,35 @@ function app() {
 			this.topBarContent = this.titles[i][j].title;
 		},
 		
+		// 收藏对话
+		starCommunication(cid, b) {
+			$axios.post(urls["star_communication"], {
+				cid: cid,
+				b: b,
+			})
+			.then(response => {
+				
+				const rb = response.data.data;
+				let [i,j] = this.find_title_by_cid(cid);
+				var tmp = {...this.titles[i][j]};
+				tmp.starred = rb
+				this.titles[i].splice(j,1);
+
+				if (rb) {
+					this.titles[0].unshift(tmp);
+				} else {
+					this.titles[1].unshift(tmp);
+				}
+			})
+			.catch(error => {
+				console.log('starCommunication请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
+				}
+			});
+		},
+
 		// 删除对话
 		deleteCommunication(cid,title) {
 			if (this.in_talk) return ;
@@ -814,6 +899,10 @@ function app() {
 			let ind = 0;
 			let now = new Date();
 			for (var i = 0; i < line_titles.length; i++) {
+				if (line_titles[i].starred) {
+					tmparr[0].push(line_titles[i]);
+					continue;
+				}
 				let daysDifference = Math.ceil((now - line_titles[i].date) / (1000 * 60 * 60 * 24));
 				while(true){
 					let d = this.title_diff_days[ind].days;
@@ -828,7 +917,7 @@ function app() {
 		},
 
 		insert_title(dict){
-			this.titles[0].unshift(dict); //unshift 在数组开头插入元素
+			this.titles[1].unshift(dict); //unshift 在数组开头插入元素
 		},
 
 		// 更新修改后的标题

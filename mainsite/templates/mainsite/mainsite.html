@@ -46,9 +46,16 @@
 								<div>
 									<div class="history_item_title" x-text="item.title"></div>
 								</div>
+								<div x-show="private_show_btn" class="more_options">
+									<template x-if="!item.starred">
+										<img src="{% static 'images/star.png' %}" class="star_communication_btn" @click.stop="starCommunication(item.id, true)">
+									</template>
+									<template x-if="item.starred">
+										<img src="{% static 'images/star_full.png' %}" class="star_communication_btn" @click.stop="starCommunication(item.id, false)">
+									</template>
 
-								<button x-show = "private_show_btn" @click.stop="deleteCommunication(item.id,item.title)" class="delete_communication_btn">❌</button>
-								
+									<img src="{% static 'images/delete.png' %}" class="delete_communication_btn" @click.stop="deleteCommunication(item.id,item.title)">
+								</div>
 							</div>
 						</template>
 					</div>
@@ -302,6 +309,7 @@
 		urls["get_history"] = "{% url 'mainsite:get_history' %}";
 		urls["get_communication_content"] = "{% url 'mainsite:get_communication_content' %}";
 		urls["delete_communication"] = "{% url 'mainsite:delete_communication' %}";
+		urls["star_communication"] = "{% url 'mainsite:star_communication' %}";
 		urls["change_communication_title"] = "{% url 'mainsite:change_communication_title' %}";
 		urls["copybtn_png"] = "{% static 'images/copybtn.png' %}";
 		urls["check_png"] = "{% static 'images/check.png' %}";

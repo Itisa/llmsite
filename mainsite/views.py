@@ -166,7 +166,7 @@ def get_history(request):
 	# query = request.User.communication_set.all().order_by('gen_date')
 	query = request.User.communication_set.all()
 	for comm in query.iterator():
-		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk})
+		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk,"starred":comm.starred})
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
 
 @require_http_methods(["GET"])
@@ -283,6 +283,26 @@ def delete_communication(request):
 	if comm.user.pk == request.User.pk:
 		comm.delete()
 		return JsonResponse({'status': 'ok'}, status=200)
+	else:
+		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
+
+@require_http_methods(["POST"])
+@require_user("data")
+def star_communication(request):
+	data = json.loads(request.body)
+	cid = data.get('cid',-2)
+	b = data.get('b',False)
+	print("star b:", b)
+	if type(b) != bool:
+		return JsonResponse({'status': 'fail', 'reason': "params error: b is not a boolen"}, status=400)
+	comm = get_communication_by_pk(cid)
+	if comm == None:
+		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
+
+	if comm.user.pk == request.User.pk:
+		comm.starred = b
+		comm.save()
+		return JsonResponse({'status': 'ok',"data":b}, status=200)
 	else:
 		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
 

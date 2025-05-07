@@ -15,6 +15,7 @@ urlpatterns = [
 	path("talk", views.talk, name="talk"),
 	path("change_communication_title", views.change_communication_title, name="change_communication_title"),
 	path("delete_communication", views.delete_communication, name="delete_communication"),
+	path("star_communication", views.star_communication, name="star_communication"),
 	path("site_mailbox", views.site_mailbox, name="site_mailbox"),
 	path("get_params", views.get_params, name="get_params"),
 ]

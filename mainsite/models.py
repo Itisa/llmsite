@@ -43,6 +43,7 @@ class Communication(models.Model):
 	frequency_penalty = models.FloatField(default=0.0,validators=[MinValueValidator(-2.0), MaxValueValidator(2.0)])
 	presence_penalty = models.FloatField(default=0.0,validators=[MinValueValidator(-2.0), MaxValueValidator(2.0)])
 	title = models.CharField(max_length=100)
+	starred = models.BooleanField(default=False)
 	def __str__(self):
 		return self.title
 

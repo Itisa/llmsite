@@ -136,23 +136,32 @@ code {
 	font-size: 0.95rem;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	width: 11rem;
+	width: 10rem;
 	overflow: hidden;
 }
 
-.delete_communication_btn {
-	background-color: #f9fbff;
-	color: #ef4444;
-	white-space: nowrap;
-	padding: 0.2rem;
-	border-radius: 20rem;
-	border: 0;
-	cursor:	pointer;
+.star_communication_btn {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+.star_communication_btn:hover {
+	background-color: #e5e7eb;
+}
 
+.delete_communication_btn {
+	width: 1.5rem;
+	height: 1.5rem;
 }
 
 .delete_communication_btn:hover {
 	background-color: #e5e7eb;
+}
+
+.more_options {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.1rem;
 }
 
 .personal_info {
@@ -467,12 +476,13 @@ code {
 
 .time_diff {
 	position: sticky;
+	width: 100%;
 	top: 0;
 	font-size: 0.9rem;
 	font-weight: bold;
 	display: flex;
 	padding: 0.25rem;
-	padding-top: 1.5rem;
+	padding-top: 1.25rem;
 	justify-content: space-between;
 	align-items: center;
 	background-color: #f9fbff;
