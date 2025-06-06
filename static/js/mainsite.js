@@ -927,7 +927,11 @@ function app() {
 			this.titles[i].splice(j,1);
 			oldtitle.date = new Date();
 			oldtitle.title = this.topBarContent;
-			this.titles[0].unshift(oldtitle);
+			if (oldtitle.starred) {
+				this.titles[0].unshift(oldtitle);
+			} else {
+				this.titles[1].unshift(oldtitle);
+			}
 		},
 
 		UserCopyMessage(event){
