@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ds2pdf</title>
+</head>
+<body>
+{% load static %}
+
+<div class="main" x-data="app()">
+	<div class="left_div">
+		<textarea id="textarea" class="left_textarea" x-model="user_input_text" placeholder="请在此输入您的markdown文本"></textarea>
+	</div>
+
+	<div class="right_div">
+		<div id="rendered_div" class="rendered_div"></div>
+	</div>
+
+	<div class="operations">
+		<button class="savebtn" onclick="saveaspdf()">保存为pdf 1<br>请选择<strong>目标打印机：另存为pdf</strong></button>
+		<button class="savebtn" onclick="downloadAsPDF()">保存为pdf 2<br>以图片形式的pdf保存</button>
+	</div>
+</div>
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<link href="{% static 'css/ds2pdf.css' %}" rel="stylesheet">
+
+<script src="{% static 'js/md_renderer.js' %}"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+<!-- <link rel="stylesheet" href="{% static 'css/katex.min.css' %}"> -->
+<!-- <script defer src="{% static 'js/katex.min.js' %}"></script> -->
+
+<script src="{% static 'js/highlight.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/highlight.css' %}">
+
+<script defer src="{% static 'js/mermaid.min.js' %}"></script>
+<script src="{% static 'js/my_marked.js' %}"></script>
+
+<script defer src="{% static 'js/ds2pdf.js' %}"></script>
+
+
+</html>

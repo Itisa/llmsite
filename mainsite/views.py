@@ -340,3 +340,8 @@ def get_params(request): # 获取服务器存的对话参数
 	ret_data["frequency_penalty"] = comm.frequency_penalty
 	ret_data["presence_penalty"] = comm.presence_penalty
 	return JsonResponse({'status': 'ok', 'data': json.dumps(ret_data)},status=200)
+
+@require_http_methods(["GET"])
+@require_user("page")
+def ds2pdf(request):
+	return render(request,"mainsite/ds2pdf.html")
