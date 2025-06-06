@@ -191,5 +191,8 @@ function init_renderer(rendertype="default") {
 		const tag = token.align ? `<${type} align="${token.align}">` : `<${type}>`;
 		return tag + content + `</${type}>\n`;
 	}
+	renderer.heading = function(token){
+		return `<h${token.depth}>${renderWithKatex(this.parser.parseInline(token.tokens))}</h${token.depth}>\n`;
+	}
 	return renderer;
 }
