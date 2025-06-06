@@ -1,7 +1,5 @@
 .main {
 	display: flex;
-	/*flex-direction: row;*/
-	/*height: 95vh;*/
 }
 
 .left_div {
@@ -15,20 +13,16 @@
 	height: 95vh;
 	border: 1px solid;
 	border-color: rgb(118, 118, 118);
-	padding: 2px;
+	padding: 5px;
 	overflow: scroll;
 }
 
-.left_textarea {
+.mytextarea {
 	height: 100%;
 	width: 100%;
 	resize: none;
-	/*border: none;*/
-}
-
-.rendered_div {
-	/*padding: 2px;*/
-
+	font-size: 14px;
+	padding: 5px;
 }
 
 .rendered_div > :first-child {
@@ -36,6 +30,7 @@
 }
 
 .operations {
+	width: 10%;
 	display: flex;
 	flex-direction: column;
 	margin-left: 5px;
@@ -90,4 +85,40 @@ code {
 .katex-mathml {
 	/* cause scrolling*/
 	display: none !important; 
+}
+
+table {
+    display: table;
+    border-collapse: separate;
+    box-sizing: border-box;
+    text-indent: initial;
+    unicode-bidi: isolate;
+    border-spacing: 2px;
+    border-color: gray;
+    /* new */
+    border-collapse: collapse;
+}
+
+th {
+    display: table-cell;
+    vertical-align: inherit;
+    font-weight: bold;
+    text-align: -internal-center;
+    unicode-bidi: isolate;
+    /* new */
+    border-bottom: 1px solid #000000;
+    padding: 10px;
+    font-size: 15px;
+    line-height: 1.72;
+}
+
+td {
+    display: table-cell;
+    vertical-align: inherit;
+    unicode-bidi: isolate;
+    /* new */
+    border-bottom: 1px solid #dddddd;
+    padding: 10px;
+    font-size: 15px;
+    line-height: 1.72;
 }

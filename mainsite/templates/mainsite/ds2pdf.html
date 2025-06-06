@@ -8,7 +8,7 @@
 
 <div class="main" x-data="app()">
 	<div class="left_div">
-		<textarea id="textarea" class="left_textarea" x-model="user_input_text" placeholder="请在此输入您的markdown文本"></textarea>
+		<textarea id="textarea" class="mytextarea" x-model="user_input_text" placeholder="请在此输入您的markdown文本"></textarea>
 	</div>
 
 	<div class="right_div">
@@ -16,12 +16,30 @@
 	</div>
 
 	<div class="operations">
-		<button class="savebtn" onclick="saveaspdf()">保存为pdf 1<br>请选择<strong>目标打印机：另存为pdf</strong></button>
-		<button class="savebtn" onclick="downloadAsPDF()">保存为pdf 2<br>以图片形式的pdf保存<br>（有概率文字被切掉）</button>
+		<button class="savebtn" onclick="saveaspdf()">保存为pdf</button>
+		<div>
+			请选择<br><strong>目标打印机：另存为pdf</strong>
+		</div>
+		<br>
+		<div>
+			注意不要禁用缓存（别打开开发者模式就没问题）
+		</div>
+		<br>
+		<div>
+			已知BUG：<br>
+			**你好**若不能正确渲染为<strong>你好</strong>，请在**...**的左右加上空格
+		</div>
 	</div>
 </div>
 
 </body>
+
+<script>
+	const higtlightcss_url = "{% static 'css/highlight.css' %}";
+	const ds2pdfcss_url = "{% static 'css/ds2pdf.css' %}";
+	const katexcss_url = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
+</script>
+
 <script src="{% static 'js/html2canvas.min.js' %}"></script>
 <script src="{% static 'js/jspdf.umd.min.js' %}"></script>
 

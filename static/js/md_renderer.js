@@ -185,5 +185,12 @@ function init_renderer(rendertype="default") {
 		itemBody += this.parser.parse(item.tokens, !!item.loose);
 		return `<li>${renderWithKatex(itemBody)}</li>\n`;
 	}
+
+	renderer.tablecell = function(token) {
+		const content = renderWithKatex(this.parser.parseInline(token.tokens));
+		const type = token.header ? 'th' : 'td';
+		const tag = token.align ? `<${type} align="${token.align}">` : `<${type}>`;
+		return tag + content + `</${type}>\n`;
+	}
 	return renderer;
 }

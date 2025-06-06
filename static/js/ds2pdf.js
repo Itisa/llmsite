@@ -6,9 +6,11 @@ function init(textval) {
 
 	textarea.addEventListener('input', function(event) {
 		rendered_div.innerHTML = marked.parse(event.target.value);
+		setTimeout(() => {mermaid.run();},0)
 	});
 	textarea.value = textval;
 	rendered_div.innerHTML = marked.parse(textval);
+	mermaid.run();
 
 	mermaid.initialize({
 		startOnLoad: false,
@@ -17,14 +19,33 @@ function init(textval) {
 		renderer: init_renderer("ds2pdf"),
 	});
 }
+
+function render_all(s) {
+	return `
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="${higtlightcss_url}">
+	<link rel="stylesheet" href="${ds2pdfcss_url}">
+	<link rel="stylesheet" href="${katexcss_url}">
+</head>
+<body>
+${s}
+</body>
+</html>
+	`;
+}
+
 function saveaspdf() {
 	const originalText = document.getElementById('textarea').value;
 	const originalContents = document.body.innerHTML;
 
-	document.body.innerHTML = document.getElementById('rendered_div').innerHTML;
-	window.print();
-	document.body.innerHTML = originalContents;
-	init(originalText);
+	document.body.innerHTML = render_all(document.getElementById('rendered_div').innerHTML);
+	setTimeout(() => {
+		window.print();
+		document.body.innerHTML = originalContents;
+		init(originalText);
+	},0);
 }
 
 init("");
