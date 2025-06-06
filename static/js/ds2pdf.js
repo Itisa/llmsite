@@ -1,8 +1,6 @@
 const { jsPDF } = window.jspdf;
 
 function init(textval) {
-	console.log("init");
-	
 	const rendered_div = document.getElementById("rendered_div")
 	const textarea = document.getElementById('textarea');
 
@@ -29,33 +27,7 @@ function saveaspdf() {
 	init(originalText);
 }
 
-function saveaspng() {
-	const originalText = document.getElementById('textarea').value;
-	const originalContents = document.body.innerHTML;
-
-	document.body.innerHTML = document.getElementById('rendered_div').innerHTML;
-	console.log("???")
-	html2canvas(document.body).then(canvas => {
-		// 转换为图片URL
-		console.log(111)
-		const imageUrl = canvas.toDataURL('image/png');
-		
-		// 创建下载链接
-		const link = document.createElement('a');
-		link.href = imageUrl;
-		link.download = 'screenshot.png';
-		link.click();
-	});
-
-	document.body.innerHTML = originalContents;
-	init(originalText);
-
- 	
-}
-
 init("");
-// async function downloadAsPDF(filename = 'document.pdf') {
-// 	const element = document.getElementById("rendered_div");
 
 async function downloadAsPDF(filename = 'document.pdf') {
 	const element = document.getElementById("rendered_div");
