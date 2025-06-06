@@ -1,4 +1,10 @@
-const { jsPDF } = window.jspdf;
+const $axios = axios.create({
+	headers: {
+		"Content-Type": "application/json",
+	}
+});
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+$axios.defaults.headers.common['X-CSRFToken'] = csrftoken;
 
 function init(textval) {
 	const rendered_div = document.getElementById("rendered_div")
@@ -153,4 +159,26 @@ async function downloadAsPDF(filename = 'document.pdf') {
 	
 	// 10. 下载PDF
 	pdf.save(filename);
+}
+function OpenReport() {
+	document.getElementById("reportUI").style.display = "flex";
+	document.getElementById("report_content").value = document.getElementById('textarea').value;
+}
+function CloseReport() {
+	document.getElementById("reportUI").style.display = "none";
+}
+
+function report() {
+	$axios.post(report_url, {
+		content: document.getElementById("report_content").value,
+		description: document.getElementById("report_description").value,
+	})
+	.then(response => {
+		alert("提交成功！感谢您的Report")
+		document.getElementById("reportUI").style.display = "none";
+	})
+	.catch(error => {
+		console.log('report请求失败:')
+		console.log(error);
+	});
 }

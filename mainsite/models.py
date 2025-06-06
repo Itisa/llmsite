@@ -103,3 +103,10 @@ class GlobalSetting(models.Model):
 	user_talk_limit = models.IntegerField(default=-1)
 	def __str__(self):
 		return "settings"
+
+class Ds2pdf_report(models.Model):
+	content = models.TextField()
+	description = models.TextField()
+	fixed = models.BooleanField(default=False)
+	def __str__(self):
+		return self.content[:20]

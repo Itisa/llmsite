@@ -19,4 +19,5 @@ urlpatterns = [
 	path("site_mailbox", views.site_mailbox, name="site_mailbox"),
 	path("get_params", views.get_params, name="get_params"),
 	path("ds2pdf", views.ds2pdf, name="ds2pdf"),
+	path("ds2pdf_report", views.ds2pdf_report, name="ds2pdf_report"),
 ]

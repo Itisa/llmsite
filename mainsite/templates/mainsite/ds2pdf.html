@@ -5,7 +5,7 @@
 </head>
 <body>
 {% load static %}
-
+{% csrf_token %}
 <div class="main" x-data="app()">
 	<div class="left_div">
 		<textarea id="textarea" class="mytextarea" x-model="user_input_text" placeholder="请在此输入您的markdown文本"></textarea>
@@ -16,32 +16,53 @@
 	</div>
 
 	<div class="operations">
-		<button class="savebtn" onclick="saveaspdf()">保存为pdf</button>
 		<div>
-			请选择<br><strong>目标打印机：另存为pdf</strong>
+			<button class="savebtn" onclick="saveaspdf()">保存为pdf</button>
+			<div>
+				请选择<br><strong>目标打印机：另存为pdf</strong>
+			</div>
+			<br>
+			<div style="color: red;">
+				警告：请不要复制未知来源的文本到此处，您的浏览器可能会遭到攻击
+			</div>
+			<br>
+			<div>
+				注意不要禁用缓存
+			</div>
+			
 		</div>
-		<br>
 		<div>
-			注意不要禁用缓存（别打开开发者模式就没问题）
-		</div>
-		<br>
-		<div>
-			已知BUG：<br>
-			**你好**若不能正确渲染为<strong>你好</strong>，请在**...**的左右加上空格
+			<button class="savebtn" onclick="OpenReport()">report</button>
 		</div>
 	</div>
 </div>
+<div id="reportUI" style="display: none;" class="report_background">
+	<div class="report_div">
 
+		<div>内容：</div>
+		<textarea id="report_content" class="report_content"></textarea>
+		<div>描述：</div>
+		<textarea id="report_description" class="report_description" placeholder="如果您想得到回复的话，请留下联系方式"></textarea>
+		
+		<!-- 右上角的按钮 -->
+		<div class="report_btn_div">
+			<button onclick="CloseReport()">取消</button>
+			<button onclick="report()">提交</button>
+		</div>
+	</div>
+</div>
+</div>
 </body>
 
 <script>
 	const higtlightcss_url = "{% static 'css/highlight.css' %}";
 	const ds2pdfcss_url = "{% static 'css/ds2pdf.css' %}";
 	const katexcss_url = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
+	const report_url = "{% url 'mainsite:ds2pdf_report' %}"
 </script>
 
-<script src="{% static 'js/html2canvas.min.js' %}"></script>
-<script src="{% static 'js/jspdf.umd.min.js' %}"></script>
+<!-- <script src="{% static 'js/html2canvas.min.js' %}"></script> -->
+<!-- <script src="{% static 'js/jspdf.umd.min.js' %}"></script> -->
 
 <link href="{% static 'css/ds2pdf.css' %}" rel="stylesheet">
 
@@ -52,6 +73,8 @@
 
 <script src="{% static 'js/highlight.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/highlight.css' %}">
+
+<script src="{% static 'js/axios_min.js' %}"></script>
 
 <script defer src="{% static 'js/mermaid.min.js' %}"></script>
 <script src="{% static 'js/my_marked.js' %}"></script>

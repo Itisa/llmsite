@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.contrib import messages
 
-from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
+from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting, Ds2pdf_report
 from .views import generate_random_string,add_user
 from .models_api import get_user_by_username
 
@@ -183,3 +183,7 @@ admin.site.register(Mailbox,MailboxAdmin)
 class GlobalSettingAdmin(admin.ModelAdmin):
 	list_display = ["website_name","enable_register","user_talk_limit"]
 admin.site.register(GlobalSetting,GlobalSettingAdmin)
+
+class Ds2pdf_reportAdmin(admin.ModelAdmin):
+	list_display = ["__str__","fixed"]
+admin.site.register(Ds2pdf_report,Ds2pdf_reportAdmin)

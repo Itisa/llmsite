@@ -1,4 +1,4 @@
-from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting
+from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting, Ds2pdf_report
 import logging
 import bcrypt
 from django.utils import timezone
@@ -163,3 +163,7 @@ def reset_user_talk_limit():
 			default=Value(limit)
 		)
 	)
+
+def new_ds2pdf_report(content,description):
+	report = Ds2pdf_report(content=content,description=description)
+	report.save();

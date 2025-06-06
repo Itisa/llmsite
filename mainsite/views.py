@@ -292,7 +292,6 @@ def star_communication(request):
 	data = json.loads(request.body)
 	cid = data.get('cid',-2)
 	b = data.get('b',False)
-	print("star b:", b)
 	if type(b) != bool:
 		return JsonResponse({'status': 'fail', 'reason': "params error: b is not a boolen"}, status=400)
 	comm = get_communication_by_pk(cid)
@@ -344,3 +343,11 @@ def get_params(request): # 获取服务器存的对话参数
 @require_http_methods(["GET"])
 def ds2pdf(request):
 	return render(request,"mainsite/ds2pdf.html")
+
+@require_http_methods(["POST"])
+def ds2pdf_report(request):
+	data = json.loads(request.body)
+	content = data.get('content','')
+	description = data.get('description','')
+	new_ds2pdf_report(content,description)
+	return JsonResponse({'status': 'ok'},status=200)
