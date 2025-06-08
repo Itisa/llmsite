@@ -5,7 +5,12 @@ const $axios = axios.create({
 });
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 $axios.defaults.headers.common['X-CSRFToken'] = csrftoken;
-
+mermaid.initialize({
+	startOnLoad: false,
+});
+marked.setOptions({
+	renderer: init_renderer("ds2pdf"),
+});
 function init(textval) {
 	const rendered_div = document.getElementById("rendered_div")
 	const textarea = document.getElementById('textarea');
@@ -16,14 +21,7 @@ function init(textval) {
 	});
 	textarea.value = textval;
 	rendered_div.innerHTML = marked.parse(textval);
-	mermaid.run();
-
-	mermaid.initialize({
-		startOnLoad: false,
-	});
-	marked.setOptions({
-		renderer: init_renderer("ds2pdf"),
-	});
+	mermaid.run();	
 }
 
 function render_all(s) {
@@ -54,7 +52,12 @@ function saveaspdf() {
 	},0);
 }
 
-init("");
+const ind = window.location.href.indexOf("?")
+var content = "";
+if (ind !== -1) {
+	content = decodeURIComponent(window.location.href.substring(ind + 3));
+}
+init(content);
 
 async function downloadAsPDF(filename = 'document.pdf') {
 	const element = document.getElementById("rendered_div");

@@ -522,6 +522,18 @@ function app() {
 				}
 			})
 			.then(response => {
+				const status = response.data.status;
+				if (status == "fail") {
+					const reason = response.data.reason;
+					if (reason == "no communication") {
+						alert("对话不存在或已被删除");
+						this.createNewChat();
+					} else if (reason == "no permission") {
+						alert("没有权限访问该对话");
+						this.createNewChat();
+					}
+					return ;
+				}
 				let [i,j] = this.find_title_by_cid(cid);
 				this.messages = response.data.messages
 				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
@@ -557,7 +569,18 @@ function app() {
 				b: b,
 			})
 			.then(response => {
-				
+				const status = response.data.status;
+				if (status == "fail") {
+					const reason = response.data.reason;
+					if (reason == "communication not found") {
+						alert("对话不存在或已被删除");
+					} else if (reason == "params error: b is not a boolen") {
+						alert("参数错误: b 不是布尔值");
+					} else if (reason == "no permission") {
+						alert("没有权限访问该对话");
+					}
+					return ;
+				}
 				const rb = response.data.data;
 				let [i,j] = this.find_title_by_cid(cid);
 				var tmp = {...this.titles[i][j]};
@@ -588,7 +611,16 @@ function app() {
 				cid: cid,
 			})
 			.then(response => {
-				// console.log(response)
+				const status = response.data.status;
+				if (status == "fail") {
+					const reason = response.data.reason;
+					if (reason == "communication not found") {
+						alert("对话不存在或已被删除");
+					} else if (reason == "no permission") {
+						alert("没有权限访问该对话");
+					}
+					return ;
+				}
 				let [i,j] = this.find_title_by_cid(cid);
 				if (cid === this.cid) {
 					this.createNewChat();
@@ -649,7 +681,20 @@ function app() {
 				newtitle: this.topBarContent,
 			})
 			.then(response => {
-				// console.log(response)
+
+				const status = response.data.status;
+				if (status == "fail") {
+					const reason = response.data.reason;
+					if (reason == "communication not found") {
+						alert("对话不存在或已被删除");
+					} else if (reason == "no permission") {
+						alert("没有权限访问该对话");
+					} else if (reason == "title too long") {
+						alert("标题长度超过限制(30)");
+					}
+					return ;
+				}
+
 				this.update_title(this.cid);
 
 				this.oldTitle = "";
@@ -778,6 +823,18 @@ function app() {
 				}
 			})
 			.then(response => {
+				const status = response.data.status;
+				if (status == "fail") {
+					const reason = response.data.reason;
+					if (reason == "communication not found") {
+						alert("对话不存在或已被删除");
+					} else if (reason == "no permission") {
+						alert("没有权限访问该对话");
+					}
+					this.createNewChat();
+					return ;
+				}
+
 				const data = JSON.parse(response.data.data)
 				this.system_content = data.system;
 				this.communication_temperature = data.temperature;
@@ -821,6 +878,13 @@ function app() {
 			this.communication_frequency_penalty = 0;
 			this.communication_presence_penalty = 0;
 			this.system_content = "";
+		},
+
+		UserCopy2pdf(event) {
+			if (this.in_talk) return ;
+			const element = event.srcElement.parentElement;
+			const codeText = element.childNodes[1].textContent;
+			window.open(urls["ds2pdf"] + "?c=" + encodeURIComponent(codeText),"_blank");
 		}
 	}
 }

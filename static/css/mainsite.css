@@ -358,6 +358,13 @@ code {
 	width: 20px;
 	cursor: pointer;
 }
+.assistant_user_copy2pdf {
+	margin-left: 0.75rem;
+	margin-top: 0;
+	height: 20px;
+	width: 20px;
+	cursor: pointer;
+}
 
 .message_reasoning {
 	color: #8b8b8b;

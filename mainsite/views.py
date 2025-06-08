@@ -72,11 +72,11 @@ def login(request):
 		
 		user = get_user_by_username(username)
 		if user == None:
-			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=400)
+			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=200)
 
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
 			if user.user_status == "FD":
-				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=400)
+				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=200)
 			sessionid = generate_random_string(20)
 			user.sessionid = sessionid
 			user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
@@ -84,7 +84,7 @@ def login(request):
 			if user.user_type == "TM" and user.user_status == "NM": # 临时用户，第二次登陆就禁止了
 				user.user_status = "FD"
 				user.save()
-				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=400)
+				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=200)
 
 			if user.user_status == "NL":
 				user.user_status = "NM"
@@ -94,7 +94,7 @@ def login(request):
 			rsp.set_cookie("username",username,max_age=1209600)
 			return rsp
 		else:
-			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=400)
+			return JsonResponse({"status": "fail","reason": "user not exist or incorrect password"}, status=200)
 
 @require_http_methods(["GET","POST"])
 def register(request):
@@ -105,10 +105,10 @@ def register(request):
 			}
 			return render(request,"mainsite/register.html")
 		else:
-			return HttpResponse("注册暂时不可用，请与管理员联系") #
+			return HttpResponse("注册暂时不可用，请与管理员联系")
 	elif request.method == "POST":
 		if not is_enable_register():
-			return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=403) #
+			return JsonResponse( {"status": "fail","reason": "register unavailable",}, status=200)
 		
 		username = request.POST.get("username","")
 		password = request.POST.get("password","")
@@ -117,7 +117,7 @@ def register(request):
 		if add_user(username,password):
 			return JsonResponse({"status": "success",}, status=200)
 		else:
-			return JsonResponse({"status": "fail","reason": "username exist"}, status=400)
+			return JsonResponse({"status": "fail","reason": "username exist"}, status=200)
 
 @require_http_methods(["GET","POST"])
 @require_user("data")
@@ -128,17 +128,17 @@ def change_password(request):
 		}
 		return render(request,"mainsite/change_password.html",data)
 	elif request.method == "POST":
-		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=403)
+		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=200)
 		user = request.User
 
 		logger.info(f"user {user} change_password")
 		ori_password = request.POST.get("ori_password","")
 		
 		if not bcrypt.checkpw(ori_password.encode(), user.user_password.encode()):
-			return JsonResponse({"status": "fail","reason": "ori_password error"}, status=400)
+			return JsonResponse({"status": "fail","reason": "ori_password error"}, status=200)
 
 		if not "new_password" in request.POST.keys():
-			return JsonResponse({"status": "fail","reason": "no new_password"}, status=400)
+			return JsonResponse({"status": "fail","reason": "no new_password"}, status=200)
 
 		new_password = request.POST.get("new_password")
 
@@ -175,9 +175,9 @@ def get_communication_content(request):
 	cid = request.GET["cid"]
 	comm = get_communication_by_pk(int(cid))
 	if comm == None:
-		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
+		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=200)
 	if (comm.user.pk != request.User.pk):
-		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
+		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
 	messages = []
 	qst = comm.communication_content_set.all().order_by('gen_date')
 	for msg in qst:
@@ -194,7 +194,7 @@ def talk(request):
 	
 	model_name = data.get('model_name',"")
 	if not model_name in get_models():
-		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=400)	
+		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=200)	
 	message = data.get('message',"")
 	system = data.get('system',"")
 	cid = data.get('cid',-2)
@@ -220,7 +220,7 @@ def talk(request):
 	except Exception as e:
 		logger.warning(e)
 		print(e)
-		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=400)
+		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=200)
 
 	# 获取对话
 	if cid == -1:
@@ -228,10 +228,10 @@ def talk(request):
 	else:
 		comm = get_communication_by_pk(cid)
 		if comm == None:
-			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=400)
+			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
 
 		if (comm.user.pk != request.User.pk):
-			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
+			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
 	
 	comm.system = system
 	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
@@ -258,18 +258,18 @@ def change_communication_title(request):
 	cid = data.get('cid',-2)
 	newtitle = data.get('newtitle',"")
 	if len(newtitle) > 30:
-		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=200)
 
 	comm = get_communication_by_pk(cid)
 	if comm == None:
-		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 	
 	if comm.user.pk == request.User.pk:
 		comm.title = newtitle
 		comm.save()
 		return JsonResponse({'status': 'ok'}, status=200)
 	else:
-		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=200)
 
 @require_http_methods(["POST"])
 @require_user("data")
@@ -278,13 +278,13 @@ def delete_communication(request):
 	cid = data.get('cid',-2)
 	comm = get_communication_by_pk(cid)
 	if comm == None:
-		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 	
 	if comm.user.pk == request.User.pk:
 		comm.delete()
 		return JsonResponse({'status': 'ok'}, status=200)
 	else:
-		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=200)
 
 @require_http_methods(["POST"])
 @require_user("data")
@@ -293,17 +293,17 @@ def star_communication(request):
 	cid = data.get('cid',-2)
 	b = data.get('b',False)
 	if type(b) != bool:
-		return JsonResponse({'status': 'fail', 'reason': "params error: b is not a boolen"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "params error: b is not a boolen"}, status=200)
 	comm = get_communication_by_pk(cid)
 	if comm == None:
-		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 
 	if comm.user.pk == request.User.pk:
 		comm.starred = b
 		comm.save()
 		return JsonResponse({'status': 'ok',"data":b}, status=200)
 	else:
-		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': "no permission"}, status=200)
 
 @require_user("page")
 def site_mailbox(request):
@@ -318,9 +318,9 @@ def site_mailbox(request):
 			add_mailbox(request.User,title,content)
 			return JsonResponse({'status': 'ok'}, status=200)
 		except json.JSONDecodeError:
-			return JsonResponse({'status': 'error', 'reason': 'Invalid JSON'}, status=400)	
+			return JsonResponse({'status': 'fail', 'reason': 'Invalid JSON'}, status=200)	
 		except KeyError as e:
-			return JsonResponse({'status': 'error', 'reason': f'Missing key: {str(e)}'}, status=400)
+			return JsonResponse({'status': 'fail', 'reason': f'Missing key: {str(e)}'}, status=200)
 
 @require_http_methods(["GET"])
 @require_user("data")
@@ -328,9 +328,9 @@ def get_params(request): # 获取服务器存的对话参数
 	cid = request.GET["cid"]
 	comm = get_communication_by_pk(int(cid))
 	if comm == None:
-		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=400)
+		return JsonResponse({'status': 'fail', 'reason': 'no communication'}, status=200)
 	if (comm.user.pk != request.User.pk):
-		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=403)
+		return JsonResponse({'status': 'fail', 'reason': 'no permission'}, status=200)
 	ret_data = {}
 	ret_data["system"] = comm.system
 	ret_data["temperature"] = comm.temperature

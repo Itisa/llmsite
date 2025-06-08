@@ -68,11 +68,24 @@
 				}
 				this.registerForm.csrfmiddlewaretoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 				const registerParams = new URLSearchParams(this.registerForm);
+				
 				axios.post(
 					"{% url 'mainsite:register' %}",
 					registerParams.toString(),
 				)
 				.then(response => {
+
+					const status = response.data.status;
+					if (status == "fail") {
+						if (response.data.reason == "username exist") {
+							this.errormsg = "用户名已存在";
+						} else if (response.data.reason == "register unavailable") {
+							this.errormsg = "注册暂时不可用";
+						} else {
+							this.errormsg = "出现其它错误";
+						}
+						return ;
+					}
 					this.okmsg = "注册成功 1秒后跳转到登录页面";
 					setTimeout(() => {
 						window.location.href = "{% url 'mainsite:site' %}";
@@ -80,13 +93,7 @@
 				})
 				.catch(error => {
 					console.error('注册失败:', error);
-					if (error.response.data.reason === "register unavailable"){
-						this.errormsg = "注册暂时不可用";
-					} else if (error.response.data.reason === "username exist") {
-						this.errormsg = "用户名已存在";
-					} else {
-						this.errormsg = "出现其它错误";
-					}
+					alert('注册失败，请稍后再试');
 				});
 			},
 

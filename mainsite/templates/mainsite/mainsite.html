@@ -149,9 +149,12 @@
 										<!-- Deepseek 助手消息样式 -->
 										<div>
 											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
-											<div class="assistant_user_copy_div">
+											<div class="assistant_user_copy_div" >
 												<div style="display: none;" x-text="message.content"></div>
+												<!-- 复制按钮 -->
 												<img class="assistant_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
+												<!-- 保存为pdf（跳转到pdf保存页面） -->
+												<img class="assistant_user_copy2pdf" src="{% static 'images/picture_as_pdf.png' %}" x-show="ifenter" @click="UserCopy2pdf(event)"></img>
 											</div>
 											
 										</div>
@@ -313,6 +316,7 @@
 		urls["copybtn_png"] = "{% static 'images/copybtn.png' %}";
 		urls["check_png"] = "{% static 'images/check.png' %}";
 		urls["get_params"] = "{% url 'mainsite:get_params' %}";
+		urls["ds2pdf"] = "{% url 'mainsite:ds2pdf' %}";
 	</script>
 	<script src="{% static 'js/md_renderer.js' %}"> </script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>
