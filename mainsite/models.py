@@ -33,6 +33,10 @@ class Communication(models.Model):
 		("DB","doubao"),
 		("OA","openai"),
 	]
+	COMMUNICATION_STATUS_CHOICES = [
+		("DN","done"),
+		("QR","querying"),
+	]
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now=True)
 	model = models.CharField(max_length=100,default='none') #用户最后使用的model 已被弃用
@@ -44,6 +48,7 @@ class Communication(models.Model):
 	presence_penalty = models.FloatField(default=0.0,validators=[MinValueValidator(-2.0), MaxValueValidator(2.0)])
 	title = models.CharField(max_length=100)
 	starred = models.BooleanField(default=False)
+	status = models.CharField(max_length=3, choices=COMMUNICATION_STATUS_CHOICES, default="DN")
 	def __str__(self):
 		return self.title
 

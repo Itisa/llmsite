@@ -3,7 +3,7 @@ import logging
 import bcrypt
 from django.utils import timezone
 from django.core.cache import cache
-from django.db.models import F
+from django.db.models import F, Case, When, Value
 
 logger = logging.getLogger(__name__)
 

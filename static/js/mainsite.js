@@ -317,22 +317,48 @@ function app() {
 				this.cid = -2; // 先把转圈圈显示出来，(不是-1就会显示)
 			}
 
-			fetch(urls["talk"], {
+			$axios.post(urls["post_message"], {
+				model_name: this.models[this.selectedModelid].name,
+				message: uploadMessage,
+				system: uploadSystem,
+				cid: uploadCid,
+				temperature: Number(this.communication_temperature),
+				top_p: Number(this.communication_top_p),
+				max_tokens: Number(this.communication_max_tokens),
+				frequency_penalty: Number(this.communication_frequency_penalty),
+				presence_penalty: Number(this.communication_presence_penalty),
+			}).then(response => {
+				const status = response.data.status;
+				if (status == "error") {
+					const reason = response.data.reason;
+					console.log("post_message error: " + reason);
+				} else if (status == "ok") {
+					const cid = response.data.cid;
+					const title = response.data.title;
+					this.insert_title({
+						id: cid,
+						title: title,
+						date: Date.now(),
+					});
+					this.cid = cid;
+					this.update_topBar();
+				}
+				this.get_streaming_content(this.cid);
+			}).catch(error => {
+				console.log("error in post_message");
+				console.log(error);
+			});
+	
+		},
+		get_streaming_content(query_cid){
+			fetch(urls["get_streaming_content"], {
 				method: 'POST',	
 				headers: {
 					'Content-Type': 'application/json',
 					'X-CSRFToken': this.csrftoken,
 				},
 				body: JSON.stringify({
-					model_name: this.models[this.selectedModelid].name,
-					message: uploadMessage,
-					system: uploadSystem,
-					cid: uploadCid,
-					temperature: Number(this.communication_temperature),
-					top_p: Number(this.communication_top_p),
-					max_tokens: Number(this.communication_max_tokens),
-					frequency_penalty: Number(this.communication_frequency_penalty),
-					presence_penalty: Number(this.communication_presence_penalty),
+					cid: query_cid,
 				})
 			})
 			.then(response => {
@@ -341,14 +367,14 @@ function app() {
 				
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
 
-				if (!response.ok) {
+				// ????????????????????????????
+				if (!response.ok) { 
 					if (response.status == 401){
 						window.location.href = urls["login"];
 						return ;
 					} else {
 						throw new Error('Network response was not ok');
 					}
-					return ;
 				}
 
 				setTimeout(() => {
@@ -360,8 +386,15 @@ function app() {
 				var reasoning_cache_end = true;
 				var assistant_cache_end = false;
 				var reasoning_end = true;
-				
-				if (reasoning) {
+				var have_done_reasoning = false;
+
+				const reasoning_work = () => {
+					if (have_done_reasoning) {
+						console.error("reasoning_work have_done_reasoning");
+						return ;
+					}
+					console.log(this);
+					console.log(this.messages);
 					this.messages.push({
 						model: '',
 						content: "",
@@ -383,6 +416,11 @@ function app() {
 							}, 0);
 						}
 					},50);
+					have_done_reasoning = true;
+				}
+
+				function flush() {
+
 				}
 
 				const assistant_interval = setInterval(() => {
@@ -421,8 +459,7 @@ function app() {
 						
 						const chunk = lastchunk + decoder.decode(value);
 						lastchunk = "";
-						// console.log(chunk);
-						// 假设服务器返回的是逐行 JSON 数据
+						// 服务器返回的是逐行 JSON 数据
 						chunk.split('\n').forEach(line => {
 							if (line.trim()) {
 								if (line[line.length-1] != "}"){
@@ -433,24 +470,25 @@ function app() {
 									lastchunk = line;
 								} else {
 									const jsonData = JSON.parse(line);
-									// console.log(jsonData);
-									if (firstchunk){
-										if (this.cid < 0){ // 新对话 
-											this.insert_title({
-												id: jsonData.cid,
-												title: jsonData.title,
-												date: Date.now(),
-											});
-											this.cid = jsonData.cid;
-											this.update_topBar();
+									const cmd = jsonData.cmd;
+									if (cmd == "info") {
+										if (jsonData.model_type === "RS") {
+											reasoning_work();
 										}
-										firstchunk = false;
-									}
-									if (jsonData.role === "reasoning") {
-										reasoning_cache += jsonData.message
-									} else {
-										reasoning_cache_end	= true;
-										assistant_cache += jsonData.message
+									} else if (cmd === "fail") {
+										console.log("streaming error:");
+										assistant_cache += "\n\n**出错了，请稍后再试**";
+										reasoning_cache_end = true;
+										assistant_cache_end = true;
+									} else if (cmd === "queueing") {
+										
+									} else if (cmd === "content") {
+										if (jsonData.role === "reasoning") {
+											reasoning_cache += jsonData.message
+										} else {
+											reasoning_cache_end	= true;
+											assistant_cache += jsonData.message
+										}
 									}
 								}
 							}
@@ -459,6 +497,7 @@ function app() {
 						readChunk();  // 继续读取下一个数据块
 					});
 				};
+
 				readChunk();
 			})
 			.catch(error => {
@@ -467,6 +506,7 @@ function app() {
 				this.in_talk = false;
 			});
 		},
+
 		end_talk() {
 			in_talk = false;
 			this.in_talk = false;

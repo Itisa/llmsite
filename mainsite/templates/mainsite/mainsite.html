@@ -306,7 +306,6 @@
 		urls = {}
 		urls["login"] = "{% url 'mainsite:login' %}";
 		urls["logout"] = "{% url 'mainsite:logout' %}";
-		urls["talk"] = "{% url 'mainsite:talk' %}";
 		urls["get_available_models"] = "{% url 'mainsite:get_available_models' %}";
 		urls["get_history"] = "{% url 'mainsite:get_history' %}";
 		urls["get_communication_content"] = "{% url 'mainsite:get_communication_content' %}";
@@ -317,6 +316,8 @@
 		urls["check_png"] = "{% static 'images/check.png' %}";
 		urls["get_params"] = "{% url 'mainsite:get_params' %}";
 		urls["ds2pdf"] = "{% url 'mainsite:ds2pdf' %}";
+		urls["post_message"] = "{% url 'mainsite:post_message' %}";
+		urls["get_streaming_content"] = "{% url 'mainsite:get_streaming_content' %}";
 	</script>
 	<script src="{% static 'js/md_renderer.js' %}"> </script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>

@@ -12,7 +12,8 @@ urlpatterns = [
 	path("get_available_models", views.get_available_models, name="get_available_models"),
 	path("get_history", views.get_history, name="get_history"),
 	path("get_communication_content", views.get_communication_content, name="get_communication_content"),
-	path("talk", views.talk, name="talk"),
+	path("post_message", views.post_message, name="post_message"),
+	path("get_streaming_content", views.get_streaming_content, name="get_streaming_content"),
 	path("change_communication_title", views.change_communication_title, name="change_communication_title"),
 	path("delete_communication", views.delete_communication, name="delete_communication"),
 	path("star_communication", views.star_communication, name="star_communication"),
@@ -20,4 +21,5 @@ urlpatterns = [
 	path("get_params", views.get_params, name="get_params"),
 	path("ds2pdf", views.ds2pdf, name="ds2pdf"),
 	path("ds2pdf_report", views.ds2pdf_report, name="ds2pdf_report"),
+	path("update_communication_to_database", views.update_communication_to_database, name="update_communication_to_database"),
 ]
