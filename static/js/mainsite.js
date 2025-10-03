@@ -136,7 +136,7 @@ function app() {
 		inputMessage: '',
 		username: null,
 		topBarContent: "",
-		cid: -1,
+		cid: null,
 		isEditingTitle: false,
 		oldTitle: "", // if no changes no post
 		selectedModelid: null,
@@ -292,7 +292,7 @@ function app() {
 			this.cancelEditTitle();
 			const uploadMessage = this.inputMessage;
 			const uploadSystem = this.system_content;
-			const uploadCid = this.cid;
+			var uploadCid = this.cid;
 			this.inputMessage = "";
 			this.messages.push({
 				model: '',
@@ -313,8 +313,9 @@ function app() {
 				role: 'waiting',
 			});
 
-			if (this.cid === -1) {
-				this.cid = -2; // 先把转圈圈显示出来，(不是-1就会显示)
+			if (this.cid === null) {
+				uploadCid = "";
+				this.cid = ""; // 先把转圈圈显示出来，(不是null就会显示)
 			}
 
 			$axios.post(urls["post_message"], {
@@ -331,26 +332,34 @@ function app() {
 				const status = response.data.status;
 				if (status == "error") {
 					const reason = response.data.reason;
-					console.log("post_message error: " + reason);
+					if (reason == "talk limit exceeded") {
+						alert("对话次数已用完，请联系管理员");
+					} else if (reason == "queue full") {
+						alert("服务器繁忙，请稍后再试");
+					} else {
+						console.log("post_message error: " + reason);
+					}
 				} else if (status == "ok") {
 					const cid = response.data.cid;
 					const title = response.data.title;
-					this.insert_title({
-						id: cid,
-						title: title,
-						date: Date.now(),
-					});
+					if (this.cid == "") {
+						this.insert_title({
+							id: cid,
+							title: title,
+							date: Date.now(),
+						});
+					}
 					this.cid = cid;
 					this.update_topBar();
 				}
-				this.get_streaming_content(this.cid);
+				setTimeout(() => {this.get_streaming_content(this.cid);}, 100);
 			}).catch(error => {
 				console.log("error in post_message");
 				console.log(error);
 			});
 	
 		},
-		get_streaming_content(query_cid){
+		get_streaming_content(query_cid, have_placeholder=true) {
 			fetch(urls["get_streaming_content"], {
 				method: 'POST',	
 				headers: {
@@ -362,20 +371,12 @@ function app() {
 				})
 			})
 			.then(response => {
-				this.messages.pop()
+				if (have_placeholder){
+					this.messages.pop(); // 删除等待
+				}
 				if(this.cid >= 0) this.update_title(this.cid);
 				
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
-
-				// ????????????????????????????
-				if (!response.ok) { 
-					if (response.status == 401){
-						window.location.href = urls["login"];
-						return ;
-					} else {
-						throw new Error('Network response was not ok');
-					}
-				}
 
 				setTimeout(() => {
 					this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
@@ -387,14 +388,14 @@ function app() {
 				var assistant_cache_end = false;
 				var reasoning_end = true;
 				var have_done_reasoning = false;
-
+				var flushing = false;
+				var reasoning = false;
 				const reasoning_work = () => {
+					reasoning = true;
 					if (have_done_reasoning) {
 						console.error("reasoning_work have_done_reasoning");
 						return ;
 					}
-					console.log(this);
-					console.log(this.messages);
 					this.messages.push({
 						model: '',
 						content: "",
@@ -403,6 +404,7 @@ function app() {
 					reasoning_end = false;
 					reasoning_cache_end = false;
 					const reasoning_interval = setInterval(() => {
+						if (flushing) return ;
 						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
 						const lennow = this.messages[this.messages.length-1].content.length;
 						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 3);
@@ -419,11 +421,29 @@ function app() {
 					have_done_reasoning = true;
 				}
 
-				function flush() {
-
+				const flush = () => {
+					flushing = true;
+					if (reasoning) {
+						if (reasoning_cache_end == true) {
+							this.messages[this.messages.length-1].content = reasoning_cache;
+							in_assistant = true;
+							this.messages.push({
+								model: this.models[this.selectedModelid].origin,
+								content: "",
+								role: 'assistant',
+							});
+							this.messages[this.messages.length-1].content = assistant_cache;
+						} else {
+							this.messages[this.messages.length-1].content = reasoning_cache;
+						}
+					} else {
+						this.messages[this.messages.length-1].content = assistant_cache;
+					}				
+					flushing = false;
 				}
 
 				const assistant_interval = setInterval(() => {
+					if (flushing) return ;
 					if (!reasoning_end) return ;
 					if (!in_assistant){
 						this.messages.push({
@@ -489,6 +509,8 @@ function app() {
 											reasoning_cache_end	= true;
 											assistant_cache += jsonData.message
 										}
+									} else if (cmd == "flush") {
+										flush();
 									}
 								}
 							}
@@ -575,7 +597,14 @@ function app() {
 					return ;
 				}
 				let [i,j] = this.find_title_by_cid(cid);
-				this.messages = response.data.messages
+				var msgs = response.data.messages;
+				if (msgs.length > 0 && msgs[msgs.length-1].role === "querying") {
+					msgs.pop();
+					this.messages = msgs;
+					setTimeout(() => {this.get_streaming_content(cid,false);}, 0);
+				} else {
+					this.messages = msgs;
+				}
 				this.selectedModelid = this.get_model_ind(this.titles[i][j].model);
 				this.cid = cid;
 				this.update_topBar();
@@ -679,7 +708,7 @@ function app() {
 		// 开启新对话
 		createNewChat() {
 			if (this.in_talk) return ;
-			this.cid = -1;
+			this.cid = null;
 			this.topBarContent = "新对话";
 			this.messages = [];
 			this.focusOnInput();

@@ -38,8 +38,9 @@ class Communication(models.Model):
 		("QR","querying"),
 	]
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	cid = models.CharField(max_length=33,unique=True)
 	gen_date = models.DateTimeField("date published", auto_now=True)
-	model = models.CharField(max_length=100,default='none') #用户最后使用的model 已被弃用
+	model = models.CharField(max_length=100,default='none') #用户最后使用的model
 	system = models.TextField(default='',blank=True) #用户最后使用的system
 	temperature = models.FloatField(default=0.7,validators=[MinValueValidator(0.0), MaxValueValidator(2.0)])
 	top_p = models.FloatField(default=0.9,validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])

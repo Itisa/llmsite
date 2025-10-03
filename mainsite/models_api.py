@@ -1,6 +1,7 @@
 from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting, Ds2pdf_report
 import logging
 import bcrypt
+import uuid
 from django.utils import timezone
 from django.core.cache import cache
 from django.db.models import F, Case, When, Value
@@ -54,18 +55,31 @@ def add_mailbox(user,title,content):
 	mm.save()
 
 def create_communication(user,title,model_name):
-	comm = user.communication_set.create(title=title,model=model_name)
+	cid = uuid.uuid4().hex
+	comm = user.communication_set.create(cid=cid,title=title,model=model_name)
 	return comm
 
-def get_communication_by_pk(pk):
+# def get_communication_by_pk(pk):
+# 	u = None
+# 	try:
+# 		u = Communication.objects.get(pk=pk)
+# 	except Communication.DoesNotExist:
+# 		logger.error(f"no Communication found pk={pk}")
+# 		print("Communication.DoesNotExist")
+# 		print("pk:",pk)
+# 		print("type",type(pk))
+# 		pass
+# 	return u
+
+def get_communication_by_cid(cid):
 	u = None
 	try:
-		u = Communication.objects.get(pk=pk)
+		u = Communication.objects.get(cid=cid)
 	except Communication.DoesNotExist:
-		logger.error(f"no Communication found pk={pk}")
+		logger.error(f"no Communication found cid={cid}")
 		print("Communication.DoesNotExist")
-		print("pk:",pk)
-		print("type",type(pk))
+		print("cid:",cid)
+		print("type",type(cid))
 		pass
 	return u
 
@@ -163,6 +177,14 @@ def reset_user_talk_limit():
 			default=Value(limit)
 		)
 	)
+
+def update_comm_params(comm, params):
+	comm.temperature = params["temperature"]
+	comm.top_p = params["top_p"]
+	comm.max_tokens = params["max_tokens"]
+	comm.frequency_penalty = params["frequency_penalty"]
+	comm.presence_penalty = params["presence_penalty"]
+	comm.save()
 
 def new_ds2pdf_report(content,description):
 	report = Ds2pdf_report(content=content,description=description)

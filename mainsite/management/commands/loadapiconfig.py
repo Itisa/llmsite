@@ -18,7 +18,6 @@ class Command(BaseCommand):
 				base_url = api.get("base_url","")
 				model_type = api.get("model_type","chat")
 				model_origin = api.get("model_origin","openai")
-
 				name_qst = Api_config.objects.filter(name=name)
 				if len(name_qst) == 0:
 					aa = Api_config(
@@ -30,6 +29,7 @@ class Command(BaseCommand):
 						model_origin=model_origin
 					)
 					aa.save()
+					api["api_key"] = "********"
 					self.stdout.write(f"new api {api}")
 			except KeyError as e:
 				self.stdout.write(f"ERROR: Key not found: {e}")

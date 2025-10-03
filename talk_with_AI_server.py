@@ -50,14 +50,14 @@ else:
 
 @dataclass
 class Task:
-    task_id: str
+    cid: str
     params: List[Any]
     messages: List[Dict[str, str]]
     reasoning_content: str = ""   # 已接收的推理流式片段拼接
     content : str = ""            # 已接收的流式片段拼接
     model_name: str = ""
     model_type: str = ""  # RS / CH
-    status: str = "queueing"  # queueing -> reasoning -> running -> done/failed
+    status: str = "queueing"  # queueing -> reasoning -> content -> done/failed
     error: Optional[str] = None
 
     def update(self, **kwargs):
@@ -76,23 +76,23 @@ class TaskStore:
 
     def add(self, task: Task):
         with self._lock:
-            self._tasks[task.task_id] = task
+            self._tasks[task.cid] = task
 
-    def get(self, task_id: str) -> Optional[Task]:
+    def get(self, cid: str) -> Optional[Task]:
         with self._lock:
-            return self._tasks.get(task_id)
+            return self._tasks.get(cid)
 
-    def update(self, task_id: str, **kwargs):
+    def update(self, cid: str, **kwargs):
         with self._lock:
-            t = self._tasks.get(task_id)
+            t = self._tasks.get(cid)
             if not t:
                 return
             for k, v in kwargs.items():
                 setattr(t, k, v)
 
-    def delete(self, task_id: str):
+    def delete(self, cid: str):
         with self._lock:
-            self._tasks.pop(task_id, None)
+            self._tasks.pop(cid, None)
 
 task_store = TaskStore()
 task_queue: "queue.Queue[Task]" = queue.Queue(maxsize=MAX_QUEUE_SIZE)
@@ -100,8 +100,7 @@ task_queue: "queue.Queue[Task]" = queue.Queue(maxsize=MAX_QUEUE_SIZE)
 
 class LLMClient:
     def _simulate_stream(self,task) -> Generator[str, None, None]:
-        fake = f"[模拟回复] 你提交了数组内容摘要：{task.messages[-1]}. 下面是逐步生成的响应。"
-        print(f"{fake=}")
+        fake = f"[模拟回复] 你提交了数组内容摘要：{task.messages[-1]}. 下面是逐步生成的响应。呀，用户连续发了两个“你好”，可能是想测试我的反应或者网络有延迟重复发送了。考虑到对话历史很短，之前只是简单问候过，这次可以更活泼些打破重复问候的循环。用轻松的语气点破“重复打招呼”这个行为，加上表情符号让氛围更轻松。既然用户暂时没提出具体需求，可以主动提供几个常见话题方向，比如天气、音乐、书籍，用具体例子降低用户发起对话的门槛。最后用开放性问题引导用户说出真实需求，保持对话的开放性。"
         for ch in fake:
             time.sleep(0.02)
             yield ch
@@ -119,7 +118,7 @@ class LLMClient:
             content = ""
             for chunk in self._simulate_stream(task):
                 t += 1
-                if task.model_type == "RS" and t < 10:
+                if task.model_type == "RS" and t < 100:
                     reasoning_content += chunk
                     try:
                         task.update(reasoning_content=reasoning_content,status="reasoning")
@@ -128,7 +127,7 @@ class LLMClient:
                 else:
                     content += chunk
                     try:
-                        task.update(content=content, status="running")
+                        task.update(content=content, status="content")
                     except Exception as e:
                         logging.error(f"Error updating task: {e}")
             return
@@ -180,7 +179,7 @@ class LLMClient:
                         continue
                     new_content = chunk.choices[0].delta.content
                     task.content += new_content
-                    task.update(content=task.content,status="running")
+                    task.update(content=task.content,status="content")
             elif model["model_origin"] == "OA":
                 client = OpenAI(
                     api_key = model["api_key"],
@@ -207,7 +206,7 @@ class LLMClient:
                     else:
                         new_content = chunk.choices[0].delta.content
                         task.content += new_content
-                        task.update(content=task.content,status="running")
+                        task.update(content=task.content,status="content")
 llm_client = LLMClient()
 
 
@@ -219,19 +218,17 @@ class Worker(threading.Thread):
             task: Task = task_queue.get()
             if task is None:  # 预留退出信号
                 break
-            # task_store.update(task.task_id, status="running", started_at=time.time())
+            # task_store.update(task.cid, status="running", started_at=time.time())
             try:
                 llm_client.stream_chat(task)
-                task_store.update(task.task_id, status="done", finished_at=time.time())
+                task_store.update(task.cid, status="done", finished_at=time.time())
             except Exception as e:
-                logging.error(f"Error processing task {task.task_id}: {e}")
-                task_store.update(task.task_id, status="failed", error=str(e), finished_at=time.time())
+                logging.error(f"Error processing task {task.cid}: {e}")
+                task_store.update(task.cid, status="failed", error=str(e), finished_at=time.time())
             finally:
-                print(task.reasoning_content)
-                print(task.content)
                 threading.Timer(
                     RETENTION_SECONDS,
-                    lambda tid=task.task_id: task_store.delete(tid)
+                    lambda tid=task.cid: task_store.delete(tid)
                 ).start()
 
                 # 将对话内容写入数据库
@@ -239,12 +236,12 @@ class Worker(threading.Thread):
                 print(f"modeltype: {task.model_type}")
                 if task.model_type == "RS":
                     data = [{
-                            "cid": task.task_id,
+                            "cid": task.cid,
                             "role": "reasoning",
                             "content": task.reasoning_content,
                             "model_name": task.model_name,
                         }, {
-                            "cid": task.task_id,
+                            "cid": task.cid,
                             "role": "assistant",
                             "content": task.content,
                             "model_name": task.model_name,
@@ -253,18 +250,18 @@ class Worker(threading.Thread):
                 elif task.model_type == "CH":
                     data = [
                         {
-                            "cid": task.task_id,
+                            "cid": task.cid,
                             "role": "assistant",
                             "content": task.content,
                             "model_name": task.model_name,
                         }
                     ]
                 else:
-                    logging.error(f"Unknown model type {task.model_type} for task {task.task_id}")
+                    logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
             
                 rsp = requests.post("http://127.0.0.1:8000/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
                 if rsp.status_code != 200:
-                    logging.error(f"Failed to update comm reasoning for task {task.task_id}: {rsp.status_code} reason {rsp.text}")
+                    logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
 
 def start_workers(n: int):
@@ -297,7 +294,7 @@ class SubmitHandler(BaseHandler):
         try:
             data = json.loads(self.request.body.decode("utf-8"))
         except Exception:
-            return self.write_json({"error": "invalid json"}, 400)
+            return self.write_json({"status": "error", "reason":"invalid json"}, 400)
 
         messages = data.get("messages")
         model_name = data.get("model_name")
@@ -308,27 +305,26 @@ class SubmitHandler(BaseHandler):
 
         try:
             print(f"Submitting task... {messages} {model_name} {params}")
-            task_id = data.get("task_id")
-            task = Task(task_id=task_id,messages=messages,model_name=model_name,params=params)
+            cid = data.get("cid")
+            task = Task(cid=cid,messages=messages,model_name=model_name,params=params)
             task_store.add(task)
             task_queue.put(task, block=False)
-            print(" Task queued with ID:", task_id)
+            print(" Task queued with ID:", cid)
         except queue.Full:
             print("Task queue full")
-            return self.write_json({"error": "server busy: queue is full"}, 503)
+            return self.write_json({"status": "error", "reason":"queue full"}, 200)
 
-        return self.write_json({"task_id": task_id})
+        return self.write_json({"status":"ok","cid": cid})
 
 class ContentHandler(BaseHandler):
     async def get(self):
-        task_id = self.get_query_argument("task_id", None)
+        cid = self.get_query_argument("cid", None)
         query_type = self.get_query_argument("query_type", "content") # reasoning / content
         last_index = self.get_query_argument("last_index", "0")
-        print(f"Content called with task_id={task_id}, query_type={query_type}, last_index={last_index}")
-        if not task_id:
-            return self.write_json({"error": "task_id is required"}, 400)
+        if not cid:
+            return self.write_json({"error": "cid is required"}, 400)
         
-        t = task_store.get(task_id)
+        t = task_store.get(cid)
         if not t:
             print("Task not found")
             return self.write_json({"error": "task not found"}, 404)
@@ -351,12 +347,12 @@ class ContentHandler(BaseHandler):
         
 class StatusHandler(BaseHandler):
     async def get(self):
-        task_id = self.get_query_argument("task_id", None)
-        print(f"Status called with task_id={task_id}")
-        if not task_id:
-            return self.write_json({"status": "error","reason": "task_id is required"})
+        cid = self.get_query_argument("cid", None)
+        print(f"Status called with cid={cid}")
+        if cid is None:
+            return self.write_json({"status": "error","reason": "cid is required"})
         
-        t = task_store.get(task_id)
+        t = task_store.get(cid)
         if not t:
             print("Task not found")
             return self.write_json({"status": "error","reason": "task not found"})

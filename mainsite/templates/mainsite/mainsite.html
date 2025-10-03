@@ -103,7 +103,7 @@
 					<!-- 标题 -->
 					<div x-show="!isEditingTitle" class="communication_title" x-text="topBarContent"></div>
 					<!-- 修改标题按钮 -->
-					<button x-show="cid !== -1 && !isEditingTitle" @click="enableEditTitle" class="change_title_btn">
+					<button x-show="cid !== null && !isEditingTitle" @click="enableEditTitle" class="change_title_btn">
 						📝
 					</button>
 					<!-- 输入框 -->
@@ -121,7 +121,7 @@
 			</div>
 
 			<!-- 消息区域 -->
-			<div class="communication_area" id="message_area" :class="{ 'hidden': cid === -1 }">
+			<div class="communication_area" id="message_area" :class="{ 'hidden': cid === null }">
 				<div class="communication_area_contract">
 					<template x-for="message in messages">
 						<div :class="message.role === 'user' ? 'text-right' : 'text-left'"
@@ -186,7 +186,7 @@
 
 			<!-- 输入区域 -->
 			<div class="user_input_area">
-				<div x-show = "cid === -1" class="input_service_description">
+				<div x-show = "cid === null" class="input_service_description">
 					<div class="input_service_description_line1">
 						<img src="{% static 'images/101.png' %}" class="input_service_description_icon">
 						<div class="input_service_description_text">我是 {{ website_name }} ，很高兴见到你！</div>
@@ -321,9 +321,9 @@
 	</script>
 	<script src="{% static 'js/md_renderer.js' %}"> </script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>
-	<!-- <link rel="stylesheet" href="{% static 'css/katex.min.css' %}"> -->
-	<!-- <script defer src="{% static 'js/katex.min.js' %}"></script> -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-	<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+	<link rel="stylesheet" href="{% static 'css/katex.min.css' %}">
+	<script defer src="{% static 'js/katex.min.js' %}"></script>
+	<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"> -->
+	<!-- <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script> -->
 </body>
 </html>

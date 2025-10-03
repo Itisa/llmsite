@@ -14,7 +14,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .models_api import *
-# from .talk_with_AI import talk_with_AI, talk_limit_exceeded
 from .talk_with_AI import request_talk, yield_content
 
 def redirect2loginResponse():
@@ -168,14 +167,14 @@ def get_history(request):
 	# query = request.User.communication_set.all().order_by('gen_date')
 	query = request.User.communication_set.all()
 	for comm in query.iterator():
-		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.pk,"starred":comm.starred})
+		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.cid,"starred":comm.starred})
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
 
 @require_http_methods(["GET"])
 @require_user("data")
 def get_communication_content(request):
 	cid = request.GET["cid"]
-	comm = get_communication_by_pk(int(cid))
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=200)
 	if (comm.user.pk != request.User.pk):
@@ -195,13 +194,15 @@ def post_message(request):
 		data = json.loads(request.body)
 	except:
 		data = {}
+	if not user_try_talk(request.User):
+		return JsonResponse({'status': 'error', 'reason': 'talk limit exceeded'}, status=200)
 	
 	model_name = data.get('model_name',"")
 	if not model_name in get_models():
 		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=200)	
 	message = data.get('message',"")
 	system = data.get('system',"")
-	cid = data.get('cid',-2)
+	cid = data.get('cid',"")
 
 	params = {}
 	params["temperature"] = data.get("temperature",1)
@@ -222,40 +223,38 @@ def post_message(request):
 	ensure_range(params["presence_penalty"],-2,2)
 
 	# 获取对话
-	if cid == -1:
+	if cid == "":
 		comm = create_communication(request.User,message[:30],model_name)
 	else:
-		comm = get_communication_by_pk(cid)
+		comm = get_communication_by_cid(cid)
 		if comm is None:
 			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
 
 		if comm.user.pk != request.User.pk:
 			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
-		
-	###################################################################### need to be done to js
-	if not user_try_talk(request.User):
-		return JsonResponse({'status': 'error', 'reason': 'talk limit exceed'}, status=200)
+	update_comm_params(comm, params)
+	comm.model = model_name
 	comm.system = system
 	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
 
 	messages = []
 	if system != "":
 		messages.append({"role": "system", "content": system})
-	for msg in comm.communication_content_set.all():
+	for msg in comm.communication_content_set.all().order_by('pk'):
 		if msg.role == "reasoning":
 			continue
-		messages.append({"role":msg.role,"content":msg.content})
+		messages.append({"role" : msg.role,"content":msg.content})
 	messages.append({"role": "user", "content": message})
 
-	rsp = request_talk(comm.pk, messages, model_name, params)
+	rsp = request_talk(comm.cid, messages, model_name, params)
 	if rsp == "fail":
-		return JsonResponse({'status': 'error', 'reason': 'talk limit exceed'}, status=200)
-	elif rsp == "Error":
-		return JsonResponse({'status': 'error', 'reason': 'internal error'}, status=200)
-	elif rsp == "OK":
+		return JsonResponse({'status': 'error', 'reason': 'Internal Error'}, status=200)
+	if rsp == "queue full":
+		return JsonResponse({'status': 'error', 'reason': 'queue full'}, status=200)
+	elif rsp == "ok":
 		comm.status = "QR"
 		comm.save()
-		return JsonResponse({'status': 'ok', 'cid': comm.pk, "title": comm.title}, status=200)
+		return JsonResponse({'status': 'ok', 'cid': comm.cid, "title": comm.title}, status=200)
 
 @require_http_methods(["POST"])
 @require_user("data")
@@ -265,10 +264,10 @@ def get_streaming_content(request):
 	except:
 		data = {}
 
-	cid = data.get('cid',-1)
-	if cid == -1:
+	cid = data.get('cid',"")
+	if cid == "":
 		return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
-	comm = get_communication_by_pk(cid)
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
 	if comm.user.pk != request.User.pk:
@@ -281,12 +280,12 @@ def get_streaming_content(request):
 @require_user("data")
 def change_communication_title(request):
 	data = json.loads(request.body)
-	cid = data.get('cid',-2)
+	cid = data.get('cid',"")
 	newtitle = data.get('newtitle',"")
 	if len(newtitle) > 30:
 		return JsonResponse({'status': 'fail', 'reason': "length of title exceed 30"}, status=200)
 
-	comm = get_communication_by_pk(cid)
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 	
@@ -301,8 +300,8 @@ def change_communication_title(request):
 @require_user("data")
 def delete_communication(request):
 	data = json.loads(request.body)
-	cid = data.get('cid',-2)
-	comm = get_communication_by_pk(cid)
+	cid = data.get('cid',"")
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 	
@@ -316,11 +315,11 @@ def delete_communication(request):
 @require_user("data")
 def star_communication(request):
 	data = json.loads(request.body)
-	cid = data.get('cid',-2)
+	cid = data.get('cid',"")
 	b = data.get('b',False)
 	if type(b) != bool:
 		return JsonResponse({'status': 'fail', 'reason': "params error: b is not a boolen"}, status=200)
-	comm = get_communication_by_pk(cid)
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'fail', 'reason': "communication not found"}, status=200)
 
@@ -352,7 +351,7 @@ def site_mailbox(request):
 @require_user("data")
 def get_params(request): # 获取服务器存的对话参数
 	cid = request.GET["cid"]
-	comm = get_communication_by_pk(int(cid))
+	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'fail', 'reason': 'no communication'}, status=200)
 	if (comm.user.pk != request.User.pk):
@@ -382,7 +381,6 @@ def ds2pdf_report(request):
 @require_http_methods(["POST"])
 @csrf_exempt
 def update_communication_to_database(request):
-	print(f"received update_communication_to_databases")
 	if not request.META.get('REMOTE_ADDR') in ['localhost', '127.0.0.1']:
 		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
 		return JsonResponse({'status': 'fail', 'reason': 'no permission'}, status=200)
@@ -391,23 +389,23 @@ def update_communication_to_database(request):
 	print(f"datas: {datas}")
 	for data in datas:
 		print(f"data: {data}")
-		cid = data.get("cid",-1)
+		cid = data.get("cid","")
 		role = data.get("role","")
 		if "content" not in data.keys():
 			return JsonResponse({'status': 'fail', 'reason': 'no content'}, status=200)
 		content = data.get("content")
 		model_name = data.get("model_name","")
 
-		if cid == -1 or model_name == "":
+		if cid == "" or model_name == "":
 			return JsonResponse({'status': 'fail', 'reason': 'params error'}, status=200)
 		
-		comm = get_communication_by_pk(int(cid))
+		comm = get_communication_by_cid(cid)
 
 		if comm is None:
 			return JsonResponse({'status': 'fail', 'reason': 'no communication'}, status=200)
 		
 		if comm.status != "QR":
-			logger.warning(f"comm {comm.pk} status is not querying")
+			logger.warning(f"comm {comm.cid} status is not querying")
 
 		create_communication_content(comm ,role, content, get_model_origin_by_name(model_name))
 		if role == "assistant":
