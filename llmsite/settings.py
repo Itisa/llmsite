@@ -76,6 +76,7 @@ DATABASE_PORT = ""
 DATABASE_OPTIONS = {}
 SECRET_KEY = 'django-insecure-#w@25vu=80@@y&(arepi@=j$ad!f#iy2q9^ga#t5%5*c12d^o&'
 ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
+LOCAL_HOST = "127.0.0.1"
 try:
 	from .local_settings import *
 except:

@@ -25,8 +25,9 @@ logging.basicConfig(
 
 HOST = "127.0.0.1"
 PORT = 8888
+LOCAL_HOST = "127.0.0.1"
 try:
-    from llmsite.local_settings import AI_SERVER_PORT, AI_SERVER_HOST
+    from llmsite.local_settings import AI_SERVER_PORT, AI_SERVER_HOST, LOCAL_HOST
     PORT = AI_SERVER_PORT
     HOST = AI_SERVER_HOST.replace("http://","").replace("https://","")
 except Exception as e:
@@ -259,7 +260,7 @@ class Worker(threading.Thread):
                 else:
                     logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
             
-                rsp = requests.post(f"http://127.0.0.1:{LOCAL_SERVER_PORT}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
+                rsp = requests.post(f"http://{LOCAL_HOST}:{LOCAL_SERVER_PORT}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
                 if rsp.status_code != 200:
                     logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
