@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 
 DEBUG = False
-TALK_TEST = False
 
 from pathlib import Path
 

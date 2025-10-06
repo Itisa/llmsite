@@ -18,3 +18,4 @@ mainsite_ttt.css
 api_config.json
 test_talk_with_AI.html
 AIserver_settings.py
+uwsgi.ini

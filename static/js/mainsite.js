@@ -157,6 +157,7 @@ function app() {
 		communication_max_tokens: "4096", // [1, 8192]
 		communication_frequency_penalty: "0", // [-2.0, 2.0]
 		communication_presence_penalty: "0", // [-2.0, 2.0]
+		AIserver_down: true,
 		init() {
 			mermaid.initialize({
 				startOnLoad: false,
@@ -289,6 +290,7 @@ function app() {
 		sendMessage() {
 			if (!this.inputMessage.trim()) return ;
 			if (this.in_talk) return ;
+			if (this.AIserver_down) return ;
 			this.cancelEditTitle();
 			const uploadMessage = this.inputMessage;
 			const uploadSystem = this.system_content;
@@ -541,6 +543,15 @@ function app() {
 		get_available_models() {
 			$axios.get(urls["get_available_models"])
 			.then(response => {
+				const status = response.data.status;
+				if (status == "AI server down") {
+					alert("AI server is down, please contact the administrator. You can still browse the chat history.");
+				} else if (status == "ok") {
+					this.AIserver_down = false;
+				}
+				if (response.data.talk_test !== undefined && response.data.talk_test === true) {
+					document.getElementsByClassName("site_title")[0].textContent += " TALK_TEST_ON";
+				}
 				this.models = response.data.data;
 				
 				const last_used_model = localStorage.getItem("last_used_model");

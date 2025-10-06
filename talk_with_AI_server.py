@@ -17,13 +17,13 @@ from openai import OpenAI
 from volcenginesdkarkruntime import Ark
 import logging
 logging.basicConfig(
-    filename="AIserver.log", # 输出到文件
-    filemode="a",            # 写入模式：a=追加，w=覆盖
-    level=logging.INFO,     # 保存所有级别日志
+    filename="AIserver.log", 
+    filemode="a",
+    level=logging.INFO, # 保存所有级别日志
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-HOST = "127.0.0.1"  # 仅监听本机
+HOST = "127.0.0.1"
 PORT = 8888
 try:
     from llmsite.local_settings import AI_SERVER_PORT, AI_SERVER_HOST
@@ -32,11 +32,12 @@ try:
 except Exception as e:
     print("Using default HOST and PORT:",HOST,PORT)
 
-MAX_WORKERS = 2  # 同时并发的工作线程数
+MAX_WORKERS = 2
 MAX_QUEUE_SIZE = 100
-REQUEST_TIMEOUT = 120  # 单任务超时秒
-RETENTION_SECONDS = 300 # 任务完成后保留 5 分钟
-TALK_TEST = True  # 是否启用测试模式（模拟流式）
+REQUEST_TIMEOUT = 120
+RETENTION_SECONDS = 300
+TALK_TEST = True
+LOCAL_SERVER_PORT = 8000
 from AIserver_settings import *
 
 API_CONFIG_PATH = "./mainsite/api_config.json"
@@ -233,7 +234,6 @@ class Worker(threading.Thread):
 
                 # 将对话内容写入数据库
                 data = []
-                print(f"modeltype: {task.model_type}")
                 if task.model_type == "RS":
                     data = [{
                             "cid": task.cid,
@@ -259,7 +259,7 @@ class Worker(threading.Thread):
                 else:
                     logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
             
-                rsp = requests.post("http://127.0.0.1:8000/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
+                rsp = requests.post(f"http://127.0.0.1:{LOCAL_SERVER_PORT}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
                 if rsp.status_code != 200:
                     logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
@@ -304,14 +304,11 @@ class SubmitHandler(BaseHandler):
         logging.info(f"Received task: messages={messages} \n, model_name={model_name} \n, params={params}")
 
         try:
-            print(f"Submitting task... {messages} {model_name} {params}")
             cid = data.get("cid")
             task = Task(cid=cid,messages=messages,model_name=model_name,params=params)
             task_store.add(task)
             task_queue.put(task, block=False)
-            print(" Task queued with ID:", cid)
         except queue.Full:
-            print("Task queue full")
             return self.write_json({"status": "error", "reason":"queue full"}, 200)
 
         return self.write_json({"status":"ok","cid": cid})
@@ -326,7 +323,6 @@ class ContentHandler(BaseHandler):
         
         t = task_store.get(cid)
         if not t:
-            print("Task not found")
             return self.write_json({"error": "task not found"}, 404)
         if query_type not in ("reasoning", "content"):
             return self.write_json({"error": "query_type must be 'reasoning' or 'content'"}, 400)
@@ -348,13 +344,11 @@ class ContentHandler(BaseHandler):
 class StatusHandler(BaseHandler):
     async def get(self):
         cid = self.get_query_argument("cid", None)
-        print(f"Status called with cid={cid}")
         if cid is None:
             return self.write_json({"status": "error","reason": "cid is required"})
         
         t = task_store.get(cid)
         if not t:
-            print("Task not found")
             return self.write_json({"status": "error","reason": "task not found"})
 
         return self.write_json({
@@ -363,23 +357,24 @@ class StatusHandler(BaseHandler):
             "model_type": t.model_type,
         })
 
-# class HealthHandler(BaseHandler):
-#     async def get(self):
-#         pending = task_queue.qsize()
-#         return self.write_json({
-#             "ok": True,
-#             "workers": MAX_WORKERS,
-#             "queue_size": pending,
-#         })
+class HealthHandler(BaseHandler):
+    async def get(self):
+        return self.write_json({"status": "ok","talk_test": TALK_TEST})
 
 def make_app():
     return tornado.web.Application([
         (r"/submit", SubmitHandler),
         (r"/content", ContentHandler),
         (r"/status", StatusHandler),
+        (r"/health", HealthHandler),
     ])
 
 def main():
+    try:
+        rsp = requests.get(f"http://127.0.0.1:{LOCAL_SERVER_PORT}/health/",timeout=1)
+    except Exception as e:
+        print(f"Error: Cannot reach local server at port {LOCAL_SERVER_PORT}. Please ensure the main server is running.")
+        return
     start_workers(MAX_WORKERS)
     app = make_app()
     app.listen(PORT, address=HOST)  # 仅监听本机地址

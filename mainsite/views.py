@@ -4,13 +4,14 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.utils import timezone
-
+from django.conf import settings
 import json
 import bcrypt
 import random
 import string
 import datetime
 import logging
+import requests
 logger = logging.getLogger(__name__)
 
 from .models_api import *
@@ -158,7 +159,13 @@ def logout(request):
 @require_http_methods(["GET"])
 @require_user("data")
 def get_available_models(request):
-	return JsonResponse({'status': 'ok', 'data': get_typed_models()},status=200)
+	try:
+		rsp = requests.get(settings.AI_SERVER_HOST+":"+str(settings.AI_SERVER_PORT)+"/health",timeout=1)
+			
+		return JsonResponse({'status': 'ok', 'data': get_typed_models(), 'talk_test': rsp.json().get("talk_test",False)},status=200)
+	except Exception as e:
+		return JsonResponse({'status': 'AI server down', 'data': get_typed_models()},status=200)
+		
 
 @require_http_methods(["GET"])
 @require_user("data")
@@ -386,9 +393,7 @@ def update_communication_to_database(request):
 		return JsonResponse({'status': 'fail', 'reason': 'no permission'}, status=200)
 	
 	datas = json.loads(request.body)
-	print(f"datas: {datas}")
 	for data in datas:
-		print(f"data: {data}")
 		cid = data.get("cid","")
 		role = data.get("role","")
 		if "content" not in data.keys():
@@ -412,4 +417,12 @@ def update_communication_to_database(request):
 			comm.status = "DN"
 			comm.save()
 
+	return JsonResponse({'status': 'ok'},status=200)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def health_check(request):
+	if not request.META.get('REMOTE_ADDR') in ['localhost', '127.0.0.1']:
+		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
+		return HttpResponse(status=404)
 	return JsonResponse({'status': 'ok'},status=200)
