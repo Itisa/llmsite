@@ -422,7 +422,7 @@ def update_communication_to_database(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def health_check(request):
-	if not request.META.get('REMOTE_ADDR') in ['localhost', '127.0.0.1']:
+	if not request.META.get('REMOTE_ADDR') in [settings.LOCAL_HOST, 'localhost']:
 		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
 		return HttpResponse(status=404)
 	return JsonResponse({'status': 'ok'},status=200)

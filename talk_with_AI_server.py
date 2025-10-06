@@ -260,7 +260,7 @@ class Worker(threading.Thread):
                 else:
                     logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
             
-                rsp = requests.post(f"http://{LOCAL_HOST}:{LOCAL_SERVER_PORT}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
+                rsp = requests.post(f"http://{LOCAL_HOST}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
                 if rsp.status_code != 200:
                     logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
@@ -372,7 +372,7 @@ def make_app():
 
 def main():
     try:
-        rsp = requests.get(f"http://127.0.0.1:{LOCAL_SERVER_PORT}/health/",timeout=1)
+        rsp = requests.get(f"http://{LOCAL_HOST}/health/",timeout=1)
     except Exception as e:
         print(f"Error: Cannot reach local server at port {LOCAL_SERVER_PORT}. Please ensure the main server is running.")
         return
