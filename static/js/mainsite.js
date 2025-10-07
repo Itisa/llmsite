@@ -439,6 +439,15 @@ function app() {
 							this.messages[this.messages.length-1].content = reasoning_cache;
 						}
 					} else {
+						if (!in_assistant){
+							console.log("flush !in_assistant");
+							this.messages.push({
+								model: this.models[this.selectedModelid].origin,
+								content: "",
+								role: 'assistant',
+							});
+							in_assistant = true;
+						}
 						this.messages[this.messages.length-1].content = assistant_cache;
 					}				
 					flushing = false;
