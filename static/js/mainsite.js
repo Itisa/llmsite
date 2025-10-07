@@ -499,7 +499,8 @@ function app() {
 										}
 									} else if (cmd === "fail") {
 										console.log("streaming error:");
-										assistant_cache += "\n\n**出错了，请稍后再试**";
+										assistant_cache += "\n\n\n**出错了，请稍后再试**";
+										flush();
 										reasoning_cache_end = true;
 										assistant_cache_end = true;
 									} else if (cmd === "queueing") {

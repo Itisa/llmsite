@@ -259,8 +259,10 @@ class Worker(threading.Thread):
                     ]
                 else:
                     logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
-            
+                
+                print(f"Task {task.cid} completed. Writing to database...")
                 rsp = requests.post(f"http://{LOCAL_HOST}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
+                print(f"Database update response: {rsp.status_code} {rsp.text}")
                 if rsp.status_code != 200:
                     logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
@@ -268,7 +270,6 @@ class Worker(threading.Thread):
 def start_workers(n: int):
     for _ in range(n):
         Worker().start()
-
 
 class BaseHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
@@ -375,6 +376,7 @@ def main():
         rsp = requests.get(f"http://{LOCAL_HOST}/health/",timeout=1)
     except Exception as e:
         print(f"Error: Cannot reach local server at port {LOCAL_SERVER_PORT}. Please ensure the main server is running.")
+        print(e)
         return
     start_workers(MAX_WORKERS)
     app = make_app()
