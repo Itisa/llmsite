@@ -302,7 +302,6 @@ function app() {
 				role: 'user',
 			});
 			
-			let reasoning = (this.models[this.selectedModelid].type === "reasoning");
 			this.in_talk = true;
 			in_talk = true;
 			setTimeout(() => {
@@ -425,7 +424,11 @@ function app() {
 
 				const flush = () => {
 					flushing = true;
+					console.log(JSON.stringify(this.messages));
+					var rrr = reasoning;
+					console.log(rrr);
 					if (reasoning) {
+						console.log("reasoning flush");
 						if (reasoning_cache_end == true) {
 							this.messages[this.messages.length-1].content = reasoning_cache;
 							in_assistant = true;
@@ -439,6 +442,9 @@ function app() {
 							this.messages[this.messages.length-1].content = reasoning_cache;
 						}
 					} else {
+						var xxx = in_assistant;
+						console.log(xxx);
+						console.log("not reasoning flush");
 						if (!in_assistant){
 							console.log("flush !in_assistant");
 							this.messages.push({
@@ -448,6 +454,7 @@ function app() {
 							});
 							in_assistant = true;
 						}
+						console.log(JSON.stringify(this.messages));
 						this.messages[this.messages.length-1].content = assistant_cache;
 					}				
 					flushing = false;
