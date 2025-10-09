@@ -1,4 +1,7 @@
 var in_talk = false;
+function get_id() {
+	return crypto.randomUUID();
+}
 
 function downloadStringAsFile(content, filename, contentType = 'text/plain') {
 	const blob = new Blob([content], { type: contentType });
@@ -129,7 +132,7 @@ function app() {
 	return {
 		// 应用状态
 		user: null,
-		messages: [], // content, role, model(effect when role == 'assistant')
+		messages: [], // content, role, model(effect when role == 'assistant'), id
 		titles: [], // id, title, date, starred
 		title_diff_days: [],
 		models: [], // name, type, origin
@@ -256,9 +259,13 @@ function app() {
 				{name:"30天内",days:30},
 				{name:"其它",days:-1}, 
 			]; 
-			for (var i = 0; i < this.title_diff_days.length; i++) {
+			for (let i = 0; i < this.title_diff_days.length; i++) {
 				this.titles.push([]);
 			}
+		},
+
+		md_render(content) {
+			return marked.parse(content);
 		},
 
 		find_title_by_cid(cid) {
@@ -294,12 +301,13 @@ function app() {
 			this.cancelEditTitle();
 			const uploadMessage = this.inputMessage;
 			const uploadSystem = this.system_content;
-			var uploadCid = this.cid;
+			let uploadCid = this.cid;
 			this.inputMessage = "";
 			this.messages.push({
 				model: '',
 				content: uploadMessage,
 				role: 'user',
+				id: get_id(),
 			});
 			
 			this.in_talk = true;
@@ -312,6 +320,7 @@ function app() {
 				model: this.models[this.selectedModelid].origin,
 				content: "",
 				role: 'waiting',
+				id: get_id(),
 			});
 
 			if (this.cid === null) {
@@ -375,6 +384,7 @@ function app() {
 				if (have_placeholder){
 					this.messages.pop(); // 删除等待
 				}
+				let new_messages_cnt = 0;
 				if(this.cid >= 0) this.update_title(this.cid);
 				
 				setTimeout(() => {this.history_list.scrollTop = 0;}, 0);
@@ -382,17 +392,36 @@ function app() {
 				setTimeout(() => {
 					this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
 				}, 0);
-				var in_assistant = false;
-				var reasoning_cache = "";
-				var assistant_cache = "";
-				var reasoning_cache_end = true;
-				var assistant_cache_end = false;
-				var reasoning_end = true;
-				var have_done_reasoning = false;
-				var flushing = false;
-				var reasoning = false;
+				let in_assistant = false;
+				let reasoning_cache = "";
+				let assistant_cache = "";
+				let reasoning_cache_end = true;
+				let assistant_cache_end = false;
+				let reasoning_end = true;
+				let have_done_reasoning = false;
+				let flushing = false;
+				let reasoning = false;
+				let server_fail = false;
+				const reasoning_interval = setInterval(() => {
+					if (server_fail) {
+						console.log("reasoning_interval in server_fail");
+					}
+					if (reasoning == false) return ;
+					if (flushing) return ;
+					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
+					const lennow = this.messages[this.messages.length-1].content.length;
+					this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 3);
+					if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
+						reasoning_end = true;
+						clearInterval(reasoning_interval);
+					}
+					if (at_bottom) {
+						setTimeout(() => {
+							this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
+						}, 0);
+					}
+				},50);
 				const reasoning_work = () => {
-					reasoning = true;
 					if (have_done_reasoning) {
 						console.error("reasoning_work have_done_reasoning");
 						return ;
@@ -401,34 +430,20 @@ function app() {
 						model: '',
 						content: "",
 						role: 'reasoning',
+						id: get_id(),
 					});	
+					new_messages_cnt += 1;
 					reasoning_end = false;
 					reasoning_cache_end = false;
-					const reasoning_interval = setInterval(() => {
-						if (flushing) return ;
-						const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
-						const lennow = this.messages[this.messages.length-1].content.length;
-						this.messages[this.messages.length-1].content = reasoning_cache.slice(0,lennow + 3);
-						if (reasoning_cache_end && this.messages[this.messages.length-1].content.length === reasoning_cache.length) {
-							reasoning_end = true;
-							clearInterval(reasoning_interval);
-						}
-						if (at_bottom) {
-							setTimeout(() => {
-								this.message_area_div.scrollTop = this.message_area_div.scrollHeight;
-							}, 0);
-						}
-					},50);
+					
+					reasoning = true;
 					have_done_reasoning = true;
 				}
 
 				const flush = () => {
 					flushing = true;
 					console.log(JSON.stringify(this.messages));
-					var rrr = reasoning;
-					console.log(rrr);
 					if (reasoning) {
-						console.log("reasoning flush");
 						if (reasoning_cache_end == true) {
 							this.messages[this.messages.length-1].content = reasoning_cache;
 							in_assistant = true;
@@ -436,21 +451,20 @@ function app() {
 								model: this.models[this.selectedModelid].origin,
 								content: "",
 								role: 'assistant',
+								id: get_id(),
 							});
+							new_messages_cnt += 1;
 							this.messages[this.messages.length-1].content = assistant_cache;
 						} else {
 							this.messages[this.messages.length-1].content = reasoning_cache;
 						}
 					} else {
-						var xxx = in_assistant;
-						console.log(xxx);
-						console.log("not reasoning flush");
 						if (!in_assistant){
-							console.log("flush !in_assistant");
 							this.messages.push({
 								model: this.models[this.selectedModelid].origin,
 								content: "",
 								role: 'assistant',
+								id: get_id(),
 							});
 							in_assistant = true;
 						}
@@ -461,6 +475,9 @@ function app() {
 				}
 
 				const assistant_interval = setInterval(() => {
+					if (server_fail) {
+						console.log("assistant_interval in server_fail");
+					}
 					if (flushing) return ;
 					if (!reasoning_end) return ;
 					if (!in_assistant){
@@ -468,7 +485,9 @@ function app() {
 							model: this.models[this.selectedModelid].origin,
 							content: "",
 							role: 'assistant',
+							id: get_id(),
 						});
+						new_messages_cnt += 1;
 						in_assistant = true;
 					}
 					const at_bottom = this.message_area_div.scrollTop + this.message_area_div.clientHeight >= this.message_area_div.scrollHeight - 10;
@@ -484,12 +503,31 @@ function app() {
 						}, 0);
 					}
 				},50);
-				var firstchunk = true;
-				var lastchunk = '';				
+
+				const server_fail_func = () => {
+					server_fail = true;
+					clearInterval(assistant_interval);
+					clearInterval(reasoning_interval);
+					flush();
+					this.end_talk(true);
+					alert("服务器出错，请稍后再试");
+					// console.log(JSON.stringify(this.messages));
+					// for (let i = 0; i < new_messages_cnt; i++) {
+					// 	this.messages.pop();
+					// }
+					// const i = this.messages.length - 1;
+					// this.messages[i].model = "error";
+					// this.messages[i].content = "**出错了，请稍后再试**";
+					// this.messages[i].role = 'assistant';
+				}
+
+				// let firstchunk = true;
+				let lastchunk = '';				
 				const reader = response.body.getReader();
 				const decoder = new TextDecoder();
 				const readChunk = () => {
 					reader.read().then(({ done, value }) => {
+						if (server_fail) return ;
 						if (done) {
 							assistant_cache_end = true;
 							return;
@@ -515,8 +553,7 @@ function app() {
 										}
 									} else if (cmd === "fail") {
 										console.log("streaming error:");
-										assistant_cache += "\n\n\n**出错了，请稍后再试**";
-										flush();
+										server_fail_func();
 										reasoning_cache_end = true;
 										assistant_cache_end = true;
 									} else if (cmd === "queueing") {
@@ -548,9 +585,10 @@ function app() {
 			});
 		},
 
-		end_talk() {
+		end_talk(error=false) {
 			in_talk = false;
 			this.in_talk = false;
+			if (error) return ;
 			setTimeout(() => {
 				mermaid.run();
 			},0);
@@ -625,7 +663,10 @@ function app() {
 					return ;
 				}
 				let [i,j] = this.find_title_by_cid(cid);
-				var msgs = response.data.messages;
+				let msgs = response.data.messages;
+				for (let i = 0; i < msgs.length; i++) {
+					msgs[i].id = get_id();
+				}
 				if (msgs.length > 0 && msgs[msgs.length-1].role === "querying") {
 					msgs.pop();
 					this.messages = msgs;
@@ -680,7 +721,7 @@ function app() {
 				}
 				const rb = response.data.data;
 				let [i,j] = this.find_title_by_cid(cid);
-				var tmp = {...this.titles[i][j]};
+				let tmp = {...this.titles[i][j]};
 				tmp.starred = rb
 				this.titles[i].splice(j,1);
 
@@ -839,7 +880,7 @@ function app() {
 
 		//获取模型在 this.models 中的下标
 		get_model_ind(model_name) {
-			for (var i = 0; i < this.models.length; i++) {
+			for (let i = 0; i < this.models.length; i++) {
 				if (this.models[i].name === model_name){
 					return i;
 				}
@@ -855,18 +896,18 @@ function app() {
 
 		// 将标题排序
 		order_title(line_titles){
-			for (var i = 0; i < line_titles.length; i++) {
+			for (let i = 0; i < line_titles.length; i++) {
 				line_titles[i].date = new Date(line_titles[i].date);
 			}
 			line_titles.sort((a, b) => b.date - a.date);
 			let tmparr = []
 			tmparr = [];
-			for (var i = 0; i < this.title_diff_days.length; i++) {
+			for (let i = 0; i < this.title_diff_days.length; i++) {
 				tmparr.push([]);
 			}
 			let ind = 0;
 			let now = new Date();
-			for (var i = 0; i < line_titles.length; i++) {
+			for (let i = 0; i < line_titles.length; i++) {
 				if (line_titles[i].starred) {
 					tmparr[0].push(line_titles[i]);
 					continue;

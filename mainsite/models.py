@@ -28,11 +28,6 @@ class User(models.Model):
 		return self.username
 
 class Communication(models.Model):
-	MODEL_ORIGIN_CHOICES = [
-		("DS","deepseek"),
-		("DB","doubao"),
-		("OA","openai"),
-	]
 	COMMUNICATION_STATUS_CHOICES = [
 		("DN","done"),
 		("QR","querying"),
@@ -58,7 +53,10 @@ class Communication_Content(models.Model):
 		("DS","deepseek"),
 		("DB","doubao"),
 		("OA","openai"),
+		("KM","kimi"),
+		("QW","qwen"),
 		("NN","none"),
+		("ER","error"),
 	]
 	communication = models.ForeignKey(Communication, on_delete=models.CASCADE)
 	gen_date = models.DateTimeField("date published", auto_now_add=True)
@@ -86,6 +84,8 @@ class Api_config(models.Model):
 		("DS","deepseek"),
 		("DB","doubao"),
 		("OA","openai"),
+		("KM","kimi"),
+		("QW","qwen"),
 	]
 	name = models.CharField(max_length=40,unique=True)
 	base_url = models.CharField(max_length=100,blank=True)

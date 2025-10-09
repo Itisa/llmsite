@@ -9,13 +9,14 @@ import time
 import json
 import requests
 from django.utils import timezone
-from mainsite.models_api import get_model_by_name, create_communication_content
+from mainsite.models_api import write_failed_communication_to_database
 import logging
 logger = logging.getLogger(__name__)
 
 INITIAL_SLEEP_TIME = 0.1
-SLEEP_TIME_INCREASE_RATE = 0.2
+SLEEP_TIME_INCREASE_RATE = 0.05
 MAX_SLEEP_TIME = 3
+BACKEND_REQUEST_TIMEOUT = 20
 
 class UserCommunicationContent:
 	def __init__(self, cid):
@@ -30,12 +31,15 @@ class UserCommunicationContent:
 		self.sleep_time = INITIAL_SLEEP_TIME
 		self.query_index = 0
 		self.change_content_type = False
+		self.start_time = time.time()
+		self.active_time = time.time()
 	
 	def query_new_content(self) -> str:
 		response_data = {}
 		response_content = ""
 		def Fail_RSP():
-			response_data = []
+			write_failed_communication_to_database(self.cid, "**出错了，请稍后再试**")
+			response_data = {}
 			response_data["cmd"] = "fail"
 			self.finished = True
 			return json.dumps(response_data) + "\n"
@@ -76,22 +80,16 @@ class UserCommunicationContent:
 		if rsp.status_code != 200:
 			logger.error(f"Failed to query task content for comm {self.cid}: {rsp.status_code}")
 			return Fail_RSP()
-		
 		rsp_data = rsp.json()
 		self.status = rsp_data["status"]
 
-		if rsp_data["status"] != "queueing":
-			self.sleep_time = INITIAL_SLEEP_TIME
+		if rsp_data["status"] == "failed":
+			logger.error(f"Task {self.cid} failed during processing.")
+			return Fail_RSP()
 
 		if rsp_data["status"] == "queueing":
 			response_data["cmd"] = "queueing"
-			response_content += json.dumps(response_data) + "\n"
-			self.sleep_time = min(self.sleep_time + SLEEP_TIME_INCREASE_RATE, MAX_SLEEP_TIME)
-
-		elif rsp_data["status"] == "failed":
-			logger.error(f"Task {self.cid} failed during processing.")
-			return Fail_RSP()
-		
+			response_content += json.dumps(response_data) + "\n"		
 		elif self.query_type == "reasoning":
 			new_content = rsp_data["reasoning_content"]
 			self.reasoning_content += new_content
@@ -106,9 +104,11 @@ class UserCommunicationContent:
 				self.last_index = 0
 				self.change_content_type = True
 			
-			if new_content == "":
+			if new_content == "" and rsp_data["status"] != "done":
 				pass
 			else:
+				self.active_time = time.time()
+				self.sleep_time = INITIAL_SLEEP_TIME
 				response_data["cmd"] = "content"
 				response_data["role"] = "reasoning"
 				response_data["message"] = new_content
@@ -122,9 +122,11 @@ class UserCommunicationContent:
 				self.finished = True
 				self.change_content_type = True
 			
-			if new_content == "":
+			if new_content == "" and rsp_data["status"] != "done":
 				pass
 			else:
+				self.active_time = time.time()
+				self.sleep_time = INITIAL_SLEEP_TIME
 				response_data["cmd"] = "content"
 				response_data["role"] = "content"
 				response_data["message"] = new_content
@@ -134,13 +136,24 @@ class UserCommunicationContent:
 			self.finished = True
 		
 		if self.query_index == 1:
+			# 为了用户在中断后重连后能够直接把前面的所有东西全部flush，而不是再一个一个字输出来
+			# 可以在前端弄？
 			flush_data = {"cmd":"flush"}
 			response_content += json.dumps(flush_data) + "\n"
+
 		self.query_index += 1
 		return response_content
 
 	def get_content(self):
 		while True:
+			self.sleep_time = min(self.sleep_time + SLEEP_TIME_INCREASE_RATE, MAX_SLEEP_TIME)
+
+			if time.time() - self.active_time > BACKEND_REQUEST_TIMEOUT:
+				logger.error(f"Task {self.cid} timed out.")
+				self.finished = True
+				yield json.dumps({"cmd":"fail"}) + "\n"
+				break
+
 			yield_content = self.query_new_content()
 			yield yield_content
 			if self.finished:

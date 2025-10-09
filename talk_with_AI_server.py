@@ -104,15 +104,14 @@ class LLMClient:
     def _simulate_stream(self,task) -> Generator[str, None, None]:
         fake = f"[模拟回复] 你提交了数组内容摘要：{task.messages[-1]}. 下面是逐步生成的响应。呀，用户连续发了两个“你好”，可能是想测试我的反应或者网络有延迟重复发送了。考虑到对话历史很短，之前只是简单问候过，这次可以更活泼些打破重复问候的循环。用轻松的语气点破“重复打招呼”这个行为，加上表情符号让氛围更轻松。既然用户暂时没提出具体需求，可以主动提供几个常见话题方向，比如天气、音乐、书籍，用具体例子降低用户发起对话的门槛。最后用开放性问题引导用户说出真实需求，保持对话的开放性。"
         for ch in fake:
-            time.sleep(0.02)
+            time.sleep(0.04)
             yield ch
 
     def stream_chat(self, task):
         model = next((d for d in api_config if d.get("name") == task.model_name), None)
         # 如果找到就返回 dict，否则返回 None
         if model is None:
-            logging.error(f"Model {task.model_name} not found in api_config.")
-            return "Error: Model not configured"
+            raise Exception(f"Model {task.model_name} not found in api_config.")
         task.model_type = model.get("model_type")
         if TALK_TEST:
             t = 0
@@ -182,12 +181,12 @@ class LLMClient:
                     new_content = chunk.choices[0].delta.content
                     task.content += new_content
                     task.update(content=task.content,status="content")
+            
             elif model["model_origin"] == "OA":
                 client = OpenAI(
                     api_key = model["api_key"],
                     base_url = model["base_url"],
                 )
-                
                 response = client.chat.completions.create(
                     model = model["model"],
                     messages = task.messages,
@@ -209,8 +208,60 @@ class LLMClient:
                         new_content = chunk.choices[0].delta.content
                         task.content += new_content
                         task.update(content=task.content,status="content")
-llm_client = LLMClient()
+           
+            elif model["model_origin"] == "KM":
+                client = OpenAI(
+                    api_key = model["api_key"],
+                    base_url = model["base_url"],
+                )     
+                response = client.chat.completions.create(
+                    model = model["model"],
+                    messages = task.messages,
+                    stream = True,
+                    temperature = task.params["temperature"],
+                    top_p = task.params["top_p"],
+                    max_tokens = task.params["max_tokens"],
+                    frequency_penalty = task.params["frequency_penalty"],
+                    presence_penalty = task.params["presence_penalty"],
+                )
+                for chunk in response:
+                    delta = chunk.choices[0].delta
+                    if delta.content:
+                        new_content = delta.content
+                        task.content += new_content
+                        task.update(content=task.content,status="content")
+            elif model["model_origin"] == "QW":
+                client = OpenAI(
+                    api_key = model["api_key"],
+                    base_url = model["base_url"],
+                )     
+                response = client.chat.completions.create(
+                    model = model["model"],
+                    messages = task.messages,
+                    stream = True,
+                    temperature = task.params["temperature"],
+                    top_p = task.params["top_p"],
+                    max_tokens = task.params["max_tokens"],
+                    frequency_penalty = task.params["frequency_penalty"],
+                    presence_penalty = task.params["presence_penalty"],
+                )
+                for chunk in response:
+                    if chunk.choices:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            new_content = delta.content
+                            task.content += new_content
+                            task.update(content=task.content,status="content")
+                    elif chunk.usage: 
+                        # 需要在client.chat.completions.create()中加上stream_options={"include_usage": True}
+                        # 请求结束，打印Token用量。
+                        # print("\n--- 请求用量 ---")
+                        # print(f"输入 Tokens: {chunk.usage.prompt_tokens}")
+                        # print(f"输出 Tokens: {chunk.usage.completion_tokens}")
+                        # print(f"总计 Tokens: {chunk.usage.total_tokens}")
+                        pass
 
+llm_client = LLMClient()
 
 class Worker(threading.Thread):
     daemon = True
@@ -232,7 +283,9 @@ class Worker(threading.Thread):
                     RETENTION_SECONDS,
                     lambda tid=task.cid: task_store.delete(tid)
                 ).start()
-
+                if task.status == "failed":
+                    task_queue.task_done()
+                    continue
                 # 将对话内容写入数据库
                 data = []
                 if task.model_type == "RS":
@@ -260,9 +313,9 @@ class Worker(threading.Thread):
                 else:
                     logging.error(f"Unknown model type {task.model_type} for task {task.cid}")
                 
-                print(f"Task {task.cid} completed. Writing to database...")
+                # print(f"Task {task.cid} completed. Writing to database...")
                 rsp = requests.post(f"http://{LOCAL_HOST}/site/update_communication_to_database",data=json.dumps(data),headers={"Content-Type":"application/json"})
-                print(f"Database update response: {rsp.status_code} {rsp.text}")
+                # print(f"Database update response: {rsp.status_code} {rsp.text}")
                 if rsp.status_code != 200:
                     logging.error(f"Failed to update comm reasoning for task {task.cid}: {rsp.status_code} reason {rsp.text}")
                 task_queue.task_done()
@@ -329,6 +382,9 @@ class ContentHandler(BaseHandler):
         if query_type not in ("reasoning", "content"):
             return self.write_json({"error": "query_type must be 'reasoning' or 'content'"}, 400)
         
+        if t.status == "failed":
+            return self.write_json({"status": "failed","reason": t.error})
+
         last_index = int(last_index)
         if query_type == "reasoning":
             new_content = t.reasoning_content[int(last_index):]
@@ -373,7 +429,7 @@ def make_app():
 
 def main():
     try:
-        rsp = requests.get(f"http://{LOCAL_HOST}/health/",timeout=1)
+        rsp = requests.get(f"http://{LOCAL_HOST}/health/",timeout=3)
     except Exception as e:
         print(f"Error: Cannot reach local server at port {LOCAL_SERVER_PORT}. Please ensure the main server is running.")
         print(e)

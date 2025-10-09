@@ -123,7 +123,7 @@
 			<!-- 消息区域 -->
 			<div class="communication_area" id="message_area" :class="{ 'hidden': cid === null }">
 				<div class="communication_area_contract">
-					<template x-for="message in messages">
+					<template x-for="message in messages" :key="message.id">
 						<div :class="message.role === 'user' ? 'text-right' : 'text-left'"
 							 x-data = "{ifenter : false}" 
 							 @mouseenter="ifenter = true" 
@@ -144,7 +144,10 @@
 										<template x-if="message.model === 'deepseek'"><img src="{% static 'images/ds_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'doubao'"><img src="{% static 'images/db_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'openai'"><img src="{% static 'images/oa_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'kimi'"><img src="{% static 'images/km_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'qwen'"><img src="{% static 'images/qw_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'none'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
+										<template x-if="message.model === 'error'"><img src="{% static 'images/error_dialog.png' %}" class="assistant_icon"></template>
 
 										<!-- Deepseek 助手消息样式 -->
 										<div>

@@ -189,3 +189,12 @@ def update_comm_params(comm, params):
 def new_ds2pdf_report(content,description):
 	report = Ds2pdf_report(content=content,description=description)
 	report.save();
+
+def write_failed_communication_to_database(cid, error_message):
+	comm = get_communication_by_cid(cid)
+	if comm is None:
+		logger.error(f"Cannot write failed communication to database, because no comm found cid={cid}")
+	else:
+		comm.status = "DN"
+		comm.save()
+		create_communication_content(comm, role="assistant", content=error_message, model="ER")
