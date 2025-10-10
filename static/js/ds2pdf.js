@@ -21,7 +21,7 @@ function init(textval) {
 	});
 	textarea.value = textval;
 	rendered_div.innerHTML = marked.parse(textval);
-	mermaid.run();	
+	mermaid.run();
 }
 
 function render_all(s) {
@@ -52,10 +52,10 @@ function saveaspdf() {
 	},0);
 }
 
-const ind = window.location.href.indexOf("?")
-var content = "";
-if (ind !== -1) {
-	content = decodeURIComponent(window.location.href.substring(ind + 3));
+var content = localStorage.getItem("ds2pdf");
+localStorage.setItem("ds2pdf","")
+if (content == null) {
+	content = "";
 }
 init(content);
 

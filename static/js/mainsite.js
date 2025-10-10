@@ -1030,7 +1030,8 @@ function app() {
 			if (this.in_talk) return ;
 			const element = event.srcElement.parentElement;
 			const codeText = element.childNodes[1].textContent;
-			window.open(urls["ds2pdf"] + "?c=" + encodeURIComponent(codeText),"_blank");
+			localStorage.setItem("ds2pdf",codeText)
+			window.open(urls["ds2pdf"],"_blank");
 		}
 	}
 }
