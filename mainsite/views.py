@@ -426,3 +426,31 @@ def health_check(request):
 		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
 		return HttpResponse(status=404)
 	return JsonResponse({'status': 'ok'},status=200)
+
+@require_http_methods(["POST"])
+@require_user("data")
+def user_copy_communication(request):
+	try:
+		data = json.loads(request.body)
+	except:
+		data = {}
+	
+	cid = data.get('cid',"")
+
+	# 获取对话
+	if cid == "":
+		return JsonResponse({'status': 'error', 'reason': 'no cid'}, status=200)
+	else:
+		comm = get_communication_by_cid(cid)
+		if comm is None:
+			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
+
+		if comm.user.pk != request.User.pk:
+			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
+		
+		if comm.status != "DN":
+			return JsonResponse({'status': 'error', 'reason': 'communication not done'}, status=200)
+		
+		new_comm = copy_communication(comm)
+		return JsonResponse({'status': 'ok', "cid": new_comm.cid, "title": new_comm.title, "model": comm.model}, status=200)
+

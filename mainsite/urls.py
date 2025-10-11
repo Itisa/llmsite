@@ -22,4 +22,5 @@ urlpatterns = [
 	path("ds2pdf", views.ds2pdf, name="ds2pdf"),
 	path("ds2pdf_report", views.ds2pdf_report, name="ds2pdf_report"),
 	path("update_communication_to_database", views.update_communication_to_database, name="update_communication_to_database"),
+	path("user_copy_communication", views.user_copy_communication, name="user_copy_communication"),
 ]

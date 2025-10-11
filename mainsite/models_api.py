@@ -198,3 +198,17 @@ def write_failed_communication_to_database(cid, error_message):
 		comm.status = "DN"
 		comm.save()
 		create_communication_content(comm, role="assistant", content=error_message, model="ER")
+
+def copy_communication(comm):
+	newtitle = (comm.title + "_copy")[:30]
+	new_comm = create_communication(comm.user, newtitle, comm.model)
+	new_comm.system = comm.system
+	new_comm.temperature = comm.temperature
+	new_comm.top_p = comm.top_p
+	new_comm.max_tokens = comm.max_tokens
+	new_comm.frequency_penalty = comm.frequency_penalty
+	new_comm.presence_penalty = comm.presence_penalty
+	qst = comm.communication_content_set.all().order_by('gen_date')
+	for msg in qst:
+		create_communication_content(new_comm, msg.role, msg.content, msg.model)
+	return new_comm

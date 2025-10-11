@@ -33,6 +33,9 @@ function deleteCookie(name, path, domain) {
 
 function MessagecopyToClipboard(div) {
 	const codeText = div.childNodes[1].textContent;
+	console.log(div.childNodes)
+	console.log(div.childNodes[1])
+	console.log(codeText);
 	if (navigator.clipboard) {
 		navigator.clipboard.writeText(codeText).then(() => {
 			MessageshowCopiedFeedback(div);
@@ -141,7 +144,7 @@ function app() {
 		// 应用状态
 		user: null,
 		messages: [], // content, role, model(effect when role == 'assistant'), id
-		titles: [], // id, title, date, starred
+		titles: [], // id, title, date, starred, model
 		title_diff_days: [],
 		models: [], // name, type, origin
 		inputMessage: '',
@@ -450,7 +453,6 @@ function app() {
 
 				const flush = () => {
 					flushing = true;
-					console.log(JSON.stringify(this.messages));
 					if (reasoning) {
 						if (reasoning_cache_end == true) {
 							this.messages[this.messages.length-1].content = reasoning_cache;
@@ -476,7 +478,6 @@ function app() {
 							});
 							in_assistant = true;
 						}
-						console.log(JSON.stringify(this.messages));
 						this.messages[this.messages.length-1].content = assistant_cache;
 					}				
 					flushing = false;
@@ -952,7 +953,8 @@ function app() {
 		},
 
 		UserCopyMessage(event){
-			let element = event.srcElement.parentElement;
+			let element = event.srcElement.parentElement.parentElement;
+			console.log(element);
 			MessagecopyToClipboard(element);
 			event.srcElement.src = urls["check_png"];
 			setTimeout(() => {
@@ -1032,6 +1034,49 @@ function app() {
 			const codeText = element.childNodes[1].textContent;
 			localStorage.setItem("ds2pdf",codeText)
 			window.open(urls["ds2pdf"],"_blank");
-		}
+		},
+
+		UserEditMessage(event) {
+			this.messages[0].content += " **123** ";
+			// console.log(event);
+			// let element = event.srcElement.parentElement;
+			// const codeText = element.childNodes[1].textContent;
+			// this.insert_title({
+			// 	id: cid,
+			// 	title: title,
+			// 	date: Date.now(),
+			// });
+		},
+
+		copyCommunication() {
+			let yes = confirm(`确认要复制对话"${this.topBarContent}"?`)
+			if (yes) {
+				$axios.post(urls["user_copy_communication"], {
+					cid: this.cid,
+				})
+				.then(response => {
+					const status = response.data.status;
+					if (status == "error") {
+						console.log(response.data.reason);
+					} else {
+						let tmp = {
+							id: response.data.cid,
+							title: response.data.title,
+							model: response.data.model,
+							date: Date.now(),
+							starred: false,	
+						}
+						this.titles[1].unshift(tmp);
+					}
+				})
+				.catch(error => {
+					console.log('copyCommunication请求失败:')
+					console.log(error);
+					if (error.status === 401){
+						window.location.href = urls["login"];
+					}
+				});
+			}
+		},
 	}
 }

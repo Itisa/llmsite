@@ -258,6 +258,19 @@ code {
 	background-color: #2563eb;
 }
 
+.copy_communication_btn {
+	font-size: 1.25rem;
+	margin-left: 0.5rem;
+	border-radius: 0.5rem;
+	border: 0.1rem;
+	padding: 0;
+	background-color: #ffffff;
+}
+
+.copy_communication_btn:hover {
+	background-color: #2563eb;
+}
+
 .new_title_input_and_button {
 
 }
@@ -321,6 +334,7 @@ code {
 .message_user_block {
 	display: flex;
 	text-align: right;
+	flex-direction: column;
 }
 .message_user {
 	text-align: left;

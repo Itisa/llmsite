@@ -106,6 +106,10 @@
 					<button x-show="cid !== null && !isEditingTitle" @click="enableEditTitle" class="change_title_btn">
 						📝
 					</button>
+					<!-- 复制对话按钮 -->
+					<button x-show="cid !== null && !isEditingTitle" @click="copyCommunication" class="copy_communication_btn">
+						📄
+					</button>
 					<!-- 输入框 -->
 					<div style="display: none;" x-show="isEditingTitle" class="new_title_input_and_button">
 						<input x-model="topBarContent"
@@ -132,9 +136,14 @@
 								<template x-if="message.role === 'user'">
 									<div class="message_user_block">
 										<div style="display: none;" x-text="message.content"></div>
-										<img class="message_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img>
 										<!-- 用户消息样式 -->
 										<div class="message_user" x-text="message.content"></div>
+										<div>
+											<!-- <img class="message_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img> -->
+											<!-- <img class="message_user_copy" src="{% static 'images/edit_note.png' %}" x-show="ifenter" @click="UserEditMessage(event)"></img> -->
+											<img class="message_user_copy" src="{% static 'images/copybtn.png' %}" @click="UserCopyMessage(event)"></img>
+											<img class="message_user_copy" src="{% static 'images/edit_note.png' %}" @click="UserEditMessage(event)"></img>
+										</div>
 									</div>
 								</template>
 								<template x-if="message.role === 'assistant'">
@@ -321,6 +330,7 @@
 		urls["ds2pdf"] = "{% url 'mainsite:ds2pdf' %}";
 		urls["post_message"] = "{% url 'mainsite:post_message' %}";
 		urls["get_streaming_content"] = "{% url 'mainsite:get_streaming_content' %}";
+		urls["user_copy_communication"] = "{% url 'mainsite:user_copy_communication' %}";
 	</script>
 	<script src="{% static 'js/md_renderer.js' %}"> </script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>
