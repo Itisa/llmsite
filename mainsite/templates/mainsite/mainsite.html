@@ -127,8 +127,8 @@
 			<!-- 消息区域 -->
 			<div class="communication_area" id="message_area" :class="{ 'hidden': cid === null }">
 				<div class="communication_area_contract">
-					<template x-for="message in messages" :key="message.id">
-						<div :class="message.role === 'user' ? 'text-right' : 'text-left'"
+					<template x-for="(message,msgind) in messages" :key="message.id">
+						<div :class="(message.role === 'user' || message.role === 'user_edit') ? 'text-right' : 'text-left'"
 							 x-data = "{ifenter : false}" 
 							 @mouseenter="ifenter = true" 
 							 @mouseleave="ifenter = false">
@@ -136,20 +136,32 @@
 								<template x-if="message.role === 'user'">
 									<div class="message_user_block">
 										<div style="display: none;" x-text="message.content"></div>
+										<div style="display: none;" x-text="msgind"></div>
 										<!-- 用户消息样式 -->
 										<div class="message_user" x-text="message.content"></div>
 										<div>
-											<!-- <img class="message_user_copy" src="{% static 'images/copybtn.png' %}" x-show="ifenter" @click="UserCopyMessage(event)"></img> -->
-											<!-- <img class="message_user_copy" src="{% static 'images/edit_note.png' %}" x-show="ifenter" @click="UserEditMessage(event)"></img> -->
 											<img class="message_user_copy" src="{% static 'images/copybtn.png' %}" @click="UserCopyMessage(event)"></img>
 											<img class="message_user_copy" src="{% static 'images/edit_note.png' %}" @click="UserEditMessage(event)"></img>
 										</div>
 									</div>
 								</template>
+								<template x-if="message.role === 'user_edit'">
+									<div class="user_edit_input_box" id="user_edit_input_box">
+										<div style="display: none;" x-text="msgind"></div>
+										<textarea 
+											name="user_edit_textarea"
+											class="user_edit_textarea"
+											x-bind:value="message.content"
+											x-init="$nextTick(() => $el.focus())">
+										</textarea>
+										<div class="user_edit_btns">
+											<button class="user_edit_btn user_edit_btn-cancel" @click="UserEditMessageCancel(event)">取消</button>
+											<button class="user_edit_btn user_edit_btn-send" @click="UserEditMessageConfirm(event)">发送</button>
+										</div>
+									</div>
+								</template>
 								<template x-if="message.role === 'assistant'">
-									
 									<div class="message_assistant_and_icon">
-										
 										<template x-if="message.model === 'deepseek'"><img src="{% static 'images/ds_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'doubao'"><img src="{% static 'images/db_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'openai'"><img src="{% static 'images/oa_dialog.png' %}" class="assistant_icon"></template>
@@ -157,7 +169,6 @@
 										<template x-if="message.model === 'qwen'"><img src="{% static 'images/qw_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'none'"><img src="{% static 'images/default_dialog.png' %}" class="assistant_icon"></template>
 										<template x-if="message.model === 'error'"><img src="{% static 'images/error_dialog.png' %}" class="assistant_icon"></template>
-
 										<!-- Deepseek 助手消息样式 -->
 										<div>
 											<div class="message_assistant" x-html="marked.parse(message.content)"></div>
@@ -168,13 +179,11 @@
 												<!-- 保存为pdf（跳转到pdf保存页面） -->
 												<img class="assistant_user_copy2pdf" src="{% static 'images/picture_as_pdf.png' %}" x-show="ifenter" @click="UserCopy2pdf(event)"></img>
 											</div>
-											
 										</div>
 									</div>
 									
 								</template>
 								<template x-if="message.role === 'reasoning'">
-
 									<!-- 深度思考内容样式 -->
 									<div class="message_reasoning" x-html="marked.parse(message.content)"></div>
 								</template>
@@ -331,6 +340,7 @@
 		urls["post_message"] = "{% url 'mainsite:post_message' %}";
 		urls["get_streaming_content"] = "{% url 'mainsite:get_streaming_content' %}";
 		urls["user_copy_communication"] = "{% url 'mainsite:user_copy_communication' %}";
+		urls["user_new_communication"] = "{% url 'mainsite:user_new_communication' %}";
 	</script>
 	<script src="{% static 'js/md_renderer.js' %}"> </script>
 	<script src="{% static 'js/mainsite.js' %}"> </script>

@@ -104,7 +104,7 @@ class Api_config(models.Model):
 		cache.delete("typed_models")
 
 class GlobalSetting(models.Model):
-	website_name = models.CharField(max_length=40,default="Deepseek chat")
+	website_name = models.CharField(max_length=40,default="AI chat")
 	enable_register = models.BooleanField(default=False)
 	user_talk_limit = models.IntegerField(default=-1)
 	def __str__(self):

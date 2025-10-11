@@ -104,7 +104,7 @@ class LLMClient:
     def _simulate_stream(self,task) -> Generator[str, None, None]:
         fake = f"[模拟回复] 你提交了数组内容摘要：{task.messages[-1]}. 下面是逐步生成的响应。呀，用户连续发了两个“你好”，可能是想测试我的反应或者网络有延迟重复发送了。考虑到对话历史很短，之前只是简单问候过，这次可以更活泼些打破重复问候的循环。用轻松的语气点破“重复打招呼”这个行为，加上表情符号让氛围更轻松。既然用户暂时没提出具体需求，可以主动提供几个常见话题方向，比如天气、音乐、书籍，用具体例子降低用户发起对话的门槛。最后用开放性问题引导用户说出真实需求，保持对话的开放性。"
         for ch in fake:
-            time.sleep(0.04)
+            time.sleep(0.02)
             yield ch
 
     def stream_chat(self, task):
@@ -271,7 +271,7 @@ class Worker(threading.Thread):
             task: Task = task_queue.get()
             if task is None:  # 预留退出信号
                 break
-            # task_store.update(task.cid, status="running", started_at=time.time())
+            # print(f"starting task cid:{task.cid} model_name:{task.model_name}")
             try:
                 llm_client.stream_chat(task)
                 task_store.update(task.cid, status="done", finished_at=time.time())

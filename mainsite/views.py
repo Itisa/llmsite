@@ -50,6 +50,26 @@ def generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
 	return ''.join(random.choices(characters, k=length))
 
+def get_params_from_dict(dic):
+	params = {}
+	params["temperature"] = dic.get("temperature",1)
+	params["top_p"] = dic.get("top_p",1)
+	params["max_tokens"] = dic.get("max_tokens",4096)
+	params["frequency_penalty"] = dic.get("frequency_penalty",0)
+	params["presence_penalty"] = dic.get("presence_penalty",0)
+	def ensure_range(val,l,r,paramname=""):
+		if l <= val and val <= r:
+			return
+		logger.warning(f"illegal param {val}, except [{l}, {r}]")
+		raise Exception(f"illegal params: {paramname} except [{l}, {r}] got {val}")
+
+	ensure_range(params["temperature"],0,2,"temperature")
+	ensure_range(params["top_p"],0,1,"top_p")
+	ensure_range(params["max_tokens"],1,8192,"max_tokens")
+	ensure_range(params["frequency_penalty"],-2,2,"frequency_penalty")
+	ensure_range(params["presence_penalty"],-2,2,"presence_penalty")
+	return params
+
 @require_http_methods(["GET"])
 @require_user("page")
 def site(request):
@@ -211,23 +231,10 @@ def post_message(request):
 	system = data.get('system',"")
 	cid = data.get('cid',"")
 
-	params = {}
-	params["temperature"] = data.get("temperature",1)
-	params["top_p"] = data.get("top_p",1)
-	params["max_tokens"] = data.get("max_tokens",4096)
-	params["frequency_penalty"] = data.get("frequency_penalty",0)
-	params["presence_penalty"] = data.get("presence_penalty",0)
-	def ensure_range(val,l,r):
-		if l <= val and val <= r:
-			return
-		logger.warning(f"illegal param {val}, except [{l}, {r}]")
+	try:
+		params = get_params_from_dict(data)
+	except Exception as e:
 		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=200)
-
-	ensure_range(params["temperature"],0,2)
-	ensure_range(params["top_p"],0,1)
-	ensure_range(params["max_tokens"],1,8192)
-	ensure_range(params["frequency_penalty"],-2,2)
-	ensure_range(params["presence_penalty"],-2,2)
 
 	# 获取对话
 	if cid == "":
@@ -454,3 +461,71 @@ def user_copy_communication(request):
 		new_comm = copy_communication(comm)
 		return JsonResponse({'status': 'ok', "cid": new_comm.cid, "title": new_comm.title, "model": comm.model}, status=200)
 
+@require_http_methods(["POST"])
+@require_user("data")
+def user_new_communication(request):
+	try:
+		data = json.loads(request.body)
+	except:
+		data = {}
+	cid = data.get('cid',"")
+	messages = data.get("messages",[])
+	model_name = data.get('model_name',"")
+	if not model_name in get_models():
+		return JsonResponse({'status': 'error', 'reason': 'model not supported'}, status=200)	
+	
+	if not user_try_talk(request.User):
+		return JsonResponse({'status': 'error', 'reason': 'talk limit exceeded'}, status=200)
+	
+	if cid == "":
+		return JsonResponse({'status': 'error', 'reason': 'no cid'}, status=200)
+	elif messages == []:
+		return JsonResponse({'status': 'error', 'reason': 'no messages'}, status=200)
+	else:
+		comm = get_communication_by_cid(cid)
+		if comm is None:
+			return JsonResponse({'status': 'error', 'reason': 'cid not exist'}, status=200)
+
+		if comm.user.pk != request.User.pk:
+			return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
+		
+		if comm.status != "DN":
+			return JsonResponse({'status': 'error', 'reason': 'communication not done'}, status=200)
+		
+		for i in range(len(messages)):
+			if set(messages[i].keys()) != {"role", "content", "model"}:
+				return JsonResponse({'status': 'error', 'reason': 'params error in messages'}, status=200)
+			if not messages[i]["role"] in ["assistant","reasoning","user"]:
+				return JsonResponse({'status': 'error', 'reason': 'params error in messages'}, status=200)
+		system = data.get('system',"")
+		cid = data.get('cid',"")
+		try:
+			params = get_params_from_dict(data)
+		except Exception as e:
+			print(e)
+			return JsonResponse({'status': 'error', 'reason': 'params error'}, status=200)
+		
+		upload_messages = []
+		for msg in messages:
+			if msg["role"] != "reasoning":
+				upload_messages.append({"role": msg["role"],"content": msg["content"]})
+		systemed_messages = []
+		if system != "":
+			systemed_messages.append({"role":"system","content":system})
+		systemed_messages.extend(upload_messages)
+
+		newtitle = (comm.title[:22] + "_another")
+		new_comm = new_communication(request.User, messages, newtitle, system, params)
+		update_comm_params(new_comm,params)
+		new_comm.system = system
+		rsp = request_talk(new_comm.cid, systemed_messages, model_name, params)
+		if rsp == "fail":
+			return JsonResponse({'status': 'error', 'reason': 'Internal Error'}, status=200)
+		if rsp == "queue full":
+			return JsonResponse({'status': 'error', 'reason': 'queue full'}, status=200)
+		elif rsp == "ok":
+			new_comm.status = "QR"
+			new_comm.save()
+			return JsonResponse({'status': 'ok', 'cid': new_comm.cid, "title": new_comm.title}, status=200)
+		# new_comm = copy_communication(comm)
+		# return JsonResponse({'status': 'ok', "cid": new_comm.cid, "title": new_comm.title, "model": comm.model}, status=200)

@@ -54,7 +54,7 @@ def add_mailbox(user,title,content):
 	mm = Mailbox(user=user,title=title,content=content)
 	mm.save()
 
-def create_communication(user,title,model_name):
+def create_communication(user,title,model_name): # 我有点没看懂这里的model_name要干什么，后面要修改一下
 	cid = uuid.uuid4().hex
 	comm = user.communication_set.create(cid=cid,title=title,model=model_name)
 	return comm
@@ -200,7 +200,7 @@ def write_failed_communication_to_database(cid, error_message):
 		create_communication_content(comm, role="assistant", content=error_message, model="ER")
 
 def copy_communication(comm):
-	newtitle = (comm.title + "_copy")[:30]
+	newtitle = (comm.title[:25] + "_copy")
 	new_comm = create_communication(comm.user, newtitle, comm.model)
 	new_comm.system = comm.system
 	new_comm.temperature = comm.temperature
@@ -211,4 +211,16 @@ def copy_communication(comm):
 	qst = comm.communication_content_set.all().order_by('gen_date')
 	for msg in qst:
 		create_communication_content(new_comm, msg.role, msg.content, msg.model)
+	return new_comm
+
+def new_communication(user,messages,title,system,params):
+	new_comm = create_communication(user, title, "none")
+	new_comm.system = system
+	new_comm.temperature = params["temperature"]
+	new_comm.top_p = params["top_p"]
+	new_comm.max_tokens = params["max_tokens"]
+	new_comm.frequency_penalty = params["frequency_penalty"]
+	new_comm.presence_penalty = params["presence_penalty"]
+	for msg in messages:
+		create_communication_content(new_comm, msg["role"], msg["content"], msg["model"])
 	return new_comm

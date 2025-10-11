@@ -33,9 +33,6 @@ function deleteCookie(name, path, domain) {
 
 function MessagecopyToClipboard(div) {
 	const codeText = div.childNodes[1].textContent;
-	console.log(div.childNodes)
-	console.log(div.childNodes[1])
-	console.log(codeText);
 	if (navigator.clipboard) {
 		navigator.clipboard.writeText(codeText).then(() => {
 			MessageshowCopiedFeedback(div);
@@ -609,7 +606,8 @@ function app() {
 			.then(response => {
 				const status = response.data.status;
 				if (status == "AI server down") {
-					alert("AI server is down, please contact the administrator. You can still browse the chat history.");
+					////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+					// alert("AI server is down, please contact the administrator. You can still browse the chat history.");
 				} else if (status == "ok") {
 					this.AIserver_down = false;
 				}
@@ -954,7 +952,6 @@ function app() {
 
 		UserCopyMessage(event){
 			let element = event.srcElement.parentElement.parentElement;
-			console.log(element);
 			MessagecopyToClipboard(element);
 			event.srcElement.src = urls["check_png"];
 			setTimeout(() => {
@@ -1032,20 +1029,77 @@ function app() {
 			if (this.in_talk) return ;
 			const element = event.srcElement.parentElement;
 			const codeText = element.childNodes[1].textContent;
+			console.log(codeText);
 			localStorage.setItem("ds2pdf",codeText)
 			window.open(urls["ds2pdf"],"_blank");
 		},
 
 		UserEditMessage(event) {
-			this.messages[0].content += " **123** ";
-			// console.log(event);
-			// let element = event.srcElement.parentElement;
-			// const codeText = element.childNodes[1].textContent;
-			// this.insert_title({
-			// 	id: cid,
-			// 	title: title,
-			// 	date: Date.now(),
-			// });
+			const element = event.srcElement.parentElement.parentElement;
+			const msgind = element.childNodes[3].textContent;
+			if (this.messages[msgind].role != "user") {
+				console.error(`error occured: ${msgind}'s ownwer is not user`);
+			}
+			this.messages[msgind].role = "user_edit";
+		},
+		
+		UserEditMessageCancel(event) {
+			const element = event.srcElement.parentElement.parentElement;
+			const msgind = element.childNodes[1].textContent;
+			this.messages[msgind].role = "user";
+		},
+		UserEditMessageConfirm(event) {
+			const element = event.srcElement.parentElement.parentElement;
+			const msgind = element.childNodes[1].textContent;
+			const msg = element.childNodes[3];
+			console.log(msg.value);
+			// const msg_history = this.messages.slice(0,msgind);
+			// console.log(msg_history);
+			let upload_messages = [];
+			for (let i = 0; i < msgind; i += 1) {
+				upload_messages.push({
+					role: this.messages[i].role,
+					content: this.messages[i].content,
+					model: this.messages[i].model,
+				})
+			}
+			upload_messages.push({
+				role: "user",
+				content: msg.value,
+				model: this.models[this.selectedModelid].name,
+			})
+			console.log(upload_messages);
+			// return ;
+			$axios.post(urls["user_new_communication"], {
+				cid: this.cid,
+				messages: upload_messages,
+				system: this.system_content,
+				model_name: this.models[this.selectedModelid].name,
+				temperature: Number(this.communication_temperature),
+				top_p: Number(this.communication_top_p),
+				max_tokens: Number(this.communication_max_tokens),
+				frequency_penalty: Number(this.communication_frequency_penalty),
+				presence_penalty: Number(this.communication_presence_penalty),
+			})
+			.then(response => {
+				const status = response.data.status;
+				if (status == "error") {
+					console.log(response.data.reason);
+				} else {
+					this.insert_title({
+						id: response.data.cid,
+						title: response.data.title,
+						date: Date.now(),
+					});
+				}
+			})
+			.catch(error => {
+				console.log('UserEditMessageConfirm请求失败:')
+				console.log(error);
+				if (error.status === 401){
+					window.location.href = urls["login"];
+				}
+			});
 		},
 
 		copyCommunication() {
