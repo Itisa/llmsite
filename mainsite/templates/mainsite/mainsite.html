@@ -152,11 +152,12 @@
 											name="user_edit_textarea"
 											class="user_edit_textarea"
 											x-bind:value="message.content"
-											x-init="$nextTick(() => $el.focus())">
+											x-init="$nextTick(() => $el.focus())"
+											@keydown.enter="UserEditMessageConfirm(event,'enter')">
 										</textarea>
 										<div class="user_edit_btns">
 											<button class="user_edit_btn user_edit_btn-cancel" @click="UserEditMessageCancel(event)">取消</button>
-											<button class="user_edit_btn user_edit_btn-send" @click="UserEditMessageConfirm(event)">发送</button>
+											<button class="user_edit_btn user_edit_btn-send" @click="UserEditMessageConfirm(event,'button')">发送</button>
 										</div>
 									</div>
 								</template>

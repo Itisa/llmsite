@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 from .models_api import *
 from .talk_with_AI import request_talk, yield_content
 
-def redirect2loginResponse():
+def _redirect2loginResponse():
 	response = HttpResponseRedirect(reverse("mainsite:login"))
 	# response.delete_cookie('sessionid')
 	# response.delete_cookie('username')
 	return response
 
-def NoAuthResponse():
+def _NoAuthResponse():
 	response = HttpResponse('Unauthorized', status=401)
 	# response.delete_cookie('sessionid')
 	# response.delete_cookie('username')
@@ -39,18 +39,18 @@ class require_user:
 			request = args[0]
 			if not if_user_valid(request.User):
 				if request.method == "GET" and self.request_type == "page":
-					return redirect2loginResponse()
+					return _redirect2loginResponse()
 				else:
-					return NoAuthResponse()
+					return _NoAuthResponse()
 			result = func(*args, **kwargs)
 			return result
 		return wrapper
 
-def generate_random_string(length):
+def _generate_random_string(length):
 	characters = string.ascii_letters + string.digits  # 字母和数字
 	return ''.join(random.choices(characters, k=length))
 
-def get_params_from_dict(dic):
+def _get_params_from_dict(dic):
 	params = {}
 	params["temperature"] = dic.get("temperature",1)
 	params["top_p"] = dic.get("top_p",1)
@@ -99,7 +99,7 @@ def login(request):
 		if bcrypt.checkpw(password.encode(), user.user_password.encode()):
 			if user.user_status == "FD":
 				return JsonResponse( {"status": "fail","reason": "user forbidden"}, status=200)
-			sessionid = generate_random_string(20)
+			sessionid = _generate_random_string(20)
 			user.sessionid = sessionid
 			user.sessionid_expire = timezone.now() + datetime.timedelta(days=14)
 
@@ -150,7 +150,6 @@ def change_password(request):
 		}
 		return render(request,"mainsite/change_password.html",data)
 	elif request.method == "POST":
-		# return JsonResponse( {"status": "fail","reason": "change_password unavailable",}, status=200)
 		user = request.User
 
 		logger.info(f"user {user} change_password")
@@ -180,19 +179,16 @@ def logout(request):
 @require_user("data")
 def get_available_models(request):
 	try:
-		rsp = requests.get(settings.AI_SERVER_HOST+":"+str(settings.AI_SERVER_PORT)+"/health",timeout=1)
-			
+		rsp = requests.get(settings.AI_SERVER_HOST+":"+str(settings.AI_SERVER_PORT)+"/health",timeout=1)	
 		return JsonResponse({'status': 'ok', 'data': get_typed_models(), 'talk_test': rsp.json().get("talk_test",False)},status=200)
 	except Exception as e:
 		return JsonResponse({'status': 'AI server down', 'data': get_typed_models()},status=200)
 		
-
 @require_http_methods(["GET"])
 @require_user("data")
 def get_history(request):
 	titles = []
-	# query = request.User.communication_set.all().order_by('gen_date')
-	query = request.User.communication_set.all()
+	query = request.User.communication_set.all() # 不用排序，前端会排序
 	for comm in query.iterator():
 		titles.append({"title":comm.title,"model":comm.model,"date":comm.gen_date,"id":comm.cid,"starred":comm.starred})
 	return JsonResponse({'status': 'ok', 'titles': titles},status=200)
@@ -204,7 +200,7 @@ def get_communication_content(request):
 	comm = get_communication_by_cid(cid)
 	if comm is None:
 		return JsonResponse({'status': 'error', 'reason': 'no communication'}, status=200)
-	if (comm.user.pk != request.User.pk):
+	if comm.user.pk != request.User.pk:
 		return JsonResponse({'status': 'error', 'reason': 'no permission'}, status=200)
 	messages = []
 	qst = comm.communication_content_set.all().order_by('gen_date')
@@ -232,7 +228,7 @@ def post_message(request):
 	cid = data.get('cid',"")
 
 	try:
-		params = get_params_from_dict(data)
+		params = _get_params_from_dict(data)
 	except Exception as e:
 		return JsonResponse({'status': 'error', 'reason': 'illegal params'}, status=200)
 
@@ -249,7 +245,7 @@ def post_message(request):
 	update_comm_params(comm, params)
 	comm.model = model_name
 	comm.system = system
-	create_communication_content(comm,"user",message,get_model_origin_by_name(model_name))
+	create_communication_content(comm, "user", message, get_model_origin_by_name(model_name))
 
 	messages = []
 	if system != "":
@@ -500,7 +496,7 @@ def user_new_communication(request):
 		system = data.get('system',"")
 		cid = data.get('cid',"")
 		try:
-			params = get_params_from_dict(data)
+			params = _get_params_from_dict(data)
 		except Exception as e:
 			print(e)
 			return JsonResponse({'status': 'error', 'reason': 'params error'}, status=200)
@@ -516,8 +512,10 @@ def user_new_communication(request):
 
 		newtitle = (comm.title[:22] + "_another")
 		new_comm = new_communication(request.User, messages, newtitle, system, params)
+
 		update_comm_params(new_comm,params)
 		new_comm.system = system
+		
 		rsp = request_talk(new_comm.cid, systemed_messages, model_name, params)
 		if rsp == "fail":
 			return JsonResponse({'status': 'error', 'reason': 'Internal Error'}, status=200)
@@ -527,5 +525,3 @@ def user_new_communication(request):
 			new_comm.status = "QR"
 			new_comm.save()
 			return JsonResponse({'status': 'ok', 'cid': new_comm.cid, "title": new_comm.title}, status=200)
-		# new_comm = copy_communication(comm)
-		# return JsonResponse({'status': 'ok', "cid": new_comm.cid, "title": new_comm.title, "model": comm.model}, status=200)

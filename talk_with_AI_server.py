@@ -355,7 +355,7 @@ class SubmitHandler(BaseHandler):
         model_name = data.get("model_name")
         params = data.get("params", {})
         if not isinstance(messages, list) or not model_name:
-            return self.write_json({"error": "body must include messages(list) and model_name(str)"}, 400)
+            return self.write_json({"status":"error", "reason" : "body must include messages(list) and model_name(str)"}, 400)
         logging.info(f"Received task: messages={messages} \n, model_name={model_name} \n, params={params}")
 
         try:
@@ -364,7 +364,7 @@ class SubmitHandler(BaseHandler):
             task_store.add(task)
             task_queue.put(task, block=False)
         except queue.Full:
-            return self.write_json({"status": "error", "reason":"queue full"}, 200)
+            return self.write_json({"status": "error", "reason": "queue full"}, 200)
 
         return self.write_json({"status":"ok","cid": cid})
 
@@ -374,13 +374,13 @@ class ContentHandler(BaseHandler):
         query_type = self.get_query_argument("query_type", "content") # reasoning / content
         last_index = self.get_query_argument("last_index", "0")
         if not cid:
-            return self.write_json({"error": "cid is required"}, 400)
+            return self.write_json({"status": "error", "reason": "cid is required"}, 200)
         
         t = task_store.get(cid)
         if not t:
-            return self.write_json({"error": "task not found"}, 404)
+            return self.write_json({"status": "error", "reason": "task not found"}, 404)
         if query_type not in ("reasoning", "content"):
-            return self.write_json({"error": "query_type must be 'reasoning' or 'content'"}, 400)
+            return self.write_json({"status": "error", "reason": "query_type must be 'reasoning' or 'content'"}, 400)
         
         if t.status == "failed":
             return self.write_json({"status": "failed","reason": t.error})

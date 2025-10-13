@@ -6,8 +6,8 @@ from django.urls import path
 from django.contrib import messages
 
 from .models import User, Communication, Communication_Content, Mailbox, Api_config, GlobalSetting, Ds2pdf_report
-from .views import generate_random_string,add_user
-from .models_api import get_user_by_username
+from .views import _generate_random_string
+from .models_api import get_user_by_username, add_user
 
 import bcrypt
 
@@ -41,7 +41,7 @@ admin.site.register(Api_config,Api_configAdmin)
 
 def new_user(username, password, user_type):
 	if password == "":
-		password = generate_random_string(10)
+		password = _generate_random_string(10)
 	if add_user(username,password,user_type):
 		result = (messages.SUCCESS,f"successfully new user 用户名={username}, 密码={password}, 用户类型={user_type}")
 	else:
@@ -75,7 +75,7 @@ reset_pwd2username.short_description = "重置密码为用户名"
 
 def change_password(username, password):
 	if password == "":
-		password = generate_random_string(10)
+		password = _generate_random_string(10)
 	user = get_user_by_username(username)
 	if user is None:
 		return (messages.ERROR, f"用户不存在 用户名={username}, 密码={password}")
