@@ -221,6 +221,19 @@ def new_communication(user,messages,title,system,params):
 	new_comm.max_tokens = params["max_tokens"]
 	new_comm.frequency_penalty = params["frequency_penalty"]
 	new_comm.presence_penalty = params["presence_penalty"]
+	MODEL_CHOICES = [
+		("DS","deepseek"),
+		("DB","doubao"),
+		("OA","openai"),
+		("KM","kimi"),
+		("QW","qwen"),
+		("NN","none"),
+		("ER","error"),
+	]
+	dic = {}
+	for short,long in MODEL_CHOICES:
+		dic[long] = short
+	
 	for msg in messages:
-		create_communication_content(new_comm, msg["role"], msg["content"], msg["model"])
+		create_communication_content(new_comm, msg["role"], msg["content"], dic[msg["model"]] )
 	return new_comm

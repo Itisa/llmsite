@@ -1037,6 +1037,7 @@ function app() {
 		},
 
 		UserEditMessage(event) {
+			if (this.AIserver_down) return ;
 			const element = event.srcElement.parentElement.parentElement;
 			const msgind = element.childNodes[3].textContent;
 			if (this.messages[msgind].role != "user") {
@@ -1051,8 +1052,7 @@ function app() {
 			this.messages[msgind].role = "user";
 		},
 
-		UserEditMessageConfirm(event,src)
-		{
+		UserEditMessageConfirm(event,src) {
 			let element = null;
 			if (src == 'enter') {
 				if (event.shiftKey) return ;
@@ -1077,7 +1077,7 @@ function app() {
 			upload_messages.push({
 				role: "user",
 				content: msg,
-				model: this.models[this.selectedModelid].name,
+				model: "none",
 			})
 			$axios.post(urls["user_new_communication"], {
 				cid: this.cid,
