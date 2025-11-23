@@ -29,6 +29,7 @@ INSTALLED_APPS = [
 	'django.contrib.messages',
 	'django.contrib.staticfiles',
 	"mainsite.apps.MainsiteConfig",
+	# "django_q",
 ]
 
 MIDDLEWARE = [
@@ -38,7 +39,7 @@ MIDDLEWARE = [
 	'django.middleware.csrf.CsrfViewMiddleware',
 	'django.contrib.auth.middleware.AuthenticationMiddleware',
 	'django.contrib.messages.middleware.MessageMiddleware',
-	'django.middleware.clickjacking.XFrameOptionsMiddleware',
+	# 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 	'django.middleware.clickjacking.XFrameOptionsMiddleware',
 	'llmsite.middleware.UserAuthMiddleware',
 ]
@@ -77,6 +78,7 @@ DATABASE_OPTIONS = {}
 SECRET_KEY = 'django-insecure-#w@25vu=80@@y&(arepi@=j$ad!f#iy2q9^ga#t5%5*c12d^o&'
 ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
 LOCAL_HOST = "127.0.0.1"
+TALK_TEST = False
 try:
 	from .local_settings import *
 except:

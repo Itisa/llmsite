@@ -11,11 +11,10 @@ import random
 import string
 import datetime
 import logging
-import requests
 logger = logging.getLogger(__name__)
 
 from .models_api import *
-from .talk_with_AI import request_talk, yield_content
+from .talk_with_AI import new_talk, yield_content
 
 def _redirect2loginResponse():
 	response = HttpResponseRedirect(reverse("mainsite:login"))
@@ -178,11 +177,7 @@ def logout(request):
 @require_http_methods(["GET"])
 @require_user("data")
 def get_available_models(request):
-	try:
-		rsp = requests.get(settings.AI_SERVER_HOST+":"+str(settings.AI_SERVER_PORT)+"/health",timeout=1)	
-		return JsonResponse({'status': 'ok', 'data': get_typed_models(), 'talk_test': rsp.json().get("talk_test",False)},status=200)
-	except Exception as e:
-		return JsonResponse({'status': 'AI server down', 'data': get_typed_models()},status=200)
+	return JsonResponse({'data': get_typed_models()},status=200)
 		
 @require_http_methods(["GET"])
 @require_user("data")
@@ -256,7 +251,7 @@ def post_message(request):
 		messages.append({"role" : msg.role,"content":msg.content})
 	messages.append({"role": "user", "content": message})
 
-	rsp = request_talk(comm.cid, messages, model_name, params)
+	rsp = new_talk(comm.cid, messages, model_name, params)
 	if rsp == "fail":
 		return JsonResponse({'status': 'error', 'reason': 'Internal Error'}, status=200)
 	if rsp == "queue full":
@@ -390,7 +385,7 @@ def ds2pdf_report(request):
 #only localhost can access
 @require_http_methods(["POST"])
 @csrf_exempt
-def update_communication_to_database(request):
+def update_communication_to_database(request): ### 不再使用
 	if not request.META.get('REMOTE_ADDR') in [settings.LOCAL_HOST, 'localhost', '127.0.0.1']:
 		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
 		return JsonResponse({'status': 'fail', 'reason': 'no permission'}, status=200)
@@ -422,9 +417,10 @@ def update_communication_to_database(request):
 
 	return JsonResponse({'status': 'ok'},status=200)
 
+
 @csrf_exempt
 @require_http_methods(["GET"])
-def health_check(request):
+def health_check(request): ### 不再使用
 	if not request.META.get('REMOTE_ADDR') in [settings.LOCAL_HOST, 'localhost', '127.0.0.1']:
 		logger.warning(f"unauthorized access from {request.META.get('REMOTE_ADDR')}")
 		return HttpResponse(status=404)
@@ -516,7 +512,7 @@ def user_new_communication(request):
 		update_comm_params(new_comm,params)
 		new_comm.system = system
 		
-		rsp = request_talk(new_comm.cid, systemed_messages, model_name, params)
+		rsp = new_talk(new_comm.cid, systemed_messages, model_name, params)
 		if rsp == "fail":
 			return JsonResponse({'status': 'error', 'reason': 'Internal Error'}, status=200)
 		if rsp == "queue full":
