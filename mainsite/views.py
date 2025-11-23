@@ -71,11 +71,12 @@ def _get_params_from_dict(dic):
 
 @require_http_methods(["GET"])
 @require_user("page")
-def site(request):
-	data = {
+def site(request, cid=None):
+	print(f"{cid=}")
+	render_data = {
 		"website_name" : get_website_name(),
 	}
-	rsp = render(request,"mainsite/mainsite.html",data)
+	rsp = render(request,"mainsite/mainsite.html",render_data)
 	return rsp
 
 @require_http_methods(["GET","POST"])

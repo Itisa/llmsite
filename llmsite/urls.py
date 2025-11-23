@@ -23,6 +23,7 @@ from mainsite import views
 urlpatterns = [
     path("site/", include("mainsite.urls")),
     path("", views.site, name="site"),
-    path("health/", views.health_check, name="health_check"),
+    path("c/<str:cid>/", views.site, name="site&cid"),
+    # path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
 ]

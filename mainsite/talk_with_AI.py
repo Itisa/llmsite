@@ -99,14 +99,14 @@ def talk_with_AI(cid,model_name,messages,params):
 				update(content=content, status="content")
 			time.sleep(0.07)
 	else:
-		if model["model_origin"] == "DS":
+		if model.model_origin == "DS":
 			client = OpenAI(
-				api_key = model["api_key"],
-				base_url = model["base_url"],
+				api_key = model.api_key,
+				base_url = model.base_url,
 			)
 			
 			response = client.chat.completions.create(
-				model = model["model"],
+				model = model.model,
 				messages = messages,
 				stream = True,
 				temperature = params["temperature"],
@@ -129,12 +129,12 @@ def talk_with_AI(cid,model_name,messages,params):
 					status = "content"
 					update(content=content,status="content")
 		
-		elif model["model_origin"] == "DB":
+		elif model.model_origin == "DB":
 			client = Ark(
-				api_key = model["api_key"]
+				api_key = model.api_key,
 			)
 			response = client.chat.completions.create(
-				model = model["model"],
+				model = model.model,
 				messages = messages,
 				stream=True,
 				temperature = params["temperature"],
@@ -151,13 +151,13 @@ def talk_with_AI(cid,model_name,messages,params):
 				status = "content"
 				update(content=content,status="content")
 		
-		elif model["model_origin"] == "OA":
+		elif model.model_origin == "OA":
 			client = OpenAI(
-				api_key = model["api_key"],
-				base_url = model["base_url"],
+				api_key = model.api_key,
+				base_url = model.base_url,
 			)
 			response = client.chat.completions.create(
-				model = model["model"],
+				model = model.model,
 				messages = messages,
 				stream = True,
 				temperature = params["temperature"],
@@ -180,13 +180,13 @@ def talk_with_AI(cid,model_name,messages,params):
 					status = "content"
 					update(content=content,status="content")
 		
-		elif model["model_origin"] == "KM":
+		elif model.model_origin == "KM":
 			client = OpenAI(
-				api_key = model["api_key"],
-				base_url = model["base_url"],
+				api_key = model.api_key,
+				base_url = model.base_url,
 			)     
 			response = client.chat.completions.create(
-				model = model["model"],
+				model = model.model,
 				messages = messages,
 				stream = True,
 				temperature = params["temperature"],
@@ -202,13 +202,13 @@ def talk_with_AI(cid,model_name,messages,params):
 					content += new_content
 					status = "content"
 					update(content=content,status="content")
-		elif model["model_origin"] == "QW":
+		elif model.model_origin == "QW":
 			client = OpenAI(
-				api_key = model["api_key"],
-				base_url = model["base_url"],
+				api_key = model.api_key,
+				base_url = model.base_url,
 			)     
 			response = client.chat.completions.create(
-				model = model["model"],
+				model = model.model,
 				messages = messages,
 				stream = True,
 				temperature = params["temperature"],
@@ -237,6 +237,7 @@ def talk_with_AI(cid,model_name,messages,params):
 	if model_type == "RS":
 		create_communication_content(comm,"reasoning",reasoning_content, model.model_origin)
 	create_communication_content(comm,"assistant",content, model.model_origin)
+	comm.status = "DN"
 	comm.save()
 	end_cache()
 

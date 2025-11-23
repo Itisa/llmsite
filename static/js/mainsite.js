@@ -257,7 +257,6 @@ function app() {
 			});
 			this.topBarContent = "新对话";
 			this.get_history();
-			this.get_available_models();
 			this.title_diff_days = [ // 需要确保days递增，最后一个是-1
 				{name:"我的收藏",days:0},
 				{name:"今天",days:1},
@@ -269,6 +268,8 @@ function app() {
 			for (let i = 0; i < this.title_diff_days.length; i++) {
 				this.titles.push([]);
 			}
+			this.get_available_models();
+
 		},
 
 		md_render(content) {
@@ -291,6 +292,19 @@ function app() {
 			window.location.href = urls["logout"];
 		},
 		
+		goto_communication_in_url(){
+			const pathname = window.location.pathname;
+			console.log("pathname: ",pathname);
+			if (pathname === '/' || pathname === '') {
+				
+			} else {
+				let cid = pathname.slice(3);
+				cid = cid.slice(0,cid.length-1);
+				console.log("cid:", cid)
+				this.get_communication_content(cid);
+			}
+		},
+
 		// 用户发送消息
 		userPressEnterInSendMessage(event){
 			if (!event.shiftKey) {
@@ -617,6 +631,7 @@ function app() {
 				} else {
 					this.selectedModelid = this.get_model_ind(last_used_model);
 				}
+				this.goto_communication_in_url();
 			})
 			.catch(error => {
 				console.log("error in get_available_models");
@@ -680,6 +695,7 @@ function app() {
 				this.cid = cid;
 				this.update_topBar();
 				this.get_params(cid);
+				history.pushState("","",`/c/${cid}/`);
 				setTimeout(() => {
 					mermaid.run();
 					setTimeout(() => {
@@ -779,6 +795,8 @@ function app() {
 		// 开启新对话
 		createNewChat() {
 			if (this.in_talk) return ;
+			console.log("createNewChat");
+			history.pushState("","","/");
 			this.cid = null;
 			this.topBarContent = "新对话";
 			this.messages = [];
@@ -801,7 +819,6 @@ function app() {
 		},
 		
 		userPressEnterInEditingTitle(event){
-			console.log(event);
 			if (!event.shiftKey) {
 				event.preventDefault();
 				this.saveTitle();
