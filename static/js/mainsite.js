@@ -269,7 +269,9 @@ function app() {
 				this.titles.push([]);
 			}
 			this.get_available_models();
-
+			window.addEventListener('popstate', (event) => {
+                this.handlePopState(event.state);
+            });
 		},
 
 		md_render(content) {
@@ -292,16 +294,38 @@ function app() {
 			window.location.href = urls["logout"];
 		},
 		
+		goto_new_url(url) {
+			console.log("goto_new_url", url);
+			state = {
+				url: url,
+			}
+			history.pushState(state, "", url);
+		},
+
+		handlePopState(state) {
+			if (state === null) {
+				this.createNewChat(pushstate=false);
+			} else {
+				if (state.url.startsWith("/c/")) {
+					let cid = state.url.slice(3);
+					cid = cid.slice(0, cid.length - 1);
+					this.get_communication_content(cid, pushstate=false);
+				} else {
+					console.log("handlePopState: not a communication url");
+					this.createNewChat(pushstate=false);
+				}
+			}
+		},
+		
 		goto_communication_in_url(){
 			const pathname = window.location.pathname;
-			console.log("pathname: ",pathname);
 			if (pathname === '/' || pathname === '') {
 				
 			} else {
 				let cid = pathname.slice(3);
 				cid = cid.slice(0,cid.length-1);
-				console.log("cid:", cid)
-				this.get_communication_content(cid);
+				console.log("1234");
+				this.get_communication_content(cid,false,true);
 			}
 		},
 
@@ -657,8 +681,12 @@ function app() {
 		},
 
 		// 加载对话消息
-		get_communication_content(cid){
+		get_communication_content(cid, pushstate=true,init=false){
+			console.log(cid,pushstate,init);
 			if (this.in_talk) return ;
+			if (cid == this.cid) {
+				return ; // 已经在这个对话中
+			}
 			this.isEditingTitle = false;
 			this.topBarContent = null;
 			$axios.get(urls["get_communication_content"], {
@@ -668,14 +696,20 @@ function app() {
 			})
 			.then(response => {
 				const status = response.data.status;
-				if (status == "fail") {
+				if (status == "fail" || status == "error") { // 怎么原来写的是fail，变成error了?
 					const reason = response.data.reason;
 					if (reason == "no communication") {
-						alert("对话不存在或已被删除");
-						this.createNewChat();
+						if (init){
+							this.createNewChat_replace(); // 初始URL出错，直接跳到初始页，不保留历史记录
+						} else {
+							this.createNewChat();
+						}
 					} else if (reason == "no permission") {
-						alert("没有权限访问该对话");
-						this.createNewChat();
+						if (init) {
+							this.createNewChat_replace();
+						} else {
+							this.createNewChat();
+						}
 					}
 					return ;
 				}
@@ -695,7 +729,9 @@ function app() {
 				this.cid = cid;
 				this.update_topBar();
 				this.get_params(cid);
-				history.pushState("","",`/c/${cid}/`);
+				if (pushstate) {
+					this.goto_new_url(`/c/${cid}/`);
+				}
 				setTimeout(() => {
 					mermaid.run();
 					setTimeout(() => {
@@ -793,15 +829,31 @@ function app() {
 		},
 
 		// 开启新对话
-		createNewChat() {
+		createNewChat(pushstate=true,init=false) {
+			if (init) {
+				this.cid = null;
+				this.goto_new_url("/");
+				return ;
+			}
 			if (this.in_talk) return ;
-			console.log("createNewChat");
-			history.pushState("","","/");
+			if (this.cid == null) {
+				return ; // 已经是新对话了
+			}
+			console.log("pushstate:",pushstate);
+			if (pushstate) {
+				this.goto_new_url("/");
+			}
 			this.cid = null;
 			this.topBarContent = "新对话";
 			this.messages = [];
 			this.focusOnInput();
 			this.InitParams();
+		},
+		createNewChat_replace() {
+			const state = {
+				url:"/",
+			};
+			history.replaceState(state,"","/")
 		},
 		
 		// 开启/关闭标题编辑
